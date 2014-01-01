@@ -1,0 +1,73 @@
+
+                     DEFINITIONS AND ACRONYMS for TCG Opal SSC
+
+-------------------------------------------------------------------------------
+
+ATA: AT Attachment
+  An interface standard for talking to storage media over a parallel bus.
+
+CDB: Command Descriptor Block
+  A SCSI command bl1ock (may contain SAT translated ATA commands).
+
+IEEE: Institute of Electrical and Electronics Engineers
+  International standards body for many computer interfaces.
+
+LBA: Logical Block Addressing
+  A simple linear addressing scheme indexing sectors from a single number,
+  instead of cylinder / head / sector.
+
+P1667:
+  IEEE standard for authenticating to storage devices.
+
+Opal: See "SSC Opal"
+
+PATA: Parallel ATA (see ATA)
+
+SATA: Serial ATA
+  An adaptation of parallel ATA devices to a high speed serial bus, along with
+  some additional commands present in the SCSI protocol.
+
+SAS: Serial Attached SCSI
+  An adaptation of parallel SCSI devices to a high speed serial bus.
+
+SAT: SCSI / ATA Translation
+  Interface defined to pass ATA commands through an existing SCSI layer.
+
+SCSI: Small Computer System Interface
+  An interface standard for talking to storage media over a parallel bus.
+
+SGIO: SCSI Generic I/O
+  A Linux system system call allowing a user to issue SCSI commands, or ATA
+  commands through the SAT translation layer, to a target hard drive.
+
+SD: Storage Device
+  A device providing long term data storage (read: hard drive).
+
+SP: Security Provider
+  A security function of a TPM, such as locking or authentication.
+
+SSC: Security Subsystem Class
+  A TCG defined standard for secure data storage.
+
+SSC Enterprise: Security Subsystem Class Enterprise
+  Published TCG standard for self encrypting SAS hard drives.
+
+SSC Opal: Security Subsystem Class Opal
+  Published TCG standard for self encrypting ATA (read: SATA) and SCSI hard drives.
+
+SWG: Storage Working Group
+
+TCG: Trusted Computing Group
+  Standards body for the trusted computing platform.
+
+TPM: Trusted Platform Module
+  Secure coprocessor performing cryptographic and authentication services.
+
+TPer: Trusted Peripheral
+  Component of a trusted computing platform that contains a TPM, such as an
+  Opal compatible self-encrypting hard drive.
+
+Trusted Computing Platform:
+  A concept popularized by the TCG, providing a stable computing platform that
+  uses strong cryptography and authentication to resist exploits, malware, and
+  unauthorized modification.
