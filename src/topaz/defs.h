@@ -22,7 +22,9 @@
  * GNU General Public License for more details.
  */
 
+#include <stdlib.h> // For size_t
 #include <stdint.h>
+#include <vector>
 
 /********* NOTE: All Structures Listed Herein Are Big Endian *********/
 
@@ -31,6 +33,16 @@
 
 namespace topaz
 {
+  
+  //////////////////////////////////////////////////////////////////////////////
+  // Common Datatypes
+  //
+  
+  // Vector of bytes
+  typedef unsigned char byte;
+  
+  // Vector of bytes
+  typedef std::vector<byte> byte_vector;
   
   //////////////////////////////////////////////////////////////////////////////
   // ATA Definitions
