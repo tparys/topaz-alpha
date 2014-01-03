@@ -24,7 +24,7 @@
  */
 
 #include <topaz/rawdrive.h>
-#include <topaz/syntax.h>
+#include <topaz/datum.h>
 
 namespace topaz
 {
@@ -53,21 +53,21 @@ namespace topaz
      *
      * @param outbuf Outbound data buffer
      */
-    void sendrecv(syntax const &outbuf, syntax &inbuf);
+    void sendrecv(datum const &data_out, datum &data_in);
     
     /**
      * \brief Send payload to TCG Opal drive
      *
      * @param outbuf Outbound data buffer
      */
-    void send(syntax const &outbuf);
+    void send(datum const &outbuf);
     
     /**
      * \brief Receive payload from TCG Opal drive
      *
      * @param inbuf Inbound data buffer
      */
-    void recv(syntax &inbuf);
+    void recv(datum &inbuf);
     
     /**
      * \brief Probe Available TPM Security Protocols

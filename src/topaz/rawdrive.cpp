@@ -139,7 +139,6 @@ void topaz::rawdrive::if_send(uint8_t proto, uint16_t comid,
 void topaz::rawdrive::if_recv(uint8_t proto, uint16_t comid,
 			      void *data, uint8_t bcount)
 {
-  printf("IF-RECV(%u, %u, ...)\n", proto, comid);
   if (USE_ATA12)
   {
     // Blank ATA12 command

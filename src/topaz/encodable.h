@@ -1,5 +1,5 @@
-#ifndef TOPAZ_SERIALIZABLE_H
-#define TOPAZ_SERIALIZABLE_H
+#ifndef TOPAZ_ENCODABLE_H
+#define TOPAZ_ENCODABLE_H
 
 /**
  * File:   $URL $
@@ -7,9 +7,9 @@
  * Date:   $Date $
  * Rev:    $Revision $
  *
- * Topaz - Serializable Object Interface Class
+ * Topaz - Encodable Object Interface Class
  *
- * This file an object class that can be serialized into a given byte stream,
+ * This file an object class that can be serialized into a TCG Opal byte stream,
  * as well as deserialized into a copy of the original object.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,37 +28,52 @@
 namespace topaz
 {
 
-  class serializable : public byte_vector
+  class encodable
   {
     
   public:
     
     // Constructor / Destructor
-    serializable();
-    virtual ~serializable();
+    encodable();
+    virtual ~encodable();
+    
+    /**
+     * \brief Query encoded size
+     *
+     * @return Byte count of object when encoded
+     */
+    virtual size_t size() const = 0;
+    
+    /**
+     * \brief Encode to data buffer
+     *
+     * @param data Data buffer of at least size() bytes
+     * @return Number of bytes encoded
+     */
+    virtual size_t encode_bytes(byte *data) const = 0;
+    
+    /**
+     * \brief Encode to Container
+     *
+     * @return Encoded data
+     */
+    byte_vector encode_vector() const;
     
     /**
      * \brief Decode from data buffer
      *
      * @param data Location to read encoded bytes
      * @param len  Length of buffer
+     * @return Number of bytes processed
      */
-    void deserialize(void const *data, size_t len);
+    virtual size_t decode_bytes(byte const *data, size_t len) = 0;
     
     /**
-     * \brief Decode from data buffer
+     * \brief Decode from Container
      *
-     * @param data Location to read encoded bytes
-     * @param len  Length of buffer
+     * @param data Specifed container
      */
-    void deserialize(byte_vector const &data);
-    
-  protected:
-    
-    /**
-     * \brief Decode internal storage
-     */
-    virtual void decode() = 0;
+    void decode_vector(byte_vector const &data);
     
   };
 

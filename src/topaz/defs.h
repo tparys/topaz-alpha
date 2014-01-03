@@ -9,7 +9,7 @@
  *
  * Topaz - Common Definitions
  *
- * This file defines important structures used throughout TCG Opal SSC
+ * This file defines important types and structures used throughout TCG Opal.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,14 @@ namespace topaz
   
   // Vector of bytes
   typedef std::vector<byte> byte_vector;
+  
+  // Vector of atoms (forward declare to avoid circular deps)
+  class atom;
+  typedef std::vector<atom> atom_vector;
+  
+  // Vector of datums (forward declare to avoid circular deps)
+  class datum;
+  typedef std::vector<datum> datum_vector;
   
   //////////////////////////////////////////////////////////////////////////////
   // ATA Definitions

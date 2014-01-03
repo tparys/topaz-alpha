@@ -10,8 +10,8 @@
  * Topaz - Atom
  *
  * This class implements a TCG Opal Atom, that is a base data type which
- * encompasses both integer and binary data types. This does not include other
- * tokens such as named types, lists, or method calls
+ * encompasses both integer and binary data types, but does NOT include other
+ * data stream tokens such as those for named types, lists, or method calls.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,48 +25,61 @@
  */
 
 #include <topaz/defs.h>
-#include <topaz/serializable.h>
+#include <topaz/encodable.h>
 
 namespace topaz
 {
   
-  class atom : public serializable
+  class atom : public encodable
   {
     
   public:
     
-    // Enumeration of various atom types
+    // Valid atom types
     typedef enum
     {
-      UNSET,  // Not yet set (invalid)
+      EMPTY,
       UINT,   // Unsigned integer
       INT,    // Signed integer
       BYTES   // Binary data
     } type_t;
-    
-    // Atom byte encodings
+      
+    // Valid atom encodings
     typedef enum
     {
-      // Tiny Atoms (Integers 0x00 - 0x3F)
-      TINY        = 0x00,
+      NONE,   // EMPTY - No valid atom
+      TINY,   // Integers 6 bits or less
+      SHORT,  // Data < 16 bytes
+      MEDIUM, // Data < 2048 bytes
+      LONG    // Data < 16777216 bytes
+    } enc_t;
+    
+    // Valid tokens for encoding atoms
+    typedef enum
+    {
+      // Tiny Atoms
+      TINY_TOK    = 0x00,
       TINY_SIGN   = 0x40, // Modifier to TINY_ATOM
       
-      // Short Atoms (Less than 16 bytes)
-      SHORT       = 0x80,
+      // Short Atoms
+      SHORT_TOK   = 0x80,
       SHORT_BIN   = 0x20, // Modifier to SHORT_ATOM
       SHORT_SIGN  = 0x10, // Modifier to SHORT_ATOM
       
-      // Medium Atoms (Less than 2048 bytes)
-      MEDIUM      = 0xc0,
+      // Medium Atoms
+      MEDIUM_TOK  = 0xc0,
       MEDIUM_BIN  = 0x10, // Modifier to MEDIUM_ATOM
       MEDIUM_SIGN = 0x08, // Modifier to MEDIUM_ATOM
       
-      // Long Atoms (Less than 16777216 bytes)
-      LONG        = 0xe0,
+      // Long Atoms
+      LONG_TOK    = 0xe0,
       LONG_BIN    = 0x02, // Modifier to LONG_ATOM
       LONG_SIGN   = 0x01, // Modifier to LONG_ATOM
-    } enc_t;
-
+      
+      // Empty
+      EMPTY_TOK   = 0xff
+    } tokens_t;
+    
     /**
      * \brief Default Constructor
      */
@@ -76,8 +89,9 @@ namespace topaz
      * \brief Unsigned Integer Constructor
      *
      * @param value Unsigned Integer to represent
+     * @param Value is Unique ID (integer encoded as binary)
      */
-    atom(uint64_t value);
+    atom(uint64_t value, bool is_uid = false);
     
     /**
      * \brief Signed Integer Constructor
@@ -92,7 +106,7 @@ namespace topaz
      * @param data Buffer to represent
      * @param len  Length of buffer
      */
-    atom(void const *data, size_t len);
+    atom(byte const *data, size_t len);
     
     /**
      * \brief Binary (Bytes) Constructor
@@ -107,47 +121,100 @@ namespace topaz
     ~atom();
     
     /**
+     * \brief Equality Operator
+     *
+     * @return True when equal
+     */
+    bool operator==(atom const &ref);
+    
+    /**
+     * \brief Inequality Operator
+     *
+     * @return True when not equal
+     */
+    bool operator!=(atom const &ref);
+    
+    /**
+     * \brief Query encoded size
+     *
+     * @return Byte count of object when encoded
+     */
+    virtual size_t size() const;
+    
+    /**
+     * \brief Encode to data buffer
+     *
+     * @param data Data buffer of at least size() bytes
+     * @return Number of bytes encoded
+     */
+    virtual size_t encode_bytes(byte *data) const;
+    
+    /**
+     * \brief Decode from data buffer
+     *
+     * @param data Location to read encoded bytes
+     * @param len  Length of buffer
+     * @return Number of bytes processed
+     */
+    virtual size_t decode_bytes(byte const *data, size_t len);
+    
+    /**
      * \brief Query Atom Type
      *
      * @return Type of atom
      */
-    atom::type_t get_type();
+    atom::type_t get_type() const;
+    
+    /**
+     * \brief Query Atom Encoding
+     *
+     * @return Encoding of atom
+     */
+    atom::enc_t get_enc() const;
     
     /**
      * \brief Query Encoded Header Size
      *
      * @return Size of encoded header
      */
-    size_t get_header_size();
+    size_t get_header_size() const;
+    
+    /**
+     * \brief Get Unsigned Integer Stored as UID (Bytes)
+     */
+    uint64_t get_uid() const;
     
     /**
      * \brief Get Unsigned Integer Value
      */
-    uint64_t get_uint();
+    uint64_t get_uint() const;
     
     /**
      * \brief Get Signed Integer Value
      */
-    int64_t get_int();
+    int64_t get_int() const;
     
     /**
      * \brief Get Binary Data
      */
-    byte_vector get_bytes();
+    byte_vector const &get_bytes() const;
     
   protected:
     
     /**
-     * \brief Decode internal storage
+     * \brief Pick appropriate atom encoding
+     *
+     * @param byte_count Number of bytes
      */
-    void decode();
+    void pick_encoding(size_t byte_count);
     
     /**
      * \brief Ensure data to be decoded is of minimum size
      *
+     * @param len Length of buffer
      * @param min Minimum size required for buffer
      */
-    void decode_check_size(size_t min);
+    void decode_check_size(size_t len, size_t min) const;
     
     /**
      * \brief Set atom type based on bin and sign flags
@@ -158,25 +225,22 @@ namespace topaz
     
     /**
      * \brief Decode unsigned / signed integer
-     */
-    void decode_int();
-    
-    /**
-     * \brief Encode Atom Bytes
      *
-     * @param data Pointer to bytes to encode
-     * @param len  Number of bytes to encode
+     * @param data Pointer to binary integer data
+     * @param len  Length of binary integer data
      */
-    void encode_atom(void const *data, size_t len);
+    void decode_int(byte const *data, size_t len);
     
     // Internal Data (raw bytes stored in std::vector superclass)
     atom::type_t data_type; // What type of data is stored
-    size_t head_bytes;      // Number of bytes used by header
+    atom::enc_t  data_enc;  // How does it get encoded?
+    size_t int_skip;        // If integer, how many bytes can be skipped
     union
     {
       uint64_t uint_val;    // Decoded unsigned integer value
       int64_t  int_val;     // Decoded integer value
     };
+    byte_vector bytes;      // Container for binary bytes
     
   };
 

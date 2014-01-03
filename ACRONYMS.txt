@@ -19,7 +19,7 @@ LBA: Logical Block Addressing
 P1667:
   IEEE standard for authenticating to storage devices.
 
-Opal: See "SSC Opal"
+Opal: See "TCG Opal"
 
 PATA: Parallel ATA (see ATA)
 
@@ -47,18 +47,23 @@ SP: Security Provider
   A security function of a TPM, such as locking or authentication.
 
 SSC: Security Subsystem Class
-  A TCG defined standard for secure data storage.
+  A TCG defined standard for secure data storage, encompassing a hardware interface
+  for controlling security/cryptography features within a storage device.
 
-SSC Enterprise: Security Subsystem Class Enterprise
-  Published TCG standard for self encrypting SAS hard drives.
+SSC Enterprise: (see TCG Enterprise)
 
-SSC Opal: Security Subsystem Class Opal
-  Published TCG standard for self encrypting ATA (read: SATA) and SCSI hard drives.
+SSC Opal: (see TCG Opal)
 
 SWG: Storage Working Group
 
 TCG: Trusted Computing Group
   Standards body for the trusted computing platform.
+
+TCG Enterprise:
+  Published TCG standard for self encrypting SAS hard drives.
+
+TCG Opal:
+  Published TCG standard for self encrypting ATA (read: SATA) and SCSI hard drives.
 
 TPM: Trusted Platform Module
   Secure coprocessor performing cryptographic and authentication services.

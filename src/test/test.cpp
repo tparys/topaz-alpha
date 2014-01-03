@@ -4,7 +4,7 @@
 #include <topaz/debug.h>
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
-#include <topaz/syntax.h>
+#include <topaz/datum.h>
 using namespace std;
 
 int main(int argc, char **argv)

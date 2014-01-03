@@ -20,15 +20,14 @@
  * GNU General Public License for more details.
  */
 
-#include <cstring>
 
 #include <cstdio>
+#include <cstring>
 #include <endian.h>
 #include <topaz/defs.h>
 #include <topaz/debug.h>
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
-#include <topaz/syntax.h>
 
 #define PAD_TO_MULTIPLE(val, mult) (((val + (mult - 1)) / mult) * mult)
 
@@ -72,7 +71,7 @@ topaz::drive::~drive()
  *
  * @param outbuf Outbound data buffer
  */
-void topaz::drive::sendrecv(topaz::syntax const &outbuf, topaz::syntax &inbuf)
+void topaz::drive::sendrecv(topaz::datum const &outbuf, topaz::datum &inbuf)
 {
   // Combined I/O - send and receive
   send(outbuf);
@@ -84,7 +83,7 @@ void topaz::drive::sendrecv(topaz::syntax const &outbuf, topaz::syntax &inbuf)
  *
  * @param outbuf Outbound data buffer
  */
-void topaz::drive::send(topaz::syntax const &outbuf)
+void topaz::drive::send(topaz::datum const &outbuf)
 {
   unsigned char *block, *payload;
   opal_header_t *header;
@@ -125,10 +124,7 @@ void topaz::drive::send(topaz::syntax const &outbuf)
   header->sub_hdr.length = htobe32(sub_size);
   
   // Copy over payload data
-  for (size_t i = 0; i < sub_size; i++)
-  {
-    payload[i] = outbuf[i];
-  }
+  outbuf.encode_bytes(payload);
   
   // Hand off formatted Com Packet
   raw.if_send(1, com_id, block, tot_size / ATA_BLOCK_SIZE);
@@ -142,11 +138,11 @@ void topaz::drive::send(topaz::syntax const &outbuf)
  *
  * @param inbuf Inbound data buffer
  */
-void topaz::drive::recv(topaz::syntax &inbuf)
+void topaz::drive::recv(topaz::datum &inbuf)
 {
   unsigned char block[ATA_BLOCK_SIZE] = {0}, *payload;
   opal_header_t *header;
-  size_t i, count;
+  size_t count;
   
   // Set up pointers
   header = (opal_header_t*)block;
@@ -167,12 +163,9 @@ void topaz::drive::recv(topaz::syntax &inbuf)
   
   // Ready the receiver buffer
   count = be32toh(header->sub_hdr.length);
-  inbuf.clear();
-  inbuf.reserve(count);
-  for (i = 0; i < count; i++)
-  {
-    inbuf.push_back(payload[i]);
-  }
+  
+  // Decode response
+  inbuf.decode_bytes(payload, count);
 }
 
 /**
@@ -411,13 +404,13 @@ void topaz::drive::probe_level0()
  */
 void topaz::drive::probe_comm_props()
 {
-  syntax msg, args;
+  topaz::datum_vector args;
+  topaz::datum call(0xff, 0xff01, args);
   
   // Sub Packet has one method call
-  msg.encode_method_call(0xff, 0xff01, args);
-  sendrecv(msg, msg);
+  sendrecv(call, call);
   
-  printf("Received %lu bytes\n", msg.size());
+  printf("Received %lu bytes\n", call.size());
 }
 
 /**
