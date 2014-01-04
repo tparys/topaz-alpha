@@ -69,6 +69,11 @@ namespace topaz
     datum();
     
     /**
+     * \brief Token Constructor
+     */
+    datum(datum::type_t type);
+    
+    /**
      * \brief Atom Constructor
      */
     datum(atom const &value);
@@ -133,10 +138,33 @@ namespace topaz
     
     /**
      * \brief Query Datum Type
-     *
-     * @return Type of datum
      */
-    datum::type_t get_type();
+    datum::type_t get_type() const;
+
+    /**
+     * \brief Query Name
+     */
+    atom const &get_name() const;
+    
+    /**
+     * \brief Query Value
+     */
+    atom const &get_value() const;
+    
+    /**
+     * \brief Query Method's Object UID
+     */
+    uint64_t get_object_uid() const;
+    
+    /**
+     * \brief Query Value Method UID
+     */
+    uint64_t get_method_uid() const;
+    
+    /**
+     * \brief Query List
+     */
+    datum_vector const &get_list() const;
     
   protected:
     

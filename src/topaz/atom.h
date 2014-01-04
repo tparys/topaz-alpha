@@ -24,6 +24,7 @@
  * GNU General Public License for more details.
  */
 
+#include <string>
 #include <topaz/defs.h>
 #include <topaz/encodable.h>
 
@@ -198,6 +199,11 @@ namespace topaz
      * \brief Get Binary Data
      */
     byte_vector const &get_bytes() const;
+    
+    /**
+     * \brief Get String
+     */
+    std::string get_string() const;
     
   protected:
     

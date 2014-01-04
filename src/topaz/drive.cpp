@@ -20,7 +20,7 @@
  * GNU General Public License for more details.
  */
 
-
+#include <unistd.h>
 #include <cstdio>
 #include <cstring>
 #include <endian.h>
@@ -28,6 +28,8 @@
 #include <topaz/debug.h>
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
+#include <topaz/uid.h>
+using namespace std;
 
 #define PAD_TO_MULTIPLE(val, mult) (((val + (mult - 1)) / mult) * mult)
 
@@ -40,6 +42,8 @@ topaz::drive::drive(char const *path)
   : raw(path)
 {
   // Initialization
+  tper_session_id = 0;
+  host_session_id = 0;
   has_opal1 = false;
   has_opal2 = false;
   lba_align = 1;
@@ -55,7 +59,10 @@ topaz::drive::drive(char const *path)
   if (has_opal2) reset_comid(com_id);
   
   // Query Opal Comm Properties
-  probe_comm_props();
+  probe_level1();
+  
+  // Open up a session with the TPer
+  session_start();
 }
 
 /**
@@ -63,7 +70,8 @@ topaz::drive::drive(char const *path)
  */
 topaz::drive::~drive()
 {
-  // Nada
+  // Cleanup
+  session_end();
 }
 
 /**
@@ -73,8 +81,13 @@ topaz::drive::~drive()
  */
 void topaz::drive::sendrecv(topaz::datum const &outbuf, topaz::datum &inbuf)
 {
-  // Combined I/O - send and receive
+  // Send the command
   send(outbuf);
+  
+  // Give the drive a moment to work
+  usleep(1000);
+  
+  // Retrieve response
   recv(inbuf);
 }
 
@@ -123,6 +136,14 @@ void topaz::drive::send(topaz::datum const &outbuf)
   header->pkt_hdr.length = htobe32(pkt_size);
   header->sub_hdr.length = htobe32(sub_size);
   
+  // Include session ID's on all packets not invoking Session Manager
+  if ((outbuf.get_type() != datum::METHOD) ||
+      (outbuf.get_object_uid() != OBJ_SESSION_MGR))
+  {
+    header->pkt_hdr.tper_session_id = htobe32(tper_session_id);
+    header->pkt_hdr.host_session_id = htobe32(host_session_id);
+  }
+  
   // Copy over payload data
   outbuf.encode_bytes(payload);
   
@@ -142,7 +163,7 @@ void topaz::drive::recv(topaz::datum &inbuf)
 {
   unsigned char block[ATA_BLOCK_SIZE] = {0}, *payload;
   opal_header_t *header;
-  size_t count;
+  size_t count, min = sizeof(opal_packet_header_t) + sizeof(opal_sub_packet_header_t);
   
   // Set up pointers
   header = (opal_header_t*)block;
@@ -156,7 +177,7 @@ void topaz::drive::recv(topaz::datum &inbuf)
   {
     throw topaz::exception("Unexpected ComID in drive response");
   }
-  if (be32toh(header->com_hdr.length) <= sizeof(opal_header_t))
+  if (be32toh(header->com_hdr.length) <= min)
   {
     throw topaz::exception("Invalid Com Packet length in drive response");
   }
@@ -208,7 +229,7 @@ void topaz::drive::probe_tpm()
 }
 
 /**
- * \brief Probe TCG Opal Level0 Discovery
+ * \brief Level 0 Probe - Discovery
  */
 void topaz::drive::probe_level0()
 {
@@ -220,7 +241,7 @@ void topaz::drive::probe_level0()
   size_t offset = sizeof(topaz::level0_header_t);
   
   // Level0 Discovery over IF-RECV
-  TOPAZ_DEBUG(1) printf("Probe Level0 Discovery\n");
+  TOPAZ_DEBUG(1) printf("Establish Level 0 Comms - Discovery\n");
   raw.if_recv(1, 1, &data, 1);
   total_len = 4 + be32toh(header->length);
   major = be16toh(header->major_ver);
@@ -400,17 +421,83 @@ void topaz::drive::probe_level0()
 }
 
 /**
- * \brief Probe TCG Opal Communication Properties
+ * \brief Level 1 Probe - Host Properties
  */
-void topaz::drive::probe_comm_props()
+void topaz::drive::probe_level1()
 {
-  topaz::datum_vector args;
-  topaz::datum call(0xff, 0xff01, args);
+  // Gin up a Properties call on Session Manager
+  topaz::datum call(OBJ_SESSION_MGR, MTH_PROPERTIES, datum_vector());
   
-  // Sub Packet has one method call
+  // Query communication properties
+  TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
   sendrecv(call, call);
   
-  printf("Received %lu bytes\n", call.size());
+  // Return type is method, data stored in argument list
+  topaz::datum_vector const &args = call.get_list();
+  
+  // Comm props stored in list (first element) of named items
+  topaz::datum_vector const &props = args[0].get_list();
+  TOPAZ_DEBUG(2) printf("  Received %lu items\n", props.size());
+  
+  for (size_t i = 0; i < props.size(); i++)
+  {
+    // Name of property
+    string name = props[i].get_name().get_string();
+    
+    // Value
+    uint64_t val = props[i].get_value().get_uint();
+    
+    // Debug
+    TOPAZ_DEBUG(2) printf("    %s = %lu\n", name.c_str(), val);
+  }
+}
+
+/**
+ * \brief Start a TCG Opal session
+ */
+void topaz::drive::session_start()
+{
+  // Debug
+  TOPAZ_DEBUG(1) printf("Starting TPM Session\n");
+  
+  // Gin up a StartSession call on Session Manager
+  topaz::datum_vector args_out;
+  args_out.push_back(topaz::datum(topaz::atom((uint64_t)1)));     // Host Session ID (left at one)
+  args_out.push_back(topaz::datum(topaz::atom(topaz::OBJ_ADMIN_SP, true)));
+  args_out.push_back(topaz::datum(topaz::atom((uint64_t)1)));     // Read/Write Session
+  topaz::datum call(OBJ_SESSION_MGR, MTH_START_SESSION, args_out);
+  
+  // Off it goes
+  sendrecv(call, call);
+  
+  // Return type is method, data stored in argument list
+  topaz::datum_vector const &args_in = call.get_list();
+  
+  // Host session ID
+  host_session_id = args_in[0].get_value().get_uint();
+  
+  // TPer session ID
+  tper_session_id = args_in[1].get_value().get_uint();
+  
+  // Debug
+  TOPAZ_DEBUG(1) printf("Session %lx:%lx Started\n",
+			tper_session_id, host_session_id);
+}
+
+/**
+ * \brief Stop a TCG Opal session
+ */
+void topaz::drive::session_end()
+{
+  // Debug
+  TOPAZ_DEBUG(1) printf("Stopping TPM Session %lx:%lx\n",
+			tper_session_id, host_session_id);
+  
+  // Gin up an end of session
+  topaz::datum eos(datum::END_SESSION);
+  
+  // Off it goes
+  sendrecv(eos, eos);
 }
 
 /**

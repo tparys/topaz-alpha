@@ -618,6 +618,20 @@ byte_vector const &atom::get_bytes() const
 }
 
 /**
+ * \brief Get String
+ */
+std::string atom::get_string() const
+{
+  // Sanity check
+  if (data_type != atom::BYTES)
+  {
+    throw topaz::exception("Atom is not binary data");
+  }
+  
+  return std::string(bytes.begin(), bytes.end());
+}
+
+/**
  * \brief Pick appropriate atom encoding
  *
  * @param byte_count Number of bytes

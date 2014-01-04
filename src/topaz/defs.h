@@ -165,7 +165,8 @@ namespace topaz
   // TCG Opal Packet Header
   typedef struct
   {
-    uint64_t session;
+    uint32_t tper_session_id;
+    uint32_t host_session_id;
     uint32_t seq_number;
     uint16_t reserved;
     uint16_t ack_type;

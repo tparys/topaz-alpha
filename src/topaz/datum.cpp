@@ -31,8 +31,21 @@ using namespace topaz;
  */
 datum::datum()
 {
-  // Datum is empty atom
+  // Initialize as empty atom
   data_type = datum::ATOM;
+  object_uid = 0;
+  method_uid = 0;
+}
+
+/**
+ * \brief Token Constructor
+ */
+datum::datum(datum::type_t data_type)
+  : data_type(data_type)
+{
+  // Initialize
+  object_uid = 0;
+  method_uid = 0;
 }
 
 /**
@@ -310,6 +323,9 @@ size_t datum::decode_bytes(byte const *data, size_t len)
 {
   size_t size = 0;
   
+  // Clear out any stale data
+  list.clear();
+  
   // Minimum 1 byte
   decode_check_size(len, 1);
   
@@ -404,7 +420,7 @@ size_t datum::decode_bytes(byte const *data, size_t len)
     decode_check_token(data, len, size++, 0x00);
     decode_check_token(data, len, size++, datum::TOK_END_LIST);
   }
-  else if (data[size] == datum::END_SESSION)
+  else if (data[size] == datum::TOK_END_SESSION)
   {
     // End of Session indicator
     data_type = datum::END_SESSION;
@@ -422,12 +438,83 @@ size_t datum::decode_bytes(byte const *data, size_t len)
 
 /**
  * \brief Query Datum Type
- *
- * @return Type of datum
  */
-datum::type_t datum::get_type()
+datum::type_t datum::get_type() const
 {
   return data_type;
+}
+
+/**
+ * \brief Query Name
+ */
+atom const &datum::get_name() const
+{
+  // Must be named type
+  if (data_type != datum::NAMED)
+  {
+    throw topaz::exception("Datum has no name");
+  }
+  
+  // Return
+  return name;
+}
+
+/**
+ * \brief Query Value
+ */
+atom const &datum::get_value() const
+{
+  // Must be atom or named type
+  if ((data_type != datum::ATOM) && (data_type != datum::NAMED))
+  {
+    throw topaz::exception("Datum has no value");
+  }
+  
+  // Return
+  return value;
+}
+
+/**
+ * \brief Query Method's Object UID
+ */
+uint64_t datum::get_object_uid() const
+{
+  // Must be method
+  if (data_type != datum::METHOD)
+  {
+    throw topaz::exception("Datum has no object UID");
+  }
+  
+  return object_uid;
+}
+
+/**
+ * \brief Query Value Method UID
+ */
+uint64_t datum::get_method_uid() const
+{
+  // Must be method
+  if (data_type != datum::METHOD)
+  {
+    throw topaz::exception("Datum has no method UID");
+  }
+  
+  return method_uid;
+}
+
+/**
+ * \brief Query List
+ */
+datum_vector const &datum::get_list() const
+{
+  // Must be list or method call
+  if ((data_type != datum::LIST) && (data_type != datum::METHOD))
+  {
+    throw topaz::exception("Datum has no list");
+  }
+  
+  // Return
+  return list;
 }
 
 /**

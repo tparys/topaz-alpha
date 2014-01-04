@@ -75,15 +75,25 @@ namespace topaz
     void probe_tpm();
     
     /**
-     * \brief Probe TCG Opal Level0 Discovery
+     * \brief Level 0 Probe - Discovery
      */
     void probe_level0();
     
     /**
-     * \brief Probe TCG Opal Communication Properties
+     * \brief Level 1 Probe - Host Properties
      */
-    void probe_comm_props();
+    void probe_level1();
 
+    /**
+     * \brief Start a TCG Opal session
+     */
+    void session_start();
+    
+    /**
+     * \brief Stop a TCG Opal session
+     */
+    void session_end();
+    
     /**
      * \brief Probe TCG Opal Communication Properties
      */
@@ -99,6 +109,10 @@ namespace topaz
     
     // Underlying Device implementing IF-SEND/RECV
     rawdrive raw;
+    
+    // TPM session data
+    uint64_t tper_session_id;
+    uint64_t host_session_id;
     
     // Internal info describing drive
     bool has_opal1;
