@@ -75,6 +75,27 @@ topaz::drive::~drive()
 }
 
 /**
+ * \brief Retrieve default device PIN
+ */
+topaz::byte_vector topaz::drive::default_pin()
+{
+  // Gin up a Get Method
+  topaz::datum_vector cell_args, args_out;
+  cell_args.push_back(topaz::datum(topaz::atom((uint64_t)3),
+				   topaz::atom((uint64_t)3)));
+  cell_args.push_back(topaz::datum(topaz::atom((uint64_t)4),
+				   topaz::atom((uint64_t)3)));
+  args_out.push_back(cell_args);
+  topaz::datum call(OBJ_C_PIN_MSID, MTH_GET, args_out);
+  
+  // Off it goes
+  sendrecv(call, call);
+  
+  // Return type is nested array (matrix?)
+  return call.get_list()[0].get_list()[0].get_value().get_bytes();
+}
+
+/**
  * \brief Combined I/O to TCG Opal drive
  *
  * @param outbuf Outbound data buffer

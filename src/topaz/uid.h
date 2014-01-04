@@ -25,14 +25,16 @@ namespace topaz
   typedef enum
   {
     OBJ_SESSION_MGR   = 0x00000000000000ffULL, // Session Manager UID
-    OBJ_ADMIN_SP      = 0x0000020500000001ULL  // Admin Security Provider
+    OBJ_ADMIN_SP      = 0x0000020500000001ULL, // Admin Security Provider
+    OBJ_C_PIN_MSID    = 0x0000000b00008402ULL  // PIN Table
   } object_uid_t;
   
   typedef enum
   {
     MTH_PROPERTIES    = 0x000000000000ff01ULL, // Query Communication Params
     MTH_START_SESSION = 0x000000000000ff02ULL, // Open Session
-    MTH_SYNC_SESSION  = 0x000000000000ff03ULL  // Terminate Session
+    MTH_SYNC_SESSION  = 0x000000000000ff03ULL, // Terminate Session
+    MTH_GET           = 0x0000000600000016ULL  // Get Table Data
   } method_uid_t;
   
 };

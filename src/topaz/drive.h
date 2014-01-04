@@ -46,6 +46,11 @@ namespace topaz
      */
     ~drive();
     
+    /**
+     * \brief Retrieve default device PIN
+     */
+    topaz::byte_vector default_pin();
+    
   protected:
     
     /**
