@@ -31,10 +31,10 @@ using namespace topaz;
  */
 datum::datum()
 {
-  // Initialize as empty atom
-  data_type = datum::ATOM;
-  object_uid = 0;
-  method_uid = 0;
+  // Datum type not yet known
+  data_type = datum::UNSET;
+  data_object_uid = 0;
+  data_method_uid = 0;
 }
 
 /**
@@ -43,49 +43,9 @@ datum::datum()
 datum::datum(datum::type_t data_type)
   : data_type(data_type)
 {
-  // Initialize
-  object_uid = 0;
-  method_uid = 0;
-}
-
-/**
- * \brief Atom Constructor
- */
-datum::datum(atom const &value)
-  : value(value)
-{
-  // Datum is specified atom
-  data_type = datum::ATOM;
-}
-
-/**
- * \brief Named Constructor
- */
-datum::datum(atom const &name, atom const &value)
-  : name(name), value(value)
-{
-  // Named data type
-  data_type = datum::NAMED;
-}
-
-/**
- * \brief List Constructor
- */
-datum::datum(datum_vector const &list)
-  : list(list)
-{
-  // List of other datums
-  data_type = datum::LIST;
-}
-
-/**
- * \brief Method Constructor
- */
-datum::datum(uint64_t object_uid, uint64_t method_uid, datum_vector const &args)
-  : object_uid(object_uid), method_uid(method_uid), list(args)
-{
-  // Method call
-  data_type = datum::METHOD;
+  // Specified datum type
+  data_object_uid = 0;
+  data_method_uid = 0;
 }
 
 /**
@@ -94,76 +54,6 @@ datum::datum(uint64_t object_uid, uint64_t method_uid, datum_vector const &args)
 datum::~datum()
 {
   // Nada
-}
-
-/**
- * \brief Equality Operator
- *
- * @return True when equal
- */
-bool datum::operator==(datum const &ref)
-{
-  // Check to make sure both are same data type
-  if (data_type == ref.data_type)
-  {
-    // Type specific checks
-    switch (data_type)
-    {
-      case datum::ATOM:
-	// Compare atoms
-	return value == ref.value;
-	break;
-	
-      case datum::NAMED:
-	// Compare name and value atoms
-	return ((name == ref.name) && (value == ref.value));
-	break;
-	
-      case datum::METHOD:
-	// Compare method calls
-	if ((object_uid != ref.object_uid) || (method_uid != ref.method_uid))
-	{
-	  // Failure
-	  return false;
-	}
-	
-	// No break - fall through to check list tokens (might be cheating)
-	
-      case datum::LIST:
-	// Compare list items
-	if (list.size() == ref.list.size())
-	{
-	  for (size_t i = 0; i < list.size(); i++)
-	  {
-	    if (list[i] != ref.list[i])
-	    {
-	      // Mismatch
-	      return false;
-	    }
-	  }
-	  
-	  // All items match
-	  return true;
-	}
-	break;
-	
-      default: // datum::END_SESSION
-	return true;
-	break;
-    }
-  }
-  // Match fail
-  return false;
-}
-
-/**
- * \brief Inequality Operator
- *
- * @return True when not equal
- */
-bool datum::operator!=(datum const &ref)
-{
-  return !((*this) == ref);
 }
 
 /**
@@ -180,31 +70,31 @@ size_t datum::size() const
   {
     case datum::ATOM:
       // Single Atom
-      count += value.size();
+      count += data_value.size();
       break;
       
     case datum::NAMED:
       // Key/Value Pair
       count += 2; // Token overhead
-      count += name.size();
-      count += value.size();
+      count += data_name.size();
+      count += data_value.size();
       break;
       
     case datum::LIST:
       // List 'o Things ...
       count += 2; // Token overhead
-      for (i = 0; i < list.size(); i++)
+      for (i = 0; i < data_list.size(); i++)
       {
-	count += list[i].size();
+	count += data_list[i].size();
       }
       break;
       
     case datum::METHOD:
       // Method call
       count += 27; // Token overhead
-      for (i = 0; i < list.size(); i++)
+      for (i = 0; i < data_list.size(); i++)
       {
-	count += list[i].size();
+	count += data_list[i].size();
       }
       break;
       
@@ -233,7 +123,7 @@ size_t datum::encode_bytes(byte *data) const
   switch (data_type)
   {
     case datum::ATOM: // Single atom
-      data += value.encode_bytes(data);
+      data += data_value.encode_bytes(data);
       break;
       
     case datum::NAMED: // Named key/value
@@ -241,10 +131,10 @@ size_t datum::encode_bytes(byte *data) const
       *data++ = datum::TOK_START_NAME;
       
       // First value (key/name)
-      data += name.encode_bytes(data);
+      data += data_name.encode_bytes(data);
       
       // Second value (named value)
-      data += value.encode_bytes(data);
+      data += data_value.encode_bytes(data);
       
       // End of name
       *data++ = datum::TOK_END_NAME;
@@ -255,9 +145,9 @@ size_t datum::encode_bytes(byte *data) const
       *data++ = datum::TOK_START_LIST;
       
       // Each item in the list
-      for (size_t i = 0; i < list.size(); i++)
+      for (size_t i = 0; i < data_list.size(); i++)
       {
-	data += list[i].encode_bytes(data);
+	data += data_list[i].encode_bytes(data);
       }
       
       // End of list
@@ -269,18 +159,18 @@ size_t datum::encode_bytes(byte *data) const
       *data++ = datum::TOK_CALL;
       
       // Object UID
-      data += atom(object_uid, true).encode_bytes(data);
+      data += atom(data_object_uid, true).encode_bytes(data);
       
       // Method UID
-      data += atom(method_uid, true).encode_bytes(data);
+      data += atom(data_method_uid, true).encode_bytes(data);
       
       // Beginning of parameter list (arguments)
       *data++ = datum::TOK_START_LIST;
       
       // Each item in the list
-      for (size_t i = 0; i < list.size(); i++)
+      for (size_t i = 0; i < data_list.size(); i++)
       {
-	data += list[i].encode_bytes(data);
+	data += data_list[i].encode_bytes(data);
       }
       
       // End of parameter list (arguments)
@@ -324,7 +214,7 @@ size_t datum::decode_bytes(byte const *data, size_t len)
   size_t size = 0;
   
   // Clear out any stale data
-  list.clear();
+  data_list.clear();
   
   // Minimum 1 byte
   decode_check_size(len, 1);
@@ -351,9 +241,9 @@ size_t datum::decode_bytes(byte const *data, size_t len)
       }
       
       // Else, assume some other datum type
-      topaz::datum tmp;
+      datum tmp;
       size += tmp.decode_bytes(data + size, len - size);
-      list.push_back(tmp);
+      data_list.push_back(tmp);
     }
   }
   else if (data[size] == datum::TOK_START_NAME)
@@ -363,17 +253,17 @@ size_t datum::decode_bytes(byte const *data, size_t len)
     size++;
     
     // Name
-    size += name.decode_bytes(data + size, len - size);
+    size += data_name.decode_bytes(data + size, len - size);
     
     // Value
-    size += value.decode_bytes(data + size, len - size);
+    size += data_value.decode_bytes(data + size, len - size);
     
     // End of named type
     decode_check_token(data, len, size++, datum::TOK_END_NAME);
   }
   else if (data[size] == datum::TOK_CALL)
   {
-    topaz::atom uid;
+    atom uid;
     
     // Method call
     data_type = datum::METHOD;
@@ -381,11 +271,11 @@ size_t datum::decode_bytes(byte const *data, size_t len)
     
     // Object UID
     size += uid.decode_bytes(data + size, len - size);
-    object_uid = uid.get_uid();
+    data_object_uid = uid.get_uid();
 
     // Method UID
     size += uid.decode_bytes(data + size, len - size);
-    method_uid = uid.get_uid();
+    data_method_uid = uid.get_uid();
     
     // Beginning of parameter list (arguments
     decode_check_token(data, len, size++, datum::TOK_START_LIST);
@@ -405,9 +295,9 @@ size_t datum::decode_bytes(byte const *data, size_t len)
       }
       
       // Else, assume some other datum type
-      topaz::datum tmp;
+      datum tmp;
       size += tmp.decode_bytes(data + size, len - size);
-      list.push_back(tmp);
+      data_list.push_back(tmp);
     }
     
     // End of data
@@ -430,7 +320,7 @@ size_t datum::decode_bytes(byte const *data, size_t len)
   {
     // Failing that, assume it's an atom
     data_type = datum::ATOM;
-    size += value.decode_bytes(data + size, len - size);
+    size += data_value.decode_bytes(data + size, len - size);
   }
   
   return size;
@@ -447,74 +337,271 @@ datum::type_t datum::get_type() const
 /**
  * \brief Query Name
  */
-atom const &datum::get_name() const
+atom &datum::name()
+{
+  // Must be named type
+  if ((data_type == datum::UNSET) || (data_type == datum::ATOM))
+  {
+    // Automatic promotion
+    data_type = datum::NAMED;
+  }
+  else if (data_type != datum::NAMED)
+  {
+    throw topaz_exception("Datum has no name");
+  }
+  
+  // Return
+  return data_name;
+}
+
+/**
+ * \brief Query Name
+ */
+atom const &datum::name() const
 {
   // Must be named type
   if (data_type != datum::NAMED)
   {
-    throw topaz::exception("Datum has no name");
+    throw topaz_exception("Datum has no name");
   }
   
   // Return
-  return name;
+  return data_name;
 }
 
 /**
  * \brief Query Value
  */
-atom const &datum::get_value() const
+atom &datum::value()
+{
+  // Must be atom or named type
+  if (data_type == datum::UNSET)
+  {
+    // Automatic promotion
+    data_type = datum::ATOM;
+  }
+  else if ((data_type != datum::ATOM) && (data_type != datum::NAMED))
+  {
+    throw topaz_exception("Datum has no value");
+  }
+  
+  // Return
+  return data_value;
+}
+
+/**
+ * \brief Query Value (const)
+ */
+atom const &datum::value() const
 {
   // Must be atom or named type
   if ((data_type != datum::ATOM) && (data_type != datum::NAMED))
   {
-    throw topaz::exception("Datum has no value");
+    throw topaz_exception("Datum has no value");
   }
   
   // Return
-  return value;
+  return data_value;
 }
 
 /**
  * \brief Query Method's Object UID
  */
-uint64_t datum::get_object_uid() const
+uint64_t &datum::object_uid()
+{
+  // Must be method
+  if ((data_type == datum::UNSET) || (data_type == datum::LIST))
+  {
+    // Automatic promotion
+    data_type = datum::METHOD;
+  }
+  else if (data_type != datum::METHOD)
+  {
+    throw topaz_exception("Datum has no object UID");
+  }
+  
+  return data_object_uid;
+}
+
+/**
+ * \brief Query Method's Object UID (const)
+ */
+uint64_t const &datum::object_uid() const
 {
   // Must be method
   if (data_type != datum::METHOD)
   {
-    throw topaz::exception("Datum has no object UID");
+    throw topaz_exception("Datum has no object UID");
   }
   
-  return object_uid;
+  return data_object_uid;
 }
 
 /**
  * \brief Query Value Method UID
  */
-uint64_t datum::get_method_uid() const
+uint64_t &datum::method_uid()
+{
+  // Must be method
+  if ((data_type == datum::UNSET) || (data_type == datum::LIST))
+  {
+    // Automatic promotion
+    data_type = datum::METHOD;
+  }
+  else if (data_type != datum::METHOD)
+  {
+    throw topaz_exception("Datum has no method UID");
+  }
+  
+  return data_method_uid;
+}
+
+/**
+ * \brief Query Value Method UID (const)
+ */
+uint64_t const &datum::method_uid() const
 {
   // Must be method
   if (data_type != datum::METHOD)
   {
-    throw topaz::exception("Datum has no method UID");
+    throw topaz_exception("Datum has no method UID");
   }
   
-  return method_uid;
+  return data_method_uid;
 }
 
 /**
  * \brief Query List
  */
-datum_vector const &datum::get_list() const
+datum_vector &datum::list()
+{
+  // Must be list or method call
+  if (data_type == datum::UNSET)
+  {
+    // Automatic promotion
+    data_type = datum::LIST;
+  }
+  else if ((data_type != datum::LIST) && (data_type != datum::METHOD))
+  {
+    throw topaz_exception("Datum has no list");
+  }
+  
+  // Return
+  return data_list;
+}
+
+/**
+ * \brief Query List (const)
+ */
+datum_vector const &datum::list() const
 {
   // Must be list or method call
   if ((data_type != datum::LIST) && (data_type != datum::METHOD))
   {
-    throw topaz::exception("Datum has no list");
+    throw topaz_exception("Datum has no list");
   }
   
   // Return
-  return list;
+  return data_list;
+}
+
+/**
+ * \brief Equality Operator
+ *
+ * @return True when equal
+ */
+bool datum::operator==(datum const &ref)
+{
+  // Check to make sure both are same data type
+  if (data_type == ref.data_type)
+  {
+    // Type specific checks
+    switch (data_type)
+    {
+      case datum::ATOM:
+	// Compare atoms
+	return data_value == ref.data_value;
+	break;
+	
+      case datum::NAMED:
+	// Compare name and value atoms
+	return ((data_name == ref.data_name) && (data_value == ref.data_value));
+	break;
+	
+      case datum::METHOD:
+	// Compare method calls
+	if ((data_object_uid != ref.data_object_uid) ||
+	    (data_method_uid != ref.data_method_uid))
+	{
+	  // Failure
+	  return false;
+	}
+	
+	// No break here - fall through to check list tokens
+	
+      case datum::LIST:
+	// Compare list items
+	if (data_list.size() == ref.data_list.size())
+	{
+	  for (size_t i = 0; i < data_list.size(); i++)
+	  {
+	    if (data_list[i] != ref.data_list[i])
+	    {
+	      // Mismatch
+	      return false;
+	    }
+	  }
+	  
+	  // All items match
+	  return true;
+	}
+	break;
+	
+      default: // datum::END_SESSION
+	return true;
+	break;
+    }
+  }
+  // Match fail
+  return false;
+}
+
+/**
+ * \brief Inequality Operator
+ *
+ * @return True when not equal
+ */
+bool datum::operator!=(datum const &ref)
+{
+  return !((*this) == ref);
+}
+
+/**
+ * \brief Datum array access
+ *
+ * @param idx Item to return
+ * @return Specified item
+ */
+datum &datum::operator[](size_t idx)
+{
+  // Must be list or method call
+  if (data_type == datum::UNSET)
+  {
+    data_type = datum::LIST;
+  }
+  else if ((data_type != datum::LIST) && (data_type != datum::METHOD))
+  {
+    throw topaz_exception("Datum has no list");
+  }
+  
+  // Resize if too small
+  if (data_list.size() <= idx)
+  {
+    data_list.resize(idx + 1);
+  }
+  
+  // Return item
+  return data_list[idx];
 }
 
 /**
@@ -527,7 +614,7 @@ void datum::decode_check_size(size_t len, size_t min) const
 {
   if (len < min)
   {
-    throw topaz::exception("Datum encoding too short");
+    throw topaz_exception("Datum encoding too short");
   }
 }
 
@@ -544,10 +631,10 @@ void datum::decode_check_token(byte const *data, size_t len, size_t idx, byte ne
   // Next token doesn't exist
   if (idx >= len)
   {
-    throw topaz::exception("Datum encoding too short");
+    throw topaz_exception("Datum encoding too short");
   }
   if (data[idx] != next)
   {
-    throw topaz::exception("Unexpected token in datum encoding");
+    throw topaz_exception("Unexpected token in datum encoding");
   }
 }

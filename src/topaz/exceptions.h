@@ -25,12 +25,12 @@
 namespace topaz
 {
   
-  class exception: public std::runtime_error
+  class topaz_exception: public std::runtime_error
   {
     
   public:
     
-    exception(std::string const& msg)
+    topaz_exception(std::string const& msg)
       : std::runtime_error(msg) {}
     
   };

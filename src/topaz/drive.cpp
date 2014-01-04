@@ -30,6 +30,7 @@
 #include <topaz/exceptions.h>
 #include <topaz/uid.h>
 using namespace std;
+using namespace topaz;
 
 #define PAD_TO_MULTIPLE(val, mult) (((val + (mult - 1)) / mult) * mult)
 
@@ -38,7 +39,7 @@ using namespace std;
  *
  * @param path OS path to specified drive (eg - '/dev/sdX')
  */
-topaz::drive::drive(char const *path)
+drive::drive(char const *path)
   : raw(path)
 {
   // Initialization
@@ -68,7 +69,7 @@ topaz::drive::drive(char const *path)
 /**
  * \brief Topaz Hard Drive Destructor
  */
-topaz::drive::~drive()
+drive::~drive()
 {
   // Cleanup
   session_end();
@@ -77,22 +78,22 @@ topaz::drive::~drive()
 /**
  * \brief Retrieve default device PIN
  */
-topaz::byte_vector topaz::drive::default_pin()
+byte_vector drive::default_pin()
 {
   // Gin up a Get Method
-  topaz::datum_vector cell_args, args_out;
-  cell_args.push_back(topaz::datum(topaz::atom((uint64_t)3),
-				   topaz::atom((uint64_t)3)));
-  cell_args.push_back(topaz::datum(topaz::atom((uint64_t)4),
-				   topaz::atom((uint64_t)3)));
-  args_out.push_back(cell_args);
-  topaz::datum call(OBJ_C_PIN_MSID, MTH_GET, args_out);
+  datum call;
+  call.object_uid()  = OBJ_C_PIN_MSID;
+  call.method_uid()  = MTH_GET;
+  call[0][0].name()  = atom((uint64_t)3);
+  call[0][0].value() = atom((uint64_t)3);
+  call[0][1].name()  = atom((uint64_t)4);
+  call[0][1].value() = atom((uint64_t)3);
   
   // Off it goes
   sendrecv(call, call);
   
   // Return type is nested array (matrix?)
-  return call.get_list()[0].get_list()[0].get_value().get_bytes();
+  return call[0][0].value().get_bytes();
 }
 
 /**
@@ -100,7 +101,7 @@ topaz::byte_vector topaz::drive::default_pin()
  *
  * @param outbuf Outbound data buffer
  */
-void topaz::drive::sendrecv(topaz::datum const &outbuf, topaz::datum &inbuf)
+void drive::sendrecv(datum const &outbuf, datum &inbuf)
 {
   // Send the command
   send(outbuf);
@@ -117,7 +118,7 @@ void topaz::drive::sendrecv(topaz::datum const &outbuf, topaz::datum &inbuf)
  *
  * @param outbuf Outbound data buffer
  */
-void topaz::drive::send(topaz::datum const &outbuf)
+void drive::send(datum const &outbuf)
 {
   unsigned char *block, *payload;
   opal_header_t *header;
@@ -159,7 +160,7 @@ void topaz::drive::send(topaz::datum const &outbuf)
   
   // Include session ID's on all packets not invoking Session Manager
   if ((outbuf.get_type() != datum::METHOD) ||
-      (outbuf.get_object_uid() != OBJ_SESSION_MGR))
+      (outbuf.object_uid() != OBJ_SESSION_MGR))
   {
     header->pkt_hdr.tper_session_id = htobe32(tper_session_id);
     header->pkt_hdr.host_session_id = htobe32(host_session_id);
@@ -180,7 +181,7 @@ void topaz::drive::send(topaz::datum const &outbuf)
  *
  * @param inbuf Inbound data buffer
  */
-void topaz::drive::recv(topaz::datum &inbuf)
+void drive::recv(datum &inbuf)
 {
   unsigned char block[ATA_BLOCK_SIZE] = {0}, *payload;
   opal_header_t *header;
@@ -196,11 +197,11 @@ void topaz::drive::recv(topaz::datum &inbuf)
   // Do some cursory verification here
   if (be16toh(header->com_hdr.com_id) != com_id)
   {
-    throw topaz::exception("Unexpected ComID in drive response");
+    throw topaz_exception("Unexpected ComID in drive response");
   }
   if (be32toh(header->com_hdr.length) <= min)
   {
-    throw topaz::exception("Invalid Com Packet length in drive response");
+    throw topaz_exception("Invalid Com Packet length in drive response");
   }
   
   // Ready the receiver buffer
@@ -213,9 +214,9 @@ void topaz::drive::recv(topaz::datum &inbuf)
 /**
  * \brief Probe Available TPM Security Protocols
  */
-void topaz::drive::probe_tpm()
+void drive::probe_tpm()
 {
-  topaz::tpm_protos_t protos;
+  tpm_protos_t protos;
   int i, count;
   bool has_opal = false;
   
@@ -245,21 +246,21 @@ void topaz::drive::probe_tpm()
   // Verify we found 0x01
   if (!has_opal)
   {
-    throw topaz::exception("Drive does not support TCG Opal");
+    throw topaz_exception("Drive does not support TCG Opal");
   }
 }
 
 /**
  * \brief Level 0 Probe - Discovery
  */
-void topaz::drive::probe_level0()
+void drive::probe_level0()
 {
   char data[ATA_BLOCK_SIZE], *feat_data;
-  topaz::level0_header_t *header = (topaz::level0_header_t*)data;
-  topaz::level0_feat_t *feat;
+  level0_header_t *header = (level0_header_t*)data;
+  level0_feat_t *feat;
   uint32_t total_len;
   uint16_t major, minor, code;
-  size_t offset = sizeof(topaz::level0_header_t);
+  size_t offset = sizeof(level0_header_t);
   
   // Level0 Discovery over IF-RECV
   TOPAZ_DEBUG(1) printf("Establish Level 0 Comms - Discovery\n");
@@ -276,26 +277,26 @@ void topaz::drive::probe_level0()
   // Verify major / minor number of structure
   if ((major != 0) || (minor != 1))
   {
-    throw topaz::exception("Unexpected Level0 Revision");
+    throw topaz_exception("Unexpected Level0 Revision");
   }
   
   // Tick through returned feature descriptors
-  for (offset = sizeof(topaz::level0_header_t);
-       offset < (total_len - sizeof(topaz::level0_feat_t));
+  for (offset = sizeof(level0_header_t);
+       offset < (total_len - sizeof(level0_feat_t));
        offset += feat->length)
   {
     // Set pointer to feature
-    feat = (topaz::level0_feat_t*)(data + offset);
+    feat = (level0_feat_t*)(data + offset);
     
     // Move to offset of feature data
-    offset += sizeof(topaz::level0_feat_t);
+    offset += sizeof(level0_feat_t);
     feat_data = data + offset;
     
     // Rip it open
     code = be16toh(feat->code);
     TOPAZ_DEBUG(2) printf("  Feature 0x%04x v%d (%d bytes): ", code,
 			  feat->version >> 4, feat->length);
-    if (code == topaz::FEAT_TPER)
+    if (code == FEAT_TPER)
     {
       TOPAZ_DEBUG(2)
       {
@@ -308,7 +309,7 @@ void topaz::drive::probe_level0()
 	printf("    ComID Mgmt: %d\n",  0x01 & (data[offset] >> 6));
       }
     }
-    else if (code == topaz::FEAT_LOCK)
+    else if (code == FEAT_LOCK)
     {
       TOPAZ_DEBUG(2)
       {
@@ -321,9 +322,9 @@ void topaz::drive::probe_level0()
 	printf("    MBR Done: %d\n",         0x01 & (data[offset] >> 5));
       }
     }
-    else if (code == topaz::FEAT_GEO)
+    else if (code == FEAT_GEO)
     {
-      topaz::feat_geo_t *geo = (topaz::feat_geo_t*)feat_data;
+      feat_geo_t *geo = (feat_geo_t*)feat_data;
       lba_align = be64toh(geo->lowest_align);
       TOPAZ_DEBUG(2)
       {
@@ -334,9 +335,9 @@ void topaz::drive::probe_level0()
 	printf("    Lowest Align: %lu\n",      lba_align);
       }
     }
-    else if (code == topaz::FEAT_OPAL1)
+    else if (code == FEAT_OPAL1)
     {
-      topaz::feat_opal1_t *opal1 = (topaz::feat_opal1_t*)feat_data;
+      feat_opal1_t *opal1 = (feat_opal1_t*)feat_data;
       has_opal1 = true;
       lba_align = 1;     // Opal 1.0 doesn't work on large sector drives
       com_id = be16toh(opal1->comid_base);
@@ -348,11 +349,11 @@ void topaz::drive::probe_level0()
 	printf("    Range cross BHV: %d\n",       0x01 & (opal1->range_bhv));
       }
     }
-    else if (code == topaz::FEAT_SINGLE)
+    else if (code == FEAT_SINGLE)
     {
       TOPAZ_DEBUG(2)
       {
-	topaz::feat_single_t *single = (topaz::feat_single_t*)feat_data;
+	feat_single_t *single = (feat_single_t*)feat_data;
 	printf("Single User Mode\n");
 	printf("    Locking Objects Supported: %d\n", be32toh(single->lock_obj_count));
 	printf("    Single User Presence: ");
@@ -374,20 +375,20 @@ void topaz::drive::probe_level0()
 	       (0x04 & single->bitmask ? "Admin" : "User"));
       }
     }
-    else if (code == topaz::FEAT_TABLES)
+    else if (code == FEAT_TABLES)
     {
       TOPAZ_DEBUG(2)
       {
-	topaz::feat_tables_t *tables = (topaz::feat_tables_t*)feat_data;
+	feat_tables_t *tables = (feat_tables_t*)feat_data;
 	printf("Additional DataStore Tables\n");
 	printf("    Max Tables: %d\n",     be16toh(tables->max_tables));
 	printf("    Max Table Size: %d\n", be32toh(tables->max_size));
 	printf("    Table Align: %d\n",    be32toh(tables->table_align));
       }
     }
-    else if (code == topaz::FEAT_OPAL2)
+    else if (code == FEAT_OPAL2)
     {
-      topaz::feat_opal2_t *opal2 = (topaz::feat_opal2_t*)feat_data;
+      feat_opal2_t *opal2 = (feat_opal2_t*)feat_data;
       has_opal2 = true;
       com_id = be16toh(opal2->comid_base);
       TOPAZ_DEBUG(2)
@@ -444,29 +445,29 @@ void topaz::drive::probe_level0()
 /**
  * \brief Level 1 Probe - Host Properties
  */
-void topaz::drive::probe_level1()
+void drive::probe_level1()
 {
+  TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
+  
   // Gin up a Properties call on Session Manager
-  topaz::datum call(OBJ_SESSION_MGR, MTH_PROPERTIES, datum_vector());
+  datum call;
+  call.object_uid() = OBJ_SESSION_MGR;
+  call.method_uid() = MTH_PROPERTIES;
   
   // Query communication properties
-  TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
   sendrecv(call, call);
   
-  // Return type is method, data stored in argument list
-  topaz::datum_vector const &args = call.get_list();
-  
   // Comm props stored in list (first element) of named items
-  topaz::datum_vector const &props = args[0].get_list();
+  datum_vector const &props = call[0].list();
   TOPAZ_DEBUG(2) printf("  Received %lu items\n", props.size());
   
   for (size_t i = 0; i < props.size(); i++)
   {
     // Name of property
-    string name = props[i].get_name().get_string();
+    string name = props[i].name().get_string();
     
     // Value
-    uint64_t val = props[i].get_value().get_uint();
+    uint64_t val = props[i].value().get_uint();
     
     // Debug
     TOPAZ_DEBUG(2) printf("    %s = %lu\n", name.c_str(), val);
@@ -476,29 +477,27 @@ void topaz::drive::probe_level1()
 /**
  * \brief Start a TCG Opal session
  */
-void topaz::drive::session_start()
+void drive::session_start()
 {
   // Debug
   TOPAZ_DEBUG(1) printf("Starting TPM Session\n");
   
   // Gin up a StartSession call on Session Manager
-  topaz::datum_vector args_out;
-  args_out.push_back(topaz::datum(topaz::atom((uint64_t)1)));     // Host Session ID (left at one)
-  args_out.push_back(topaz::datum(topaz::atom(topaz::OBJ_ADMIN_SP, true)));
-  args_out.push_back(topaz::datum(topaz::atom((uint64_t)1)));     // Read/Write Session
-  topaz::datum call(OBJ_SESSION_MGR, MTH_START_SESSION, args_out);
+  datum call;
+  call.object_uid() = OBJ_SESSION_MGR;
+  call.method_uid() = MTH_START_SESSION;
+  call[0].value()   = atom((uint64_t)1);               // Host Session ID (left at one)
+  call[1].value()   = atom(OBJ_ADMIN_SP, true); // Admin SP
+  call[2].value()   = atom((uint64_t)1);               // Read/Write Session
   
   // Off it goes
   sendrecv(call, call);
   
-  // Return type is method, data stored in argument list
-  topaz::datum_vector const &args_in = call.get_list();
-  
   // Host session ID
-  host_session_id = args_in[0].get_value().get_uint();
+  host_session_id = call[0].value().get_uint();
   
   // TPer session ID
-  tper_session_id = args_in[1].get_value().get_uint();
+  tper_session_id = call[1].value().get_uint();
   
   // Debug
   TOPAZ_DEBUG(1) printf("Session %lx:%lx Started\n",
@@ -508,14 +507,14 @@ void topaz::drive::session_start()
 /**
  * \brief Stop a TCG Opal session
  */
-void topaz::drive::session_end()
+void drive::session_end()
 {
   // Debug
   TOPAZ_DEBUG(1) printf("Stopping TPM Session %lx:%lx\n",
 			tper_session_id, host_session_id);
   
   // Gin up an end of session
-  topaz::datum eos(datum::END_SESSION);
+  datum eos(datum::END_SESSION);
   
   // Off it goes
   sendrecv(eos, eos);
@@ -524,7 +523,7 @@ void topaz::drive::session_end()
 /**
  * \brief Probe TCG Opal Communication Properties
  */
-void topaz::drive::reset_comid(uint32_t com_id)
+void drive::reset_comid(uint32_t com_id)
 {
   unsigned char block[ATA_BLOCK_SIZE] = {0};
   opal_comid_req_t *cmd = (opal_comid_req_t*)block;
@@ -544,7 +543,7 @@ void topaz::drive::reset_comid(uint32_t com_id)
   // Check result
   if ((htobe32(resp->avail_data) != 4) || (htobe32(resp->failed) != 0))
   {
-    throw topaz::exception("Cannot reset ComID");
+    throw topaz_exception("Cannot reset ComID");
   }
   
   // Debug
@@ -557,7 +556,7 @@ void topaz::drive::reset_comid(uint32_t com_id)
  * @param proto Protocol ID 0x00 - 0xff
  * @return String representation of ID
  */
-char const *topaz::drive::lookup_tpm_proto(uint8_t proto)
+char const *drive::lookup_tpm_proto(uint8_t proto)
 {
   if (proto == 0)
   {

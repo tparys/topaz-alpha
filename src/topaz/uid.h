@@ -26,7 +26,8 @@ namespace topaz
   {
     OBJ_SESSION_MGR   = 0x00000000000000ffULL, // Session Manager UID
     OBJ_ADMIN_SP      = 0x0000020500000001ULL, // Admin Security Provider
-    OBJ_C_PIN_MSID    = 0x0000000b00008402ULL  // PIN Table
+    OBJ_C_PIN_SID     = 0x0000000b000000001LL  // PIN Table
+    OBJ_C_PIN_MSID    = 0x0000000b00008402ULL  // Manufactured Default PIN Table
   } object_uid_t;
   
   typedef enum

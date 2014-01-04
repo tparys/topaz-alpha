@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     }
     
   }
-  catch (topaz::exception &e)
+  catch (topaz::topaz_exception &e)
   {
     cout << "Exception raised: " << e.what() << endl;
   }

@@ -33,6 +33,7 @@
 #include <topaz/defs.h>
 #include <topaz/exceptions.h>
 #include <topaz/rawdrive.h>
+using namespace topaz;
 
 // Set to nonzero to use ATA12 commands
 #define USE_ATA12 1
@@ -44,7 +45,7 @@
  *
  * @param path OS path to specified drive (eg - '/dev/sdX')
  */
-topaz::rawdrive::rawdrive(char const *path)
+rawdrive::rawdrive(char const *path)
 {
   // First, verify libata isn't misconfigured ...
   check_libata();
@@ -54,7 +55,7 @@ topaz::rawdrive::rawdrive(char const *path)
   fd = open(path, O_RDWR);
   if (fd == -1)
   {
-    throw topaz::exception("Cannot open specified device");
+    throw topaz_exception("Cannot open specified device");
   }
   
   // Check the TPM
@@ -62,7 +63,7 @@ topaz::rawdrive::rawdrive(char const *path)
   {
     check_tpm();
   }
-  catch (exception &e)
+  catch (topaz_exception &e)
   {
     // Constructor not done, destructor won't be called ...
     close(fd);
@@ -76,7 +77,7 @@ topaz::rawdrive::rawdrive(char const *path)
 /**
  * \brief Topaz Raw Hard Drive Destructor
  */
-topaz::rawdrive::~rawdrive()
+rawdrive::~rawdrive()
 {
   // Cleanup
   close(fd);
@@ -92,7 +93,7 @@ topaz::rawdrive::~rawdrive()
  * @param data     Data buffer
  * @param bcount   Size of data buffer in 512 byte blocks
  */
-void topaz::rawdrive::if_send(uint8_t proto, uint16_t comid,
+void rawdrive::if_send(uint8_t proto, uint16_t comid,
 			      void *data, uint8_t bcount)
 {
   if (USE_ATA12)
@@ -136,7 +137,7 @@ void topaz::rawdrive::if_send(uint8_t proto, uint16_t comid,
  * @param data     Data buffer
  * @param bcount   Size of data buffer in 512 byte blocks
  */
-void topaz::rawdrive::if_recv(uint8_t proto, uint16_t comid,
+void rawdrive::if_recv(uint8_t proto, uint16_t comid,
 			      void *data, uint8_t bcount)
 {
   if (USE_ATA12)
@@ -176,7 +177,7 @@ void topaz::rawdrive::if_recv(uint8_t proto, uint16_t comid,
  *
  * Check libata (Linux ATA layer) for misconfiguration.
  */
-void topaz::rawdrive::check_libata()
+void rawdrive::check_libata()
 {
   int fd;
   char in;
@@ -192,7 +193,7 @@ void topaz::rawdrive::check_libata()
       // Data read
       if (in == '0')
       {
-	throw topaz::exception(
+	throw topaz_exception(
 	  "Linux libata layer configured to block TPM calls (add libata.allow_tpm=1 to kernel args)");
       }
     }
@@ -207,7 +208,7 @@ void topaz::rawdrive::check_libata()
  *
  * Check for presence of Trusted Platform Module (TPM) in drive.
  */
-void topaz::rawdrive::check_tpm()
+void rawdrive::check_tpm()
 {
   uint16_t id_data[256];
   
@@ -219,7 +220,7 @@ void topaz::rawdrive::check_tpm()
   if ((get_ata_ver(id_data) < 8) || ((id_data[48] & 0xC000) != 0x4000))
   {
     /* no TPM */
-    throw topaz::exception("No TPM Detected in Specified Drive");
+    throw topaz_exception("No TPM Detected in Specified Drive");
   }
 }  
 
@@ -230,7 +231,7 @@ void topaz::rawdrive::check_tpm()
  *
  * @param data Data buffer (512 bytes)
  */
-void topaz::rawdrive::get_identify(uint16_t *data)
+void rawdrive::get_identify(uint16_t *data)
 {
   if (USE_ATA12)
   {
@@ -272,7 +273,7 @@ void topaz::rawdrive::get_identify(uint16_t *data)
  * @param data Pointer to ATA identify data
  * @return ATA major version
  */
-int topaz::rawdrive::get_ata_ver(uint16_t *data)
+int rawdrive::get_ata_ver(uint16_t *data)
 {
   unsigned int mver;
   
@@ -296,7 +297,7 @@ int topaz::rawdrive::get_ata_ver(uint16_t *data)
  * @param data Pointer to start of uin16_t encoded string
  * @param max  Maximum size of string
  */
-void topaz::rawdrive::dump_id_string(char const *desc, uint16_t *data, size_t max)
+void rawdrive::dump_id_string(char const *desc, uint16_t *data, size_t max)
 {
   size_t i;
   uint16_t word;
@@ -343,7 +344,7 @@ void topaz::rawdrive::dump_id_string(char const *desc, uint16_t *data, size_t ma
  * @param bcount Length of data buffer in blocks (512 bytes)
  * @param wait   Command timeout (seconds)
  */
-void topaz::rawdrive::ata_exec_12(unsigned char const *cmd, int type,
+void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
 				  void *data, uint8_t bcount, int wait)
 {
   struct sg_io_hdr sg_io;  // ioctl data structure
@@ -407,7 +408,7 @@ void topaz::rawdrive::ata_exec_12(unsigned char const *cmd, int type,
       break;
       
     default: // Invalid
-      throw topaz::exception("Invalid ATA Direction");
+      throw topaz_exception("Invalid ATA Direction");
       break;
   }
   
@@ -441,7 +442,7 @@ void topaz::rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   rc = ioctl(fd, SG_IO, &sg_io);
   if (rc != 0)
   {
-    throw topaz::exception("SGIO ioctl failed");
+    throw topaz_exception("SGIO ioctl failed");
   }
   
   // Debug input
@@ -460,7 +461,7 @@ void topaz::rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   {
     //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
     //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
-    throw topaz::exception("SGIO ioctl bad status");
+    throw topaz_exception("SGIO ioctl bad status");
   }
 }
 
@@ -476,7 +477,7 @@ void topaz::rawdrive::ata_exec_12(unsigned char const *cmd, int type,
  * @param bcount Length of data buffer in blocks (512 bytes)
  * @param wait   Command timeout (seconds)
  */
-void topaz::rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
+void rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
 				  void *data, uint8_t bcount, int wait)
 {
   struct sg_io_hdr sg_io;  // ioctl data structure
@@ -540,7 +541,7 @@ void topaz::rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
       break;
       
     default: // Invalid
-      throw topaz::exception("Invalid ATA Direction");
+      throw topaz_exception("Invalid ATA Direction");
       break;
   }
 
@@ -570,7 +571,7 @@ void topaz::rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
   rc = ioctl(fd, SG_IO, &sg_io);
   if (rc != 0)
   {
-    throw topaz::exception("SGIO ioctl failed");
+    throw topaz_exception("SGIO ioctl failed");
   }
   
   // Debug input
@@ -589,6 +590,6 @@ void topaz::rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
   {
     //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
     //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
-    throw topaz::exception("SGIO ioctl bad status");
+    throw topaz_exception("SGIO ioctl bad status");
   }
 }

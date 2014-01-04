@@ -472,7 +472,7 @@ size_t atom::decode_bytes(byte const *data, size_t len)
   }
   else // Reserved, or non-atom token (0xe4 - 0xfe)
   {
-    throw topaz::exception("Cannot parse atom (invalid token)");
+    throw topaz_exception("Cannot parse atom (invalid token)");
   }
   
   // Ensure expected remaining data is present
@@ -562,7 +562,7 @@ uint64_t atom::get_uid() const
   // This is simultaneously simpler, and infuriating ...
   if ((data_type != atom::BYTES) || (data_enc != atom::SHORT) || (bytes.size() != 8))
   {
-    throw topaz::exception("Invalid UID Atom");
+    throw topaz_exception("Invalid UID Atom");
   }
   
   // Extract the bytes
@@ -580,7 +580,7 @@ uint64_t atom::get_uint() const
   // Sanity check
   if (data_type != atom::UINT)
   {
-    throw topaz::exception("Atom is not unsigned integer");
+    throw topaz_exception("Atom is not unsigned integer");
   }
   
   // Pass it back
@@ -595,7 +595,7 @@ int64_t atom::get_int() const
   // Sanity check
   if (data_type != atom::INT)
   {
-    throw topaz::exception("Atom is not signed integer");
+    throw topaz_exception("Atom is not signed integer");
   }
   
   // Pass it back
@@ -610,7 +610,7 @@ byte_vector const &atom::get_bytes() const
   // Sanity check
   if (data_type != atom::BYTES)
   {
-    throw topaz::exception("Atom is not binary data");
+    throw topaz_exception("Atom is not binary data");
   }
   
   // Return reference
@@ -625,7 +625,7 @@ std::string atom::get_string() const
   // Sanity check
   if (data_type != atom::BYTES)
   {
-    throw topaz::exception("Atom is not binary data");
+    throw topaz_exception("Atom is not binary data");
   }
   
   return std::string(bytes.begin(), bytes.end());
@@ -657,7 +657,7 @@ void atom::pick_encoding(size_t byte_count)
   else
   {
     // Really?
-    throw topaz::exception("Atom too large to encode");
+    throw topaz_exception("Atom too large to encode");
   }
 }
 
@@ -671,7 +671,7 @@ void atom::decode_check_size(size_t len, size_t min) const
 {
   if (len < min)
   {
-    throw topaz::exception("Atom encoding too short");
+    throw topaz_exception("Atom encoding too short");
   }
 }
 
@@ -697,7 +697,7 @@ void atom::decode_set_type(uint8_t bits)
       break;
       
     default:
-      throw topaz::exception("Invalid / Unhandled atom type");
+      throw topaz_exception("Invalid / Unhandled atom type");
       break;
   }
 }
@@ -716,7 +716,7 @@ void atom::decode_int(byte const *data, size_t len)
   // Sanity check
   if ((len == 0) || (len > 8))
   {
-    throw topaz::exception("Invalid integer Atom length");
+    throw topaz_exception("Invalid integer Atom length");
   }
   
   // How many bytes don't get set in raw ...

@@ -49,7 +49,7 @@ namespace topaz
     /**
      * \brief Retrieve default device PIN
      */
-    topaz::byte_vector default_pin();
+    byte_vector default_pin();
     
   protected:
     

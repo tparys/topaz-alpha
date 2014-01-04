@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <topaz/atom.h>
 #include <topaz/datum.h>
+#include <topaz/uid.h>
 using namespace std;
 
 // Global, eh ....
@@ -94,24 +95,25 @@ int main()
 {
   topaz::atom uid(0x0f, true);
   topaz::datum test;
-  topaz::datum_vector list;
   
   // Atom storage (UID)
-  test = topaz::datum(uid);
+  test = topaz::datum();
+  test.value() = uid;
   check(test, topaz::datum::ATOM, uid.size());
   
   // Named Value (UID)
-  test = topaz::datum(uid, uid);
+  test.name() = uid;
   check(test, topaz::datum::NAMED, 2 + (2 * uid.size()));
   
   // List storage
-  list.push_back(uid);
-  test = topaz::datum(list);
+  test = topaz::datum();
+  test[0].value() = uid;
   check(test, topaz::datum::LIST, 2 + uid.size());
   
   // Method call
-  list.clear();
-  test = topaz::datum(0xff, 0xff01, list);
+  test = topaz::datum();
+  test.object_uid() = topaz::OBJ_SESSION_MGR;
+  test.method_uid() = topaz::MTH_PROPERTIES;
   check(test, topaz::datum::METHOD, 27);
   
   printf("\n******** %d Tests Passed ********\n\n", test_count);

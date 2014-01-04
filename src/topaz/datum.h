@@ -39,6 +39,7 @@ namespace topaz
     // Enumeration of various datum types
     typedef enum
     {
+      UNSET,      // Not yet set
       ATOM,       // Binary or integer type
       NAMED,      // Key / Value pair
       LIST,       // List (possibly empty)
@@ -71,46 +72,12 @@ namespace topaz
     /**
      * \brief Token Constructor
      */
-    datum(datum::type_t type);
-    
-    /**
-     * \brief Atom Constructor
-     */
-    datum(atom const &value);
-    
-    /**
-     * \brief Named Constructor
-     */
-    datum(atom const &name, atom const &value);
-    
-    /**
-     * \brief List Constructor
-     */
-    datum(datum_vector const &list);
-    
-    /**
-     * \brief Method Constructor
-     */
-    datum(uint64_t object_uid, uint64_t method_uid, datum_vector const &args);
+    datum(datum::type_t data_type);
     
     /**
      * \brief Destructor
      */
     ~datum();
-    
-    /**
-     * \brief Equality Operator
-     *
-     * @return True when equal
-     */
-    bool operator==(datum const &ref);
-    
-    /**
-     * \brief Inequality Operator
-     *
-     * @return True when not equal
-     */
-    bool operator!=(datum const &ref);
     
     /**
      * \brief Query encoded size
@@ -144,27 +111,74 @@ namespace topaz
     /**
      * \brief Query Name
      */
-    atom const &get_name() const;
+    atom &name();
+    
+    /**
+     * \brief Query Name (const)
+     */
+    atom const &name() const;
     
     /**
      * \brief Query Value
      */
-    atom const &get_value() const;
+    atom &value();
+    
+    /**
+     * \brief Query Value (const)
+     */
+    atom const &value() const;
     
     /**
      * \brief Query Method's Object UID
      */
-    uint64_t get_object_uid() const;
+    uint64_t &object_uid();
+    
+    /**
+     * \brief Query Method's Object UID (const)
+     */
+    uint64_t const &object_uid() const;
     
     /**
      * \brief Query Value Method UID
      */
-    uint64_t get_method_uid() const;
+    uint64_t &method_uid();
+    
+    /**
+     * \brief Query Value Method UID (const)
+     */
+    uint64_t const &method_uid() const;
     
     /**
      * \brief Query List
      */
-    datum_vector const &get_list() const;
+    datum_vector &list();
+    
+    /**
+     * \brief Query List (const)
+     */
+    datum_vector const &list() const;
+    
+    /**
+     * \brief Equality Operator
+     *
+     * @return True when equal
+     */
+    bool operator==(datum const &ref);
+    
+    /**
+     * \brief Inequality Operator
+     *
+     * @return True when not equal
+     */
+    bool operator!=(datum const &ref);
+    
+    /**
+     * \brief Datum array access
+     *
+     * @param idx Item to return
+     * @return Specified item
+     */
+    datum &operator[](size_t idx);
     
   protected:
     
@@ -190,15 +204,15 @@ namespace topaz
     datum::type_t data_type;
     
     // Atom storage
-    atom name;           // Valid only on named object
-    atom value;
+    atom data_name;           // Valid only on named object
+    atom data_value;
     
     // Method call specific parameters
-    uint64_t object_uid; // Object reference
-    uint64_t method_uid; // Method reference
+    uint64_t data_object_uid; // Object reference
+    uint64_t data_method_uid; // Method reference
     
     // Storage of other datums (lists / method calls)
-    datum_vector list;
+    datum_vector data_list;
     
   };
   

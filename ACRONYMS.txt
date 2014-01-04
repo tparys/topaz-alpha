@@ -1,5 +1,5 @@
 
-                     DEFINITIONS AND ACRONYMS for TCG Opal SSC
+                     DEFINITIONS AND ACRONYMS for TCG Opal
 
 -------------------------------------------------------------------------------
 
@@ -18,6 +18,8 @@ LBA: Logical Block Addressing
 
 P1667:
   IEEE standard for authenticating to storage devices.
+
+OFS: Original Factory State
 
 Opal: See "TCG Opal"
 
@@ -43,18 +45,20 @@ SGIO: SCSI Generic I/O
 SD: Storage Device
   A device providing long term data storage (read: hard drive).
 
+SID: Security Identifier
+  From spec: "The authority that represents the TPer owner."
+
 SP: Security Provider
   A security function of a TPM, such as locking or authentication.
 
 SSC: Security Subsystem Class
-  A TCG defined standard for secure data storage, encompassing a hardware interface
-  for controlling security/cryptography features within a storage device.
-
-SSC Enterprise: (see TCG Enterprise)
-
-SSC Opal: (see TCG Opal)
+  From spec: "Identifies the components from the Core Specification that are
+    Mandatory, Optional, Excluded, or Not Required for a particular class of
+    security subsystem."
 
 SWG: Storage Working Group
+  From spec: "One of the TCG working groups whose purpose is to define security
+    building blocks for the Storage Device."
 
 TCG: Trusted Computing Group
   Standards body for the trusted computing platform.
@@ -69,10 +73,18 @@ TPM: Trusted Platform Module
   Secure coprocessor performing cryptographic and authentication services.
 
 TPer: Trusted Peripheral
-  Component of a trusted computing platform that contains a TPM, such as an
-  Opal compatible self-encrypting hard drive.
+  From spec: "A Trusted Peripheral."
+  In English: A component of a trusted computing platform that contains a TPM,
+    such as an Opal compatible self-encrypting hard drive."
 
 Trusted Computing Platform:
   A concept popularized by the TCG, providing a stable computing platform that
   uses strong cryptography and authentication to resist exploits, malware, and
-  unauthorized modification.
+  unauthorized access/modification.
+
+UID: Unique Identifier
+  From spec: "Unique 8-byte identifier that identifies objects within tables,
+    tables, methods, and the SP itself. UIDs are unique within an SP, but not
+    across SPs."
+
+VU: Vendor Unique
