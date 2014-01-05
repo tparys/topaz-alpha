@@ -20,23 +20,26 @@
  * GNU General Public License for more details.
  */
 
+#define _UID_MAKE(high, low) (((high) * 0x100000000ULL) + (low))
+#define _UID_HIGH(uid)       ((uid) / 0x100000000ULL)
+#define _UID_LOW(uid)        ((uid) & 0x0ffffffffULL)
+
 namespace topaz
 {
   typedef enum
   {
-    OBJ_SESSION_MGR   = 0x00000000000000ffULL, // Session Manager UID
-    OBJ_ADMIN_SP      = 0x0000020500000001ULL, // Admin Security Provider
-    OBJ_C_PIN_SID     = 0x0000000b000000001LL  // PIN Table
-    OBJ_C_PIN_MSID    = 0x0000000b00008402ULL  // Manufactured Default PIN Table
+    OBJ_SESSION_MGR   = _UID_MAKE(   0x0,   0xff), // Session Manager UID
+    OBJ_ADMIN_SP      = _UID_MAKE( 0x205,    0x1), // Admin Security Provider
+    OBJ_C_PIN_SID     = _UID_MAKE(   0xb,    0x1), // PIN Table
+    OBJ_C_PIN_MSID    = _UID_MAKE(   0xb, 0x8402)  // Manufactured Default PIN Table
   } object_uid_t;
   
   typedef enum
   {
-    MTH_PROPERTIES    = 0x000000000000ff01ULL, // Query Communication Params
-    MTH_START_SESSION = 0x000000000000ff02ULL, // Open Session
-    MTH_SYNC_SESSION  = 0x000000000000ff03ULL, // Terminate Session
-    MTH_GET           = 0x0000000600000016ULL  // Get Table Data
+    MTH_PROPERTIES    = _UID_MAKE(0, 0xff01), // Query Communication Params
+    MTH_START_SESSION = _UID_MAKE(0, 0xff02), // Open Session
+    MTH_SYNC_SESSION  = _UID_MAKE(0, 0xff03), // Terminate Session
+    MTH_GET           = _UID_MAKE(6,   0x16)  // Get Table Data
   } method_uid_t;
   
 };
-

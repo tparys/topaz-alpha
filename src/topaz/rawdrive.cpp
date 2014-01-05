@@ -420,7 +420,7 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   //
   
   // Debug output command
-  TOPAZ_DEBUG(3)
+  TOPAZ_DEBUG(4)
   {
     // Command descriptor block
     printf("ATA Command:\n");
@@ -448,7 +448,7 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   // Debug input
   if (type == SG_DXFER_FROM_DEV)
   {
-    TOPAZ_DEBUG(3)
+    TOPAZ_DEBUG(4)
     {
       printf("Read Data:\n");
       topaz_dump(data, bcount * ATA_BLOCK_SIZE);
@@ -553,7 +553,7 @@ void rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
   //
   
   // Debug output command
-  TOPAZ_DEBUG(3)
+  TOPAZ_DEBUG(4)
   {
     // Command descriptor block
     printf("SCSI CDB:\n");
@@ -577,7 +577,7 @@ void rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
   // Debug input
   if (type == SG_DXFER_FROM_DEV)
   {
-    TOPAZ_DEBUG(3)
+    TOPAZ_DEBUG(4)
     {
       printf("Read Data:\n");
       topaz_dump(data, bcount * ATA_BLOCK_SIZE);

@@ -205,6 +205,11 @@ namespace topaz
      */
     std::string get_string() const;
     
+    /**
+     * \brief Debug print
+     */
+    virtual void print() const;
+    
   protected:
     
     /**

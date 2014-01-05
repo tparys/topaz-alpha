@@ -21,10 +21,12 @@
  * GNU General Public License for more details.
  */
 
+#include <cstdio>
 #include <cstring>
 #include <endian.h>
 #include <topaz/atom.h>
 #include <topaz/exceptions.h>
+#include <topaz/uid.h>
 using namespace topaz;
 
 /**
@@ -629,6 +631,88 @@ std::string atom::get_string() const
   }
   
   return std::string(bytes.begin(), bytes.end());
+}
+
+/**
+ * \brief Debug print
+ */
+void atom::print() const
+{
+  size_t i;
+  bool is_print;
+  
+  // Determine what it is ...
+  switch (data_type)
+  {
+    case atom::EMPTY:
+      // Nothing
+      printf("(EMPTY)");
+      break;
+      
+    case atom::UINT:
+      // Unsigned integer
+      printf("%lu(u)", uint_val);
+      break;
+      
+    case atom::INT:
+      // Signed integer
+      printf("%ld(s)", int_val);
+      break;
+      
+    case atom::BYTES:
+      // Binary / Bytes - Try to guess what's in it ...
+      
+      // First, check for printable chars
+      is_print = true;
+      for (i = 0; i < bytes.size(); i++)
+      {
+	if (!isprint(bytes[i]))
+	{
+	  is_print = false;
+	}
+      }
+      
+      // Nonzero length of printable chars are probably strings
+      if ((bytes.size() > 0) && (is_print))
+      {
+	// Assuming string ...
+	printf("\'");
+	for (i = 0; i < bytes.size(); i++)
+	{
+	  printf("%c", bytes[i]);
+	}
+	printf("\'");
+      }
+      // UIDs are two (usually small) numbers, stored together as a uint64.
+      // If it looks like two signed or unsigned uint32's, assume UID.
+      else if ((bytes.size() == 8) &&
+	       ((bytes[0] == 0x00) || (bytes[0] == 0xff)) &&
+	       ((bytes[4] == 0x00) || (bytes[4] == 0xff)))
+      {
+	// Assuming UID ...
+	uint64_t uid = get_uid();
+	
+	printf("%llx", _UID_HIGH(uid));
+	printf(":");
+	printf("%llx", _UID_LOW(uid));
+      }
+      // Plain ol' byte sequence ...
+      else
+      {
+	printf("[");
+	for (i = 0; (i < 16) && (i < bytes.size()); i++)
+	{
+	  printf("%02X ", bytes[i]);
+	}
+	if (i == 16)
+	{
+	  printf("... ");
+	}
+	printf("]");
+      }
+      
+      break;
+  }
 }
 
 /**

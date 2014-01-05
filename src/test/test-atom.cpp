@@ -79,9 +79,13 @@ void check(topaz::atom &test, topaz::atom::type_t type, topaz::atom::enc_t enc, 
   topaz::byte_vector test_bytes = test.encode_vector();
   topaz::atom copy;
   
+  // Dump
+  printf("Atom: ");
+  test.print();
+  
   // What's in the atom?
   type_found = test.get_type();
-  printf("Data Type: %s\n", atom_type_to_string(type_found));
+  printf("\nData Type: %s\n", atom_type_to_string(type_found));
   if (type != type_found)
   {
     printf("*** Failed (expected %s) ***\n", atom_type_to_string(type));

@@ -49,6 +49,7 @@ drive::drive(char const *path)
   has_opal2 = false;
   lba_align = 1;
   com_id = 0;
+  max_com_pkt_size = -1;
   
   // Check for drive TPM
   probe_tpm();
@@ -84,15 +85,15 @@ byte_vector drive::default_pin()
   datum call;
   call.object_uid()  = OBJ_C_PIN_MSID;
   call.method_uid()  = MTH_GET;
-  call[0][0].name()  = atom((uint64_t)3);
-  call[0][0].value() = atom((uint64_t)3);
-  call[0][1].name()  = atom((uint64_t)4);
-  call[0][1].value() = atom((uint64_t)3);
+  call[0][0].name()  = atom((uint64_t)3); // Starting Table Column
+  call[0][0].value() = atom((uint64_t)3); // C_PIN
+  call[0][1].name()  = atom((uint64_t)4); // Ending Tabling Column
+  call[0][1].value() = atom((uint64_t)3); // C_PIN
   
   // Off it goes
   sendrecv(call, call);
   
-  // Return type is nested array (matrix?)
+  // Return first element of nested array
   return call[0][0].value().get_bytes();
 }
 
@@ -124,6 +125,14 @@ void drive::send(datum const &outbuf)
   opal_header_t *header;
   size_t sub_size, pkt_size, com_size, tot_size;
   
+  // Debug
+  TOPAZ_DEBUG(3)
+  {
+    printf("Opal TX: ");
+    outbuf.print();
+    printf("\n");
+  }
+  
   // Sub Packet contains the actual data
   sub_size = outbuf.size();
   
@@ -141,6 +150,12 @@ void drive::send(datum const &outbuf)
   
   // ... and gets padded to multiple of 512 bytes
   tot_size = PAD_TO_MULTIPLE(tot_size, ATA_BLOCK_SIZE);
+  
+  // Check that the drive can accept this data
+  if (tot_size > max_com_pkt_size)
+  {
+    throw topaz_exception("ComPkt too large for drive");
+  }
   
   // Allocate some mem to work with
   block = new unsigned char[tot_size];
@@ -209,6 +224,14 @@ void drive::recv(datum &inbuf)
   
   // Decode response
   inbuf.decode_bytes(payload, count);
+  
+  // Debug
+  TOPAZ_DEBUG(3)
+  {
+    printf("Opal RX: ");
+    inbuf.print();
+    printf("\n");
+  }
 }
 
 /**
@@ -469,8 +492,14 @@ void drive::probe_level1()
     // Value
     uint64_t val = props[i].value().get_uint();
     
-    // Debug
-    TOPAZ_DEBUG(2) printf("    %s = %lu\n", name.c_str(), val);
+    // Only one we want here is the MaxComPacketSize,
+    // which specifies the maximum I/O packet length
+    if (name == "MaxComPacketSize")
+    {
+      max_com_pkt_size = val;
+      printf("  Max ComPkt Size is %lu (%lu blocks)\n",
+	     val, val / ATA_BLOCK_SIZE);
+    }
   }
 }
 

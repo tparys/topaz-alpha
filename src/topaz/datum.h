@@ -180,6 +180,11 @@ namespace topaz
      */
     datum &operator[](size_t idx);
     
+    /**
+     * \brief Debug print
+     */
+    virtual void print() const;
+    
   protected:
     
     /**

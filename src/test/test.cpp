@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     // Try to retrieve the device's default PIN
     topaz::byte_vector pin = drive.default_pin();
     bool printable = true;
-    printf("Got a PIN (%lu bytes):", pin.size());
+    printf("Got Default PIN (%lu bytes):", pin.size());
     for (size_t i = 0; i < pin.size(); i++)
     {
       if ((i % 16) == 0)

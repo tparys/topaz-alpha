@@ -124,6 +124,7 @@ namespace topaz
     bool has_opal2;
     uint32_t com_id;
     uint64_t lba_align;
+    uint64_t max_com_pkt_size;
     
   };
   

@@ -22,6 +22,7 @@
  * GNU General Public License for more details.
  */
 
+#include <cstdio>
 #include <topaz/datum.h>
 #include <topaz/exceptions.h>
 using namespace topaz;
@@ -602,6 +603,59 @@ datum &datum::operator[](size_t idx)
   
   // Return item
   return data_list[idx];
+}
+
+/**
+ * \brief Debug print
+ */
+void datum::print() const
+{
+  size_t i;
+  
+  // Determine what it is
+  switch (data_type)
+  {
+    case datum::UNSET:
+      // Nothing yet
+      printf("(UNSET)");
+      break;
+      
+    case datum::ATOM:
+      // Single atom
+      data_value.print();
+      break;
+      
+    case datum::NAMED:
+      // Named value
+      data_name.print();
+      printf(" = ");
+      data_value.print();
+      break;
+      
+    case datum::METHOD:
+      // Method Call
+      topaz::atom(data_object_uid, true).print();
+      printf(".");
+      topaz::atom(data_method_uid, true).print();
+      
+      // No break, fall through to list
+      
+    case datum::LIST:
+      // List o' things
+      printf("[");
+      for (i = 0; i < data_list.size(); i++)
+      {
+	if (i > 0) printf(", ");
+	data_list[i].print();
+      }
+      printf("]");
+      break;
+      
+    default: // datum::END_SESSION
+      // End of session
+      printf("(END SESSION)");
+      break;
+  }
 }
 
 /**

@@ -75,8 +75,13 @@ namespace topaz
      */
     void decode_vector(byte_vector const &data);
     
+    /**
+     * \brief Debug print
+     */
+    virtual void print() const = 0;
+    
   };
-
+  
 };
 
 #endif
