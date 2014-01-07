@@ -36,6 +36,7 @@ datum::datum()
   data_type = datum::UNSET;
   data_object_uid = 0;
   data_method_uid = 0;
+  data_status = STA_SUCCESS;
 }
 
 /**
@@ -47,6 +48,7 @@ datum::datum(datum::type_t data_type)
   // Specified datum type
   data_object_uid = 0;
   data_method_uid = 0;
+  data_status = STA_SUCCESS;
 }
 
 /**
@@ -183,8 +185,8 @@ size_t datum::encode_bytes(byte *data) const
       // Beginning of method status list
       *data++ = datum::TOK_START_LIST;
       
-      // Abort method?
-      *data++ = 0x00; // No
+      // Method status
+      *data++ = 0xff & data_status;
       
       // Reserved fields
       *data++ = 0x00;
@@ -304,12 +306,21 @@ size_t datum::decode_bytes(byte const *data, size_t len)
     // End of data
     decode_check_token(data, len, size++, datum::TOK_END_OF_DATA);
     
-    // Method status list
-    decode_check_token(data, len, size++, datum::TOK_START_LIST);
-    decode_check_token(data, len, size++, 0x00);
-    decode_check_token(data, len, size++, 0x00);
-    decode_check_token(data, len, size++, 0x00);
-    decode_check_token(data, len, size++, datum::TOK_END_LIST);
+    // Method status list - 5 bytes
+    decode_check_size(len, size + 5);
+    
+    // First and last token are required
+    if ((data[size] != datum::TOK_START_LIST) ||
+	(data[size + 4] != datum::TOK_END_LIST))
+    {
+      throw topaz_exception("Unexpected token in datum encoding");
+    }
+    
+    // Second byte has method status
+    data_status = (status_t)data[size + 1];
+    
+    // 5 Bytes total
+    size += 5;
   }
   else if (data[size] == datum::TOK_END_SESSION)
   {
@@ -472,6 +483,39 @@ uint64_t const &datum::method_uid() const
 }
 
 /**
+ * \brief Query Method Status Code
+ */
+datum::status_t &datum::status()
+{
+  // Must be method
+  if ((data_type == datum::UNSET) || (data_type == datum::LIST))
+  {
+    // Automatic promotion
+    data_type = datum::METHOD;
+  }
+  else if (data_type != datum::METHOD)
+  {
+    throw topaz_exception("Datum has no status");
+  }
+  
+  return data_status;
+}
+
+/**
+ * \brief Query Method Status Code (const)
+ */
+datum::status_t const &datum::status() const
+{
+  // Must be method
+  if (data_type != datum::METHOD)
+  {
+    throw topaz_exception("Datum has no status");
+  }
+  
+  return data_status;
+}
+
+/**
  * \brief Query List
  */
 datum_vector &datum::list()
@@ -631,15 +675,7 @@ void datum::print() const
       printf(" = ");
       data_value.print();
       break;
-      
-    case datum::METHOD:
-      // Method Call
-      topaz::atom(data_object_uid, true).print();
-      printf(".");
-      topaz::atom(data_method_uid, true).print();
-      
-      // No break, fall through to list
-      
+           
     case datum::LIST:
       // List o' things
       printf("[");
@@ -651,6 +687,25 @@ void datum::print() const
       printf("]");
       break;
       
+    case datum::METHOD:
+      // Method Call
+      topaz::atom(data_object_uid, true).print();
+      printf(".");
+      topaz::atom(data_method_uid, true).print();
+      printf("[");
+      for (i = 0; i < data_list.size(); i++)
+      {
+	if (i > 0) printf(", ");
+	data_list[i].print();
+      }
+      printf("]");
+      if (data_status)
+      {
+	printf("<STATUS=0x%x>", data_status);
+      }
+      break;
+      
+      // No break, fall through to list
     default: // datum::END_SESSION
       // End of session
       printf("(END SESSION)");

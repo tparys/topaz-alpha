@@ -49,9 +49,7 @@ namespace topaz
     /**
      * \brief Retrieve default device PIN
      */
-    byte_vector default_pin();
-    
-  protected:
+    atom default_pin();
     
     /**
      * \brief Combined I/O to TCG Opal drive
@@ -74,6 +72,8 @@ namespace topaz
      */
     void recv(datum &inbuf);
     
+  protected:
+    
     /**
      * \brief Probe Available TPM Security Protocols
      */
@@ -92,7 +92,7 @@ namespace topaz
     /**
      * \brief Start a TCG Opal session
      */
-    void session_start();
+    void session_start(uint64_t uid, atom pin = atom());
     
     /**
      * \brief Stop a TCG Opal session

@@ -29,9 +29,10 @@ namespace topaz
   typedef enum
   {
     OBJ_SESSION_MGR   = _UID_MAKE(   0x0,   0xff), // Session Manager UID
-    OBJ_ADMIN_SP      = _UID_MAKE( 0x205,    0x1), // Admin Security Provider
+    OBJ_SID           = _UID_MAKE(   0x9,    0x6), // ??
     OBJ_C_PIN_SID     = _UID_MAKE(   0xb,    0x1), // PIN Table
-    OBJ_C_PIN_MSID    = _UID_MAKE(   0xb, 0x8402)  // Manufactured Default PIN Table
+    OBJ_C_PIN_MSID    = _UID_MAKE(   0xb, 0x8402), // Manufactured Default PIN Table
+    OBJ_ADMIN_SP      = _UID_MAKE( 0x205,    0x1)  // Admin Security Provider
   } object_uid_t;
   
   typedef enum
@@ -39,7 +40,9 @@ namespace topaz
     MTH_PROPERTIES    = _UID_MAKE(0, 0xff01), // Query Communication Params
     MTH_START_SESSION = _UID_MAKE(0, 0xff02), // Open Session
     MTH_SYNC_SESSION  = _UID_MAKE(0, 0xff03), // Terminate Session
-    MTH_GET           = _UID_MAKE(6,   0x16)  // Get Table Data
+    MTH_REVERT_SP     = _UID_MAKE(6,   0x11), // RevertSP
+    MTH_GET           = _UID_MAKE(6,   0x16), // Get Table Data
+    MTH_REVERT        = _UID_MAKE(6,  0x202)  // Revert
   } method_uid_t;
   
 };

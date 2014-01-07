@@ -6,6 +6,7 @@
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
 #include <topaz/datum.h>
+#include <topaz/uid.h>
 using namespace std;
 
 int main(int argc, char **argv)
@@ -38,37 +39,29 @@ int main(int argc, char **argv)
   try
   {
     topaz::drive drive(argv[optind]);
-
-    // Try to retrieve the device's default PIN
-    topaz::byte_vector pin = drive.default_pin();
-    bool printable = true;
-    printf("Got Default PIN (%lu bytes):", pin.size());
-    for (size_t i = 0; i < pin.size(); i++)
-    {
-      if ((i % 16) == 0)
-      {
-	printf("\n");
-      }
-      printf(" %02X", pin[i]);
-      
-      if (!isprint(pin[i]))
-      {
-	printable = false;
-      }
-    }
+    topaz::datum call, ret;
+    
+    // C_PIN_MSID.Get[StartCol = C_PIN, EndCol = C_PIN]
+    call = topaz::datum();
+    call.object_uid()  = topaz::OBJ_C_PIN_MSID;
+    call.method_uid()  = topaz::MTH_GET;
+    call[0][0].name()  = topaz::atom((uint64_t)3); // Starting Table Column
+    call[0][0].value() = topaz::atom((uint64_t)3); // C_PIN
+    call[0][1].name()  = topaz::atom((uint64_t)4); // Ending Tabling Column
+    call[0][1].value() = topaz::atom((uint64_t)3); // C_PIN
+    drive.sendrecv(call, ret);
+    
+    // Default pin here
+    topaz::atom pin = ret[0][0].value();
+    printf("Default PIN: ");
+    pin.print();
     printf("\n");
     
-    // Is it printable?
-    if (printable)
-    {
-      printf("ASCII: ");
-      for (size_t i = 0; i < pin.size(); i++)
-      {
-	printf("%c", pin[i]);
-      }
-      printf("\n");
-    }
-    
+    // AdminSP.Revert[]
+    call = topaz::datum();
+    call.object_uid() = topaz::OBJ_ADMIN_SP;
+    call.method_uid() = topaz::MTH_REVERT;
+    drive.sendrecv(call, call);
   }
   catch (topaz::topaz_exception &e)
   {

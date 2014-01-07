@@ -64,7 +64,7 @@ drive::drive(char const *path)
   probe_level1();
   
   // Open up a session with the TPer
-  session_start();
+  session_start(OBJ_ADMIN_SP);
 }
 
 /**
@@ -79,7 +79,7 @@ drive::~drive()
 /**
  * \brief Retrieve default device PIN
  */
-byte_vector drive::default_pin()
+atom drive::default_pin()
 {
   // Gin up a Get Method
   datum call;
@@ -94,7 +94,7 @@ byte_vector drive::default_pin()
   sendrecv(call, call);
   
   // Return first element of nested array
-  return call[0][0].value().get_bytes();
+  return call[0][0].value();
 }
 
 /**
@@ -231,6 +231,13 @@ void drive::recv(datum &inbuf)
     printf("Opal RX: ");
     inbuf.print();
     printf("\n");
+  }
+  
+  // If a method call, verify return status
+  if ((inbuf.get_type() == datum::METHOD) &&
+      (inbuf.status() != datum::STA_SUCCESS))
+  {
+    throw topaz_exception("Nonzero status on method call (failed)");
   }
 }
 
@@ -497,16 +504,19 @@ void drive::probe_level1()
     if (name == "MaxComPacketSize")
     {
       max_com_pkt_size = val;
-      printf("  Max ComPkt Size is %lu (%lu blocks)\n",
-	     val, val / ATA_BLOCK_SIZE);
+      TOPAZ_DEBUG(2) printf("  Max ComPkt Size is %lu (%lu blocks)\n",
+			    val, val / ATA_BLOCK_SIZE);
     }
   }
 }
 
 /**
  * \brief Start a TCG Opal session
+ *
+ * @param uid Login Object
+ * @param pin Login PIN / password
  */
-void drive::session_start()
+void drive::session_start(uint64_t uid, atom pin)
 {
   // Debug
   TOPAZ_DEBUG(1) printf("Starting TPM Session\n");
@@ -515,9 +525,17 @@ void drive::session_start()
   datum call;
   call.object_uid() = OBJ_SESSION_MGR;
   call.method_uid() = MTH_START_SESSION;
-  call[0].value()   = atom((uint64_t)1);               // Host Session ID (left at one)
-  call[1].value()   = atom(OBJ_ADMIN_SP, true); // Admin SP
-  call[2].value()   = atom((uint64_t)1);               // Read/Write Session
+  call[0].value()   = atom((uint64_t)1);   // Host Session ID (left at one)
+  call[1].value()   = atom(uid, true);     // Admin SP
+  call[2].value()   = atom((uint64_t)1);   // Read/Write Session
+  if (pin.get_type() != atom::EMPTY)
+  {
+    // Login as specified user
+    call[3].name()  = atom((uint64_t)0);   // Named : Host Challenge
+    call[3].value() = pin;
+    call[4].name()  = atom((uint64_t)3);   // Named : Host Signing Authority
+    call[4].value() = atom(OBJ_SID, true);
+  }
   
   // Off it goes
   sendrecv(call, call);

@@ -64,6 +64,29 @@ namespace topaz
       TOK_END_TRANS   = 0xfc,
     } token_t;
     
+    // Enumerations of method status ID's
+    typedef enum
+    {
+      STA_SUCCESS               = 0x00,
+      STA_NOT_AUTHORIZED        = 0x01,
+      STA_OBSOLETE              = 0x02,
+      STA_SP_BUSY               = 0x03,
+      STA_SP_FAILED             = 0x04,
+      STA_SP_DISABLED           = 0x05,
+      STA_SP_FROZEN             = 0x06,
+      STA_NO_SESSIONS_AVAILABLE = 0x07,
+      STA_UNIQUENESS_CONFLICT   = 0x08,
+      STA_INSUFFICIENT_SPACE    = 0x09,
+      STA_INSUFFICIENT_ROWS     = 0x0A,
+      STA_INVALID_PARAMETER     = 0x0C,
+      STA_OBSOLETE2             = 0x0D,
+      STA_OBSOLETE3             = 0x0E,
+      STA_TPER_MALFUNCTION      = 0x0F,
+      STA_TRANSACTION_FAILURE   = 0x10,
+      STA_RESPONSE_OVERFLOW     = 0x11,
+      STA_AUTHORITY_LOCKED_OUT  = 0x12
+    } status_t;
+    
     /**
      * \brief Default Constructor
      */
@@ -149,6 +172,16 @@ namespace topaz
     uint64_t const &method_uid() const;
     
     /**
+     * \brief Query Value Method UID
+     */
+    status_t &status();
+    
+    /**
+     * \brief Query Value Method UID (const)
+     */
+    status_t const &status() const;
+    
+    /**
      * \brief Query List
      */
     datum_vector &list();
@@ -215,6 +248,7 @@ namespace topaz
     // Method call specific parameters
     uint64_t data_object_uid; // Object reference
     uint64_t data_method_uid; // Method reference
+    status_t data_status;     // Method call status code
     
     // Storage of other datums (lists / method calls)
     datum_vector data_list;
