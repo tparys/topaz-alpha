@@ -87,39 +87,34 @@ namespace topaz
     atom();
     
     /**
-     * \brief Unsigned Integer Constructor
-     *
-     * @param value Unsigned Integer to represent
-     * @param Value is Unique ID (integer encoded as binary)
-     */
-    atom(uint64_t value, bool is_uid = false);
-    
-    /**
-     * \brief Signed Integer Constructor
-     *
-     * @param value Integer to represent
-     */
-    atom(int64_t value);
-    
-    /**
-     * \brief Binary (Bytes) Constructor
-     *
-     * @param data Buffer to represent
-     * @param len  Length of buffer
-     */
-    atom(byte const *data, size_t len);
-    
-    /**
-     * \brief Binary (Bytes) Constructor
-     *
-     * @param data Container to represent
-     */
-    atom(byte_vector data);
-    
-    /**
      * \brief Destructor
      */
     ~atom();
+    
+    /**
+     * \brief Factory Method - Unsigned Int
+     */
+    static topaz::atom new_int(int64_t val);
+    
+    /**
+     * \brief Factory Method - Unsigned Int
+     */
+    static topaz::atom new_uint(uint64_t val);
+    
+    /**
+     * \brief Factory Method - Unique ID
+     */
+    static topaz::atom new_uid(uint64_t val);
+    
+    /**
+     * \brief Factory Method - Binary Data
+     */
+    static topaz::atom new_bin(byte const *data, size_t len);
+    
+    /**
+     * \brief Factory Method - Binary Data
+     */
+    static topaz::atom new_bin(byte_vector data);
     
     /**
      * \brief Equality Operator

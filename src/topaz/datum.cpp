@@ -162,10 +162,10 @@ size_t datum::encode_bytes(byte *data) const
       *data++ = datum::TOK_CALL;
       
       // Object UID
-      data += atom(data_object_uid, true).encode_bytes(data);
+      data += atom::new_uid(data_object_uid).encode_bytes(data);
       
       // Method UID
-      data += atom(data_method_uid, true).encode_bytes(data);
+      data += atom::new_uid(data_method_uid).encode_bytes(data);
       
       // Beginning of parameter list (arguments)
       *data++ = datum::TOK_START_LIST;
@@ -689,9 +689,9 @@ void datum::print() const
       
     case datum::METHOD:
       // Method Call
-      topaz::atom(data_object_uid, true).print();
+      atom::new_uid(data_object_uid).print();
       printf(".");
-      topaz::atom(data_method_uid, true).print();
+      atom::new_uid(data_method_uid).print();
       printf("[");
       for (i = 0; i < data_list.size(); i++)
       {

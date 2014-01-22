@@ -34,6 +34,11 @@ namespace topaz
     
   public:
     
+    typedef enum
+    {
+      
+    } lifecycle_t;
+    
     /**
      * \brief Topaz Hard Drive Constructor
      *
@@ -47,6 +52,30 @@ namespace topaz
     ~drive();
     
     /**
+     * \brief Combined I/O to TCG Opal drive
+     *
+     * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
+     */
+    void login_anon(uint64_t sp_uid);
+    
+    /**
+     * \brief Combined I/O to TCG Opal drive
+     *
+     * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
+     * @param user_uid 
+     */
+    void login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin);
+    
+    /**
+     * \brief Query Value from Specified Table
+     *
+     * @param tbl_uid Identifier of target table
+     * @param tbl_col Column number of data to retrieve (table specific)
+     * @return Queried parameter
+     */
+    atom query_table(uint64_t tbl_uid, uint64_t tbl_col);
+    
+    /**
      * \brief Retrieve default device PIN
      */
     atom default_pin();
@@ -54,7 +83,15 @@ namespace topaz
     /**
      * \brief Combined I/O to TCG Opal drive
      *
-     * @param outbuf Outbound data buffer
+     * @param data Read and write buffer for I/O
+     */
+    void sendrecv(datum &data);
+    
+    /**
+     * \brief Combined I/O to TCG Opal drive
+     *
+     * @param data_out Datum to write to drive
+     * @param data_in  Datum read from drive
      */
     void sendrecv(datum const &data_out, datum &data_in);
     
@@ -90,14 +127,9 @@ namespace topaz
     void probe_level1();
 
     /**
-     * \brief Start a TCG Opal session
+     * \brief End TPM session
      */
-    void session_start(uint64_t uid, atom pin = atom());
-    
-    /**
-     * \brief Stop a TCG Opal session
-     */
-    void session_end();
+    void logout();
     
     /**
      * \brief Probe TCG Opal Communication Properties
@@ -125,6 +157,8 @@ namespace topaz
     uint32_t com_id;
     uint64_t lba_align;
     uint64_t max_com_pkt_size;
+    unsigned admin_count;
+    unsigned user_count;
     
   };
   

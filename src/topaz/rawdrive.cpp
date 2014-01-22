@@ -424,17 +424,17 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   {
     // Command descriptor block
     printf("ATA Command:\n");
-    topaz_dump(cmd, 7);
+    dump(cmd, 7);
     
     // Command descriptor block
     printf("SCSI CDB:\n");
-    topaz_dump(cdb, sizeof(cdb));
+    dump(cdb, sizeof(cdb));
     
     // Data out?
     if (type == SG_DXFER_TO_DEV)
     {
       printf("Write Data:\n");
-      topaz_dump(data, bcount * ATA_BLOCK_SIZE);
+      dump(data, bcount * ATA_BLOCK_SIZE);
     }
   }
   
@@ -451,7 +451,7 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
     TOPAZ_DEBUG(4)
     {
       printf("Read Data:\n");
-      topaz_dump(data, bcount * ATA_BLOCK_SIZE);
+      dump(data, bcount * ATA_BLOCK_SIZE);
     }
   }
   
@@ -557,13 +557,13 @@ void rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
   {
     // Command descriptor block
     printf("SCSI CDB:\n");
-    topaz_dump(cdb, sizeof(cdb));
+    dump(cdb, sizeof(cdb));
     
     // Data out?
     if (type == SG_DXFER_TO_DEV)
     {
       printf("Write Data:\n");
-      topaz_dump(data, bcount * ATA_BLOCK_SIZE);
+      dump(data, bcount * ATA_BLOCK_SIZE);
     }
   }
   
@@ -580,7 +580,7 @@ void rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
     TOPAZ_DEBUG(4)
     {
       printf("Read Data:\n");
-      topaz_dump(data, bcount * ATA_BLOCK_SIZE);
+      dump(data, bcount * ATA_BLOCK_SIZE);
     }
   }
   

@@ -62,9 +62,6 @@ drive::drive(char const *path)
   
   // Query Opal Comm Properties
   probe_level1();
-  
-  // Open up a session with the TPer
-  session_start(OBJ_ADMIN_SP);
 }
 
 /**
@@ -73,7 +70,107 @@ drive::drive(char const *path)
 drive::~drive()
 {
   // Cleanup
-  session_end();
+  logout();
+}
+
+/**
+ * \brief Combined I/O to TCG Opal drive
+ *
+ * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
+ */
+void drive::login_anon(uint64_t sp_uid)
+{
+  // If present, end any session in progress
+  logout();
+  
+  // Method Call - SessionMgr.StartSession[]
+  datum io;
+  io.object_uid() = SESSION_MGR;
+  io.method_uid() = START_SESSION;
+  
+  // Required Arguments (Simple Atoms)
+  io[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
+  io[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
+  io[2].value()   = atom::new_uint(1);       // Read/Write Session
+  
+  // Off it goes
+  sendrecv(io, io);
+  
+  // Host session ID
+  host_session_id = io[0].value().get_uint();
+  
+  // TPer session ID
+  tper_session_id = io[1].value().get_uint();
+  
+  // Debug
+  TOPAZ_DEBUG(1) printf("Anonymous Session %lx:%lx Started\n",
+			tper_session_id, host_session_id);
+}
+
+/**
+ * \brief Combined I/O to TCG Opal drive
+ *
+ * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
+ * @param user_uid 
+ */
+void drive::login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin)
+{
+  // If present, end any session in progress
+  logout();
+  
+  // Method Call - SessionMgr.StartSession[]
+  datum io;
+  io.object_uid() = SESSION_MGR;
+  io.method_uid() = START_SESSION;
+  
+  // Required Arguments (Simple Atoms)
+  io[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
+  io[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
+  io[2].value()   = atom::new_uint(1);       // Read/Write Session
+  
+  // Optional Arguments (Named Atoms)
+  io[3].name()    = atom::new_uint(0);       // Host Challenge
+  io[3].value()   = atom::new_bin(pin);
+  io[4].name()    = atom::new_uint(3);       // Host Signing Authority (User)
+  io[4].value()   = atom::new_uid(auth_uid);
+  
+  // Off it goes
+  sendrecv(io, io);
+  
+  // Host session ID
+  host_session_id = io[0].value().get_uint();
+  
+  // TPer session ID
+  tper_session_id = io[1].value().get_uint();
+  
+  // Debug
+  TOPAZ_DEBUG(1) printf("Authorized Session %lx:%lx Started\n",
+			tper_session_id, host_session_id);
+}
+
+/**
+ * \brief Query Value from Specified Table
+ *
+ * @param tbl_uid Identifier of target table
+ * @param tbl_col Column number of data to retrieve (table specific)
+ * @return Queried parameter
+ */
+atom drive::query_table(uint64_t tbl_uid, uint64_t tbl_col)
+{
+  // Method Call - UID.Get[]
+  datum io;
+  io.object_uid()  = C_PIN_MSID;
+  io.method_uid()  = GET;
+  io[0][0].name()  = atom::new_uint(3);       // Starting Table Column
+  io[0][0].value() = atom::new_uint(tbl_col);
+  io[0][1].name()  = atom::new_uint(4);       // Ending Tabling Column
+  io[0][1].value() = atom::new_uint(tbl_col);
+  
+  // Off it goes
+  sendrecv(io, io);
+  
+  // Return first element of nested array
+  return io[0][0].value();
 }
 
 /**
@@ -81,37 +178,35 @@ drive::~drive()
  */
 atom drive::default_pin()
 {
-  // Gin up a Get Method
-  datum call;
-  call.object_uid()  = OBJ_C_PIN_MSID;
-  call.method_uid()  = MTH_GET;
-  call[0][0].name()  = atom((uint64_t)3); // Starting Table Column
-  call[0][0].value() = atom((uint64_t)3); // C_PIN
-  call[0][1].name()  = atom((uint64_t)4); // Ending Tabling Column
-  call[0][1].value() = atom((uint64_t)3); // C_PIN
-  
-  // Off it goes
-  sendrecv(call, call);
-  
-  // Return first element of nested array
-  return call[0][0].value();
+  return query_table(C_PIN_MSID, 3);
 }
 
 /**
  * \brief Combined I/O to TCG Opal drive
  *
- * @param outbuf Outbound data buffer
+ * @param data Read and write buffer for I/O
  */
-void drive::sendrecv(datum const &outbuf, datum &inbuf)
+void drive::sendrecv(datum &data)
+{
+  sendrecv(data, data);
+}
+
+/**
+ * \brief Combined I/O to TCG Opal drive
+ *
+ * @param data_out Datum to write to drive
+ * @param data_in  Datum read from drive
+ */
+void drive::sendrecv(datum const &data_out, datum &data_in)
 {
   // Send the command
-  send(outbuf);
+  send(data_out);
   
   // Give the drive a moment to work
   usleep(1000);
   
   // Retrieve response
-  recv(inbuf);
+  recv(data_in);
 }
 
 /**
@@ -173,9 +268,17 @@ void drive::send(datum const &outbuf)
   header->pkt_hdr.length = htobe32(pkt_size);
   header->sub_hdr.length = htobe32(sub_size);
   
-  // Include session ID's on all packets not invoking Session Manager
-  if ((outbuf.get_type() != datum::METHOD) ||
-      (outbuf.object_uid() != OBJ_SESSION_MGR))
+  // Method calls to session manager don't need a session
+  if ((outbuf.get_type() == datum::METHOD) &&
+      (outbuf.object_uid() == SESSION_MGR))
+  {
+    // Leave TPer & Host session IDs at 0
+  }
+  else if (host_session_id == 0) // All others require it ...
+  {
+    throw topaz_exception("Failed send(): No TPer Session");
+  }
+  else // Include current TPer & Host session IDs
   {
     header->pkt_hdr.tper_session_id = htobe32(tper_session_id);
     header->pkt_hdr.host_session_id = htobe32(host_session_id);
@@ -419,16 +522,18 @@ void drive::probe_level0()
     else if (code == FEAT_OPAL2)
     {
       feat_opal2_t *opal2 = (feat_opal2_t*)feat_data;
-      has_opal2 = true;
       com_id = be16toh(opal2->comid_base);
+      has_opal2 = true;
+      admin_count = be16toh(opal2->admin_count);
+      user_count = be16toh(opal2->user_count);
       TOPAZ_DEBUG(2)
       { 
 	printf("Opal SSC 2.0\n");
-	printf("    Base ComID: %u\n",            com_id);
-	printf("    Number of ComIDs: %d\n",      be16toh(opal2->comid_count));
-	printf("    Range cross BHV: %d\n",       0x01 & (opal2->range_bhv));
-	printf("    Max SP Admin: %d\n",          be16toh(opal2->admin_count));
-	printf("    Max SP User: %d\n",           be16toh(opal2->user_count));
+	printf("    Base ComID: %u\n",       com_id);
+	printf("    Number of ComIDs: %d\n", be16toh(opal2->comid_count));
+	printf("    Range cross BHV: %d\n",  0x01 & (opal2->range_bhv));
+	printf("    Max SP Admin: %d\n",     admin_count);
+	printf("    Max SP User: %d\n",      user_count);
 	printf("    C_PIN_SID Initial: ");
 	if (opal2->init_pin == 0x00)
 	{
@@ -480,15 +585,15 @@ void drive::probe_level1()
   TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
   
   // Gin up a Properties call on Session Manager
-  datum call;
-  call.object_uid() = OBJ_SESSION_MGR;
-  call.method_uid() = MTH_PROPERTIES;
+  datum io;
+  io.object_uid() = SESSION_MGR;
+  io.method_uid() = PROPERTIES;
   
   // Query communication properties
-  sendrecv(call, call);
+  sendrecv(io, io);
   
   // Comm props stored in list (first element) of named items
-  datum_vector const &props = call[0].list();
+  datum_vector const &props = io[0].list();
   TOPAZ_DEBUG(2) printf("  Received %lu items\n", props.size());
   
   for (size_t i = 0; i < props.size(); i++)
@@ -511,60 +616,26 @@ void drive::probe_level1()
 }
 
 /**
- * \brief Start a TCG Opal session
- *
- * @param uid Login Object
- * @param pin Login PIN / password
+ * \brief End a session with drive TPM
  */
-void drive::session_start(uint64_t uid, atom pin)
+void drive::logout()
 {
-  // Debug
-  TOPAZ_DEBUG(1) printf("Starting TPM Session\n");
-  
-  // Gin up a StartSession call on Session Manager
-  datum call;
-  call.object_uid() = OBJ_SESSION_MGR;
-  call.method_uid() = MTH_START_SESSION;
-  call[0].value()   = atom((uint64_t)1);   // Host Session ID (left at one)
-  call[1].value()   = atom(uid, true);     // Admin SP
-  call[2].value()   = atom((uint64_t)1);   // Read/Write Session
-  if (pin.get_type() != atom::EMPTY)
+  if (tper_session_id)
   {
-    // Login as specified user
-    call[3].name()  = atom((uint64_t)0);   // Named : Host Challenge
-    call[3].value() = pin;
-    call[4].name()  = atom((uint64_t)3);   // Named : Host Signing Authority
-    call[4].value() = atom(OBJ_SID, true);
+    // Debug
+    TOPAZ_DEBUG(1) printf("Stopping TPM Session %lx:%lx\n",
+			  tper_session_id, host_session_id);
+    
+    // Gin up an end of session
+    datum eos(datum::END_SESSION);
+    
+    // Off it goes
+    sendrecv(eos);
+    
+    // Mark state
+    tper_session_id = 0;
+    host_session_id = 0;
   }
-  
-  // Off it goes
-  sendrecv(call, call);
-  
-  // Host session ID
-  host_session_id = call[0].value().get_uint();
-  
-  // TPer session ID
-  tper_session_id = call[1].value().get_uint();
-  
-  // Debug
-  TOPAZ_DEBUG(1) printf("Session %lx:%lx Started\n",
-			tper_session_id, host_session_id);
-}
-
-/**
- * \brief Stop a TCG Opal session
- */
-void drive::session_end()
-{
-  // Debug
-  TOPAZ_DEBUG(1) printf("Stopping TPM Session %lx:%lx\n",
-			tper_session_id, host_session_id);
-  
-  // Gin up an end of session
-  datum eos(datum::END_SESSION);
-  
-  // Off it goes
-  sendrecv(eos, eos);
 }
 
 /**

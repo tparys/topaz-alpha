@@ -32,30 +32,20 @@ int main(int argc, char **argv)
   // Check remaining arguments
   if ((argc - optind) <= 0)
   {
-    cerr << "Usage: test /dev/sdX" << endl;
+    cerr << "Usage: tp_revert /dev/sdX" << endl;
     return -1;
   }
  
   // Open the device
   try
   {
-    datum io;
-    drive target(argv[optind]);
+    drive drive(argv[optind]);
+    datum call;
     
-    target.login_anon(ADMIN_SP);
-    //atom pin = target.default_pin();
-    //target.login(ADMIN_SP, SID, pin.get_bytes());
-    
-    // Method Call - C_PIN_SID.Get[]
-    io.object_uid() = SP_INFO;
-    io.method_uid() = GET;
-    io[0] = datum(datum::LIST);
-    target.sendrecv(io);
-    
-    io.print();
-    printf("\n");
-   
-    
+    // AdminSP.Revert[]
+    call.object_uid() = ADMIN_SP;
+    call.method_uid() = REVERT;
+    drive.sendrecv(call, call);
   }
   catch (topaz_exception &e)
   {

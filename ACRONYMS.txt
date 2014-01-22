@@ -9,6 +9,10 @@ ATA: AT Attachment
 CDB: Command Descriptor Block
   A SCSI command bl1ock (may contain SAT translated ATA commands).
 
+C_PIN: Current PIN
+  A table defined within the Opal protocol specifying credentials for a defined
+  user or authority.
+
 IEEE: Institute of Electrical and Electronics Engineers
   International standards body for many computer interfaces.
 
@@ -18,6 +22,9 @@ LBA: Logical Block Addressing
 
 P1667:
   IEEE standard for authenticating to storage devices.
+
+MSID: Manufactured [Default] SID
+  The factory default state of the drive owner credentials (SID).
 
 OFS: Original Factory State
 
@@ -38,6 +45,8 @@ SAT: SCSI / ATA Translation
 SCSI: Small Computer System Interface
   An interface standard for talking to storage media over a parallel bus.
 
+SD: Storage Device
+
 SGIO: SCSI Generic I/O
   A Linux system system call allowing a user to issue SCSI commands, or ATA
   commands through the SAT translation layer, to a target hard drive.
@@ -47,6 +56,7 @@ SD: Storage Device
 
 SID: Security Identifier
   From spec: "The authority that represents the TPer owner."
+  In English: The owner of the drive
 
 SP: Security Provider
   A security function of a TPM, such as locking or authentication.

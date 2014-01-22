@@ -18,6 +18,8 @@
  */
 
 #include <cstdio>
+#include <topaz/debug.h>
+using namespace topaz;
 
 /* Set to verbosity level (0 = none) */
 int topaz_debug = 0;
@@ -30,7 +32,7 @@ int topaz_debug = 0;
  * @param data Data buffer to display
  * @param len  Length of data buffer in bytes
  */
-void topaz_dump(void const *data, int len)
+void topaz::dump(void const *data, int len)
 {
   unsigned char const *cdata = (unsigned char*)data;
   int i, j, chunk = 16;

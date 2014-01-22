@@ -26,14 +26,17 @@ extern int topaz_debug;
 /* helper debug macro */
 #define TOPAZ_DEBUG(x) if (topaz_debug >= (x))
 
-/**
- * topaz_dump
- *
- * Dump binary data to console
- *
- * @param data Data buffer to display
- * @param len  Length of data buffer in bytes
- */
-void topaz_dump(void const *data, int len);
+namespace topaz
+{
+  /**
+   * topaz_dump
+   *
+   * Dump binary data to console
+   *
+   * @param data Data buffer to display
+   * @param len  Length of data buffer in bytes
+   */
+  void dump(void const *data, int len);
+};
 
 #endif

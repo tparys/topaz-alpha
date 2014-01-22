@@ -42,85 +42,37 @@ atom::atom()
 }
 
 /**
- * \brief Unsigned Integer Constructor
- *
- * @param value Unsigned Integer to represent
- * @param Value is Unique ID (integer encoded as binary)
+ * \brief Destructor
  */
-atom::atom(uint64_t value, bool is_uid)
+atom::~atom()
 {
-  union
-  {
-    uint64_t flip;
-    byte     raw[8];
-  };
-  
-  // Initialize
-  data_type = atom::UINT;
-  uint_val = value;
-  
-  // Unique ID's (UIDs) are quirky. They are 64 bit integers, but get
-  // encoded like a byte sequence, of a single length 8 (short).
-  // This is simultaneously simpler, and infuriating ...
-  if (is_uid)
-  {
-    // Stored as binary
-    data_type = atom::BYTES;
-    pick_encoding(8);
-    
-    // Flip integer big endian
-    flip = htobe64(value);
-    
-    // Now binary
-    bytes.resize(8);
-    for (size_t i = 0; i < 8; i++)
-    {
-      bytes[i] = raw[i];
-    }
-  }
-  // Really small values fit into a single byte
-  else if (value < 0x40)
-  {
-    // Tiny atom (Data in same byte as header)
-    data_enc = atom::TINY;
-    int_skip = 0;
-  }
-  else // Determine how many bytes are really needed
-  {
-    // Byteflip to big endian
-    flip = htobe64(value);
-    
-    // Drop unneeded leading zeroes (up to 7)
-    for (int_skip = 0; (int_skip < 8) && (raw[int_skip] == 0x00); int_skip++) {}
-    
-    // All integers less than 16 bytes long (128 bits) will fit in this ...
-    data_enc = atom::SHORT;
-  }
+  // Nada
 }
 
+//////////////////////////////////////////////////////////////////
+
 /**
- * \brief Integer Constructor
- *
- * @param value Integer to represent
+ * \brief Factory Method - Signed Int
  */
-atom::atom(int64_t value)
+atom atom::new_int(int64_t value)
 {
   union
   {
     uint64_t flip;
     byte     raw[8];
   };
+  atom ret;
   
-  // Initialize
-  data_type = atom::INT;
-  int_val = value;
+  // Intitialize
+  ret.data_type = atom::INT;
+  ret.int_val = value;
   
   // Really small values fit into a single byte
   if ((value < 0x20) && (value >= -0x20))
   {
     // Tiny atom (Data in same byte as header)
-    data_enc = atom::TINY;
-    int_skip = 0;
+    ret.data_enc = atom::TINY;
+    ret.int_skip = 0;
   }
   else // Determine how many bytes are really needed
   {
@@ -133,68 +85,141 @@ atom::atom(int64_t value)
       // Negative condition is to drop 0xff bytes,
       // provided the remaining value is still negative
       // (most significant remaining bit is a 1)
-      for (int_skip = 0; (int_skip < 8) && (raw[int_skip] == 0xff) &&
-	     ((raw[int_skip + 1] & 0x80) == 0x80); int_skip++) {}
+      for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0xff) &&
+	     ((raw[ret.int_skip + 1] & 0x80) == 0x80); ret.int_skip++) {}
     }
     else
     {
       // Positive condition is to drop 0x00 bytes,
       // provided the remaining value is still positive
       // (most significant remaining bit is a 0)
-      for (int_skip = 0; (int_skip < 8) && (raw[int_skip] == 0x00) &&
-	     ((raw[int_skip + 1] & 0x80) == 0x00); int_skip++) {}
+      for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00) &&
+	     ((raw[ret.int_skip + 1] & 0x80) == 0x00); ret.int_skip++) {}
     }
     
     // All integers less than 16 bytes long (128 bits) will fit in this ...
-    data_enc = atom::SHORT;
+    ret.data_enc = atom::SHORT;
   }
+  
+  return ret;
 }
 
 /**
- * \brief Binary (Bytes) Constructor
- *
- * @param data Buffer to represent
- * @param len  Length of buffer
+ * \brief Factory Method - Unsigned Int
  */
-atom::atom(byte const *data, size_t len)
+atom atom::new_uint(uint64_t value)
 {
+  union
+  {
+    uint64_t flip;
+    byte     raw[8];
+  };
+  atom ret;
+  
+  // Intitialize
+  ret.data_type = atom::UINT;
+  ret.uint_val = value;
+  
+  // Really small values fit into a single byte
+  if (value < 0x40)
+  {
+    // Tiny atom (Data in same byte as header)
+    ret.data_enc = atom::TINY;
+    ret.int_skip = 0;
+  }
+  else // Determine how many bytes are really needed
+  {
+    // Byteflip to big endian
+    flip = htobe64(value);
+    
+    // Drop unneeded leading zeroes (up to 7)
+    for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00);
+	 ret.int_skip++) {}
+    
+    // All integers less than 16 bytes long (128 bits) will fit in this ...
+    ret.data_enc = atom::SHORT;
+  }
+  
+  return ret;
+}
+
+/**
+ * \brief Factory Method - Unique ID
+ */
+atom atom::new_uid(uint64_t value)
+{
+  union
+  {
+    uint64_t flip;
+    byte     raw[8];
+  };
+  atom ret;
+  
+  // Unique ID's (UIDs) are quirky. They are 64 bit integers, but get
+  // encoded like a byte sequence, of a single length 8 (short).
+  // This is simultaneously simpler, and infuriating ...
+  
+  // Intitialize
+  ret.data_type = atom::UINT;
+  ret.uint_val = value;
+  
+  // Stored as binary
+  ret.data_type = atom::BYTES;
+  ret.data_enc = atom::SHORT;
+  
+  // Flip integer big endian
+  flip = htobe64(value);
+  
+  // Now binary
+  ret.bytes.resize(8);
+  for (size_t i = 0; i < 8; i++)
+  {
+    ret.bytes[i] = raw[i];
+  }
+    
+  return ret;
+}
+
+/**
+ * \brief Factory Method - Binary Data
+ */
+atom atom::new_bin(byte const *data, size_t len)
+{
+  atom ret;
+  
   // Intialize
-  data_type = atom::BYTES;
+  ret.data_type = atom::BYTES;
   
   // Pick data encoding
-  pick_encoding(len);
+  ret.pick_encoding(len);
   
   // Copy data over
-  bytes.resize(len);
+  ret.bytes.resize(len);
   for (size_t i = 0; i < len; i++)
   {
-    bytes[i] = data[i];
+    ret.bytes[i] = data[i];
   }
+  
+  return ret;
 }
 
 /**
- * \brief Binary (Bytes) Constructor
- *
- * @param data Container to represent
+ * \brief Factory Method - Binary Data
  */
-atom::atom(byte_vector data)
+atom atom::new_bin(byte_vector data)
 {
+  atom ret;
+  
   // Intialize
-  data_type = atom::BYTES;
+  ret.data_type = atom::BYTES;
   
   // Pick data encoding
-  pick_encoding(data.size());
+  ret.pick_encoding(data.size());
   
   // Copy data over
-  bytes = data;
-}
-
-/**
- * \brief Destructor
- */
-atom::~atom()
-{
-  // Nada
+  ret.bytes = data;
+  
+  return ret;
 }
 
 /**
@@ -474,6 +499,7 @@ size_t atom::decode_bytes(byte const *data, size_t len)
   }
   else // Reserved, or non-atom token (0xe4 - 0xfe)
   {
+    printf("***** Bad Char - %x *****\n", data[0]);
     throw topaz_exception("Cannot parse atom (invalid token)");
   }
   

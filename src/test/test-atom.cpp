@@ -3,25 +3,26 @@
 #include <stdint.h>
 #include <topaz/atom.h>
 using namespace std;
+using namespace topaz;
 
 // Global, eh ....
 int test_count = 0;
 
 // Convert atom type to string
-char const *atom_type_to_string(topaz::atom::type_t type)
+char const *atom_type_to_string(atom::type_t type)
 {
   switch (type)
   {
-    case topaz::atom::EMPTY:
+    case atom::EMPTY:
       return "Empty";
       break;
-    case topaz::atom::UINT:
+    case atom::UINT:
       return "Unsigned Integer";
       break;
-    case topaz::atom::INT:
+    case atom::INT:
       return "Signed Integer";
       break;
-    case topaz::atom::BYTES:
+    case atom::BYTES:
       return "Binary Data";
       break;
     default:
@@ -31,23 +32,23 @@ char const *atom_type_to_string(topaz::atom::type_t type)
 }
 
 // Convert encoding size to string
-char const *atom_enc_to_string(topaz::atom::enc_t enc)
+char const *atom_enc_to_string(atom::enc_t enc)
 {
   switch (enc)
   {
-    case topaz::atom::NONE:
+    case atom::NONE:
       return "N/A";
       break;
-    case topaz::atom::TINY:
+    case atom::TINY:
       return "Tiny";
       break;
-    case topaz::atom::SHORT:
+    case atom::SHORT:
       return "Short";
       break;
-    case topaz::atom::MEDIUM:
+    case atom::MEDIUM:
       return "Medium";
       break;
-    case topaz::atom::LONG:
+    case atom::LONG:
       return "LONG";
       break;
     default:
@@ -56,7 +57,7 @@ char const *atom_enc_to_string(topaz::atom::enc_t enc)
   }
 }
 
-void dump(topaz::byte_vector test_bytes)
+void dump(byte_vector test_bytes)
 {
   size_t i;
   printf("Encoded Data: %lu bytes\n", test_bytes.size());
@@ -72,12 +73,12 @@ void dump(topaz::byte_vector test_bytes)
 }
 
 // Verify data encoding
-void check(topaz::atom &test, topaz::atom::type_t type, topaz::atom::enc_t enc, size_t size)
+void check(atom test, atom::type_t type, atom::enc_t enc, size_t size)
 {
-  topaz::atom::type_t type_found;
-  topaz::atom::enc_t enc_found;
-  topaz::byte_vector test_bytes = test.encode_vector();
-  topaz::atom copy;
+  atom::type_t type_found;
+  atom::enc_t enc_found;
+  byte_vector test_bytes = test.encode_vector();
+  atom copy;
   
   // Dump
   printf("Atom: ");
@@ -124,35 +125,27 @@ void check(topaz::atom &test, topaz::atom::type_t type, topaz::atom::enc_t enc, 
   test_count++;
 }
 
-void test_unsigned(topaz::atom::type_t type, topaz::atom::enc_t enc, size_t size, uint64_t val)
+void test_unsigned(atom::type_t type, atom::enc_t enc, size_t size, uint64_t val)
 {
   // Debug
-  printf("\nUnsigned Integer: %llu (0x%llx)\n",
-	 (long long unsigned)val, (long long unsigned)val);
-  
-  // Encode
-  topaz::atom first(val);
+  printf("\nUnsigned Integer: %lu (0x%lx)\n", val, val);
   
   // Check
-  check(first, type, enc, size);
+  check(atom::new_uint(val), type, enc, size);
 }
 
-void test_signed(topaz::atom::type_t type, topaz::atom::enc_t enc, size_t size, int64_t val)
+void test_signed(atom::type_t type, atom::enc_t enc, size_t size, int64_t val)
 {
   // Debug
-  printf("\nSigned Integer: %lld (0x%llx)\n",
-	 (long long)val, (long long unsigned)val);
-  
-  // Encode
-  topaz::atom first(val);
+  printf("\nSigned Integer: %ld (0x%lx)\n", val, val);
   
   // Check
-  check(first, type, enc, size);
+  check(atom::new_int(val), type, enc, size);
 }
 
-void test_binary(topaz::atom::enc_t enc, size_t size)
+void test_binary(atom::enc_t enc, size_t size)
 {
-  topaz::byte_vector raw;
+  byte_vector raw;
   
   // Initialize
   raw.reserve(size);
@@ -164,11 +157,8 @@ void test_binary(topaz::atom::enc_t enc, size_t size)
   // Debug
   printf("\nBinary Data: %u bytes\n", (unsigned int)size);
   
-  // Encode
-  topaz::atom first(raw);
-  
   // Check
-  check(first, topaz::atom::BYTES, enc, size);
+  check(atom::new_bin(raw), atom::BYTES, enc, size);
 }
 
 
@@ -178,16 +168,16 @@ void test_uid(uint64_t val)
   printf("\nUnique ID: 0x%lx\n", val);
   
   // Encode
-  topaz::atom first(val, true);
+  atom first = atom::new_uid(val);
   
   // Check
-  check(first, topaz::atom::BYTES, topaz::atom::SHORT, 8);
+  check(first, atom::BYTES, atom::SHORT, 8);
 
   // Serialize to binary
-  topaz::byte_vector encoded = first.encode_vector();
+  byte_vector encoded = first.encode_vector();
   
   // Deserialize
-  topaz::atom second;
+  atom second;
   second.decode_vector(encoded);
   
   // Verify
@@ -206,19 +196,19 @@ int main()
   //
   
   // Trivial
-  test_unsigned(topaz::atom::UINT, topaz::atom::TINY, 1, 0);
+  test_unsigned(atom::UINT, atom::TINY, 1, 0);
   
   // Max Tiny Atom
-  test_unsigned(topaz::atom::UINT, topaz::atom::TINY, 1, 0x3f);
+  test_unsigned(atom::UINT, atom::TINY, 1, 0x3f);
   
   // Min Short
-  test_unsigned(topaz::atom::UINT, topaz::atom::SHORT, 1, 0x40);
+  test_unsigned(atom::UINT, atom::SHORT, 1, 0x40);
   
   // Variable byte encoding
   for (uint64_t val = 0x100, i = 1; i < 8; i++, val <<= 8)
   {
-    test_unsigned(topaz::atom::UINT, topaz::atom::SHORT, i    , val - 1);
-    test_unsigned(topaz::atom::UINT, topaz::atom::SHORT, i + 1, val);
+    test_unsigned(atom::UINT, atom::SHORT, i    , val - 1);
+    test_unsigned(atom::UINT, atom::SHORT, i + 1, val);
   }
   
   //////////////////////////////////////////////////////////////////////////////
@@ -226,26 +216,26 @@ int main()
   //
   
   // Trivial
-  test_signed(topaz::atom::INT, topaz::atom::TINY, 1, 0);
+  test_signed(atom::INT, atom::TINY, 1, 0);
   
   // Max Tiny Atom
-  test_signed(topaz::atom::INT, topaz::atom::TINY, 1, 0x1f);
-  test_signed(topaz::atom::INT, topaz::atom::TINY, 1, -0x20);
+  test_signed(atom::INT, atom::TINY, 1, 0x1f);
+  test_signed(atom::INT, atom::TINY, 1, -0x20);
   
   // Min Short
-  test_signed(topaz::atom::INT, topaz::atom::SHORT, 1, 0x20);
-  test_signed(topaz::atom::INT, topaz::atom::SHORT, 1, -0x21);
+  test_signed(atom::INT, atom::SHORT, 1, 0x20);
+  test_signed(atom::INT, atom::SHORT, 1, -0x21);
   
   // Variable byte encoding
   for (int64_t val = 0x80, i = 1; i < 8; i++, val <<= 8)
   {
     // Positive encoding
-    test_signed(topaz::atom::INT, topaz::atom::SHORT, i    , val - 1);
-    test_signed(topaz::atom::INT, topaz::atom::SHORT, i + 1, val);
+    test_signed(atom::INT, atom::SHORT, i    , val - 1);
+    test_signed(atom::INT, atom::SHORT, i + 1, val);
 
     // Negative encoding
-    test_signed(topaz::atom::INT, topaz::atom::SHORT, i    , (0 - val));
-    test_signed(topaz::atom::INT, topaz::atom::SHORT, i + 1, (0 - val) - 1);
+    test_signed(atom::INT, atom::SHORT, i    , (0 - val));
+    test_signed(atom::INT, atom::SHORT, i + 1, (0 - val) - 1);
   }
   
   //////////////////////////////////////////////////////////////////////////////
@@ -253,22 +243,22 @@ int main()
   //
   
   // Min Short
-  test_binary(topaz::atom::SHORT, 0);
+  test_binary(atom::SHORT, 0);
   
   // Max Short
-  test_binary(topaz::atom::SHORT, 0xf);
+  test_binary(atom::SHORT, 0xf);
   
   // Min Medium
-  test_binary(topaz::atom::MEDIUM, 0x10);
+  test_binary(atom::MEDIUM, 0x10);
   
   // Max Medium
-  test_binary(topaz::atom::MEDIUM, 0x7ff);
+  test_binary(atom::MEDIUM, 0x7ff);
   
   // Min Long
-  test_binary(topaz::atom::LONG, 0x800);
+  test_binary(atom::LONG, 0x800);
   
   // Max Long
-  test_binary(topaz::atom::LONG, 0xffffff);
+  test_binary(atom::LONG, 0xffffff);
   
   //////////////////////////////////////////////////////////////////////////////
   // Misc Types
@@ -279,8 +269,8 @@ int main()
   
   // Empty Atom
   printf("\n");
-  topaz::atom empty;
-  check(empty, topaz::atom::EMPTY, topaz::atom::NONE, 1);
+  atom empty;
+  check(empty, atom::EMPTY, atom::NONE, 1);
   
   printf("\n******** %d Tests Passed ********\n\n", test_count);
   
