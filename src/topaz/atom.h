@@ -112,6 +112,11 @@ namespace topaz
     static topaz::atom new_bin(byte const *data, size_t len);
     
     /**
+     * \brief Factory Method - Binary Data (C String)
+     */
+    static topaz::atom new_bin(char const *str);
+    
+    /**
      * \brief Factory Method - Binary Data
      */
     static topaz::atom new_bin(byte_vector data);

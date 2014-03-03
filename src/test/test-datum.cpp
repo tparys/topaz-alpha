@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <topaz/atom.h>
 #include <topaz/datum.h>
+#include <topaz/exceptions.h>
 #include <topaz/uid.h>
 using namespace std;
 using namespace topaz;
@@ -99,29 +100,39 @@ void check(datum &test, datum::type_t type, size_t size)
 
 int main()
 {
-  datum test;
   
-  // Atom storage (UID)
-  test = datum();
-  test.value() = atom::new_int(10);
-  check(test, datum::ATOM, 1);
-  
-  // Named Value (UID)
-  test.name() = atom::new_int(20);
-  check(test, datum::NAMED, 4);
-  
-  // List storage
-  test = datum();
-  test[0].value() = atom::new_int(10);
-  check(test, datum::LIST, 3);
-  
-  // Method call
-  test = datum();
-  test.object_uid() = SESSION_MGR;
-  test.method_uid() = PROPERTIES;
-  check(test, datum::METHOD, 27);
-  
-  printf("\n******** %d Tests Passed ********\n\n", test_count);
+  try
+  {
+    datum test;
+    
+    // Atom storage (UID)
+    test = datum();
+    test.value() = atom::new_int(10);
+    check(test, datum::ATOM, 1);
+    
+    // Named Value (UID)
+    test = datum();
+    test.name() = atom::new_int(20);
+    test.named_value() = atom::new_int(20);
+    check(test, datum::NAMED, 4);
+    
+    // List storage
+    test = datum();
+    test[0].value() = atom::new_int(10);
+    check(test, datum::LIST, 3);
+    
+    // Method call
+    test = datum();
+    test.object_uid() = SESSION_MGR;
+    test.method_uid() = PROPERTIES;
+    check(test, datum::METHOD, 27);
+    
+    printf("\n******** %d Tests Passed ********\n\n", test_count);
+  }
+  catch (topaz_exception &e)
+  {
+    printf("Exception raised: %s\n", e.what());
+  }
   
   return 0;
 }

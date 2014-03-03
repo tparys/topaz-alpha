@@ -34,11 +34,6 @@ namespace topaz
     
   public:
     
-    typedef enum
-    {
-      
-    } lifecycle_t;
-    
     /**
      * \brief Topaz Hard Drive Constructor
      *
@@ -73,7 +68,16 @@ namespace topaz
      * @param tbl_col Column number of data to retrieve (table specific)
      * @return Queried parameter
      */
-    atom query_table(uint64_t tbl_uid, uint64_t tbl_col);
+    atom table_get(uint64_t tbl_uid, uint64_t tbl_col);
+    
+    /**
+     * \brief Query Value from Specified Table
+     *
+     * @param tbl_uid Identifier of target table
+     * @param tbl_col Column number of data to retrieve (table specific)
+     * @param val Value to set in column
+     */
+    void table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val);
     
     /**
      * \brief Retrieve default device PIN

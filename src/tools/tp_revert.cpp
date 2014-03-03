@@ -39,13 +39,27 @@ int main(int argc, char **argv)
   // Open the device
   try
   {
-    drive drive(argv[optind]);
-    datum call;
+    datum io;
+    drive target(argv[optind]);
     
-    // AdminSP.Revert[]
-    call.object_uid() = ADMIN_SP;
-    call.method_uid() = REVERT;
-    drive.sendrecv(call, call);
+    target.login_anon(ADMIN_SP);
+    
+    atom mpin = target.default_pin();
+    atom tpin = atom::new_bin("hello world");
+    
+    if (1)
+    {
+      target.login(ADMIN_SP, SID, mpin.get_bytes());
+    }
+    else
+    {
+      target.login_anon(ADMIN_SP);
+    }
+    
+    // AdminSP.RevertSP[]
+    io.object_uid() = LOCKING_SP;
+    io.method_uid() = REVERT_SP;
+    target.sendrecv(io);
   }
   catch (topaz_exception &e)
   {

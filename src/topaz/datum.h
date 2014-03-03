@@ -98,6 +98,11 @@ namespace topaz
     datum(datum::type_t data_type);
     
     /**
+     * \brief Atom->Datum Promotion Constructor
+     */
+    datum(atom val);
+    
+    /**
      * \brief Destructor
      */
     ~datum();
@@ -132,6 +137,16 @@ namespace topaz
     datum::type_t get_type() const;
 
     /**
+     * \brief Query Atom Value
+     */
+    atom &value();
+    
+    /**
+     * \brief Query Atom Value (const)
+     */
+    atom const &value() const;
+    
+    /**
      * \brief Query Name
      */
     atom &name();
@@ -142,14 +157,14 @@ namespace topaz
     atom const &name() const;
     
     /**
-     * \brief Query Value
+     * \brief Query Name
      */
-    atom &value();
+    datum &named_value();
     
     /**
-     * \brief Query Value (const)
+     * \brief Query Name (const)
      */
-    atom const &value() const;
+    datum const &named_value() const;
     
     /**
      * \brief Query Method's Object UID
@@ -241,9 +256,9 @@ namespace topaz
     // What sort of object
     datum::type_t data_type;
     
-    // Atom storage
-    atom data_name;           // Valid only on named object
-    atom data_value;
+    // Data storage
+    atom         data_atom;   // Valid as single atom, or name of value
+    datum_vector data_list;   // List of values
     
     // Method call specific parameters
     uint64_t data_object_uid; // Object reference
@@ -251,7 +266,6 @@ namespace topaz
     status_t data_status;     // Method call status code
     
     // Storage of other datums (lists / method calls)
-    datum_vector data_list;
     
   };
   

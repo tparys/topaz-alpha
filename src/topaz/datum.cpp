@@ -49,6 +49,25 @@ datum::datum(datum::type_t data_type)
   data_object_uid = 0;
   data_method_uid = 0;
   data_status = STA_SUCCESS;
+  
+  // Make room for named value, if needed
+  if (data_type == datum::NAMED)
+  {
+    data_list.resize(1);
+  }
+}
+
+/**
+ * \brief Atom->Datum Promotion Constructor
+ */
+datum::datum(atom val)
+{
+  // Datum type not yet known
+  data_type = datum::ATOM;
+  data_atom = val;
+  data_object_uid = 0;
+  data_method_uid = 0;
+  data_status = STA_SUCCESS;
 }
 
 /**
@@ -73,14 +92,14 @@ size_t datum::size() const
   {
     case datum::ATOM:
       // Single Atom
-      count += data_value.size();
+      count += data_atom.size();
       break;
       
     case datum::NAMED:
       // Key/Value Pair
       count += 2; // Token overhead
-      count += data_name.size();
-      count += data_value.size();
+      count += data_atom.size();
+      count += data_list[0].size();
       break;
       
     case datum::LIST:
@@ -126,7 +145,7 @@ size_t datum::encode_bytes(byte *data) const
   switch (data_type)
   {
     case datum::ATOM: // Single atom
-      data += data_value.encode_bytes(data);
+      data += data_atom.encode_bytes(data);
       break;
       
     case datum::NAMED: // Named key/value
@@ -134,10 +153,10 @@ size_t datum::encode_bytes(byte *data) const
       *data++ = datum::TOK_START_NAME;
       
       // First value (key/name)
-      data += data_name.encode_bytes(data);
+      data += data_atom.encode_bytes(data);
       
       // Second value (named value)
-      data += data_value.encode_bytes(data);
+      data += data_list[0].encode_bytes(data);
       
       // End of name
       *data++ = datum::TOK_END_NAME;
@@ -256,10 +275,11 @@ size_t datum::decode_bytes(byte const *data, size_t len)
     size++;
     
     // Name
-    size += data_name.decode_bytes(data + size, len - size);
+    size += data_atom.decode_bytes(data + size, len - size);
     
     // Value
-    size += data_value.decode_bytes(data + size, len - size);
+    data_list.resize(1);
+    size += data_list[0].decode_bytes(data + size, len - size);
     
     // End of named type
     decode_check_token(data, len, size++, datum::TOK_END_NAME);
@@ -332,7 +352,7 @@ size_t datum::decode_bytes(byte const *data, size_t len)
   {
     // Failing that, assume it's an atom
     data_type = datum::ATOM;
-    size += data_value.decode_bytes(data + size, len - size);
+    size += data_atom.decode_bytes(data + size, len - size);
   }
   
   return size;
@@ -347,15 +367,51 @@ datum::type_t datum::get_type() const
 }
 
 /**
+ * \brief Query Atom Value
+ */
+atom &datum::value()
+{
+  // Must be atom or named type
+  if (data_type == datum::UNSET)
+  {
+    // Automatic promotion
+    data_type = datum::ATOM;
+  }
+  else if (data_type != datum::ATOM)
+  {
+    throw topaz_exception("Datum has no value");
+  }
+  
+  // Return
+  return data_atom;
+}
+
+/**
+ * \brief Query Atom Value (const)
+ */
+atom const &datum::value() const
+{
+  // Must be atom or named type
+  if (data_type != datum::ATOM)
+  {
+    throw topaz_exception("Datum has no value");
+  }
+  
+  // Return
+  return data_atom;
+}
+
+/**
  * \brief Query Name
  */
 atom &datum::name()
 {
   // Must be named type
-  if ((data_type == datum::UNSET) || (data_type == datum::ATOM))
+  if (data_type == datum::UNSET)
   {
     // Automatic promotion
     data_type = datum::NAMED;
+    data_list.resize(1);
   }
   else if (data_type != datum::NAMED)
   {
@@ -363,11 +419,11 @@ atom &datum::name()
   }
   
   // Return
-  return data_name;
+  return data_atom;
 }
 
 /**
- * \brief Query Name
+ * \brief Query Name (const)
  */
 atom const &datum::name() const
 {
@@ -378,42 +434,43 @@ atom const &datum::name() const
   }
   
   // Return
-  return data_name;
+  return data_atom;
 }
 
 /**
- * \brief Query Value
+ * \brief Query Named Value
  */
-atom &datum::value()
+datum &datum::named_value()
 {
-  // Must be atom or named type
+  // Must be named type
   if (data_type == datum::UNSET)
   {
     // Automatic promotion
-    data_type = datum::ATOM;
+    data_type = datum::NAMED;
+    data_list.resize(1);
   }
-  else if ((data_type != datum::ATOM) && (data_type != datum::NAMED))
+  else if (data_type != datum::NAMED)
   {
-    throw topaz_exception("Datum has no value");
+    throw topaz_exception("Datum has no named value");
   }
   
   // Return
-  return data_value;
+  return data_list[0];
 }
 
 /**
- * \brief Query Value (const)
+ * \brief Query Named Value (const)
  */
-atom const &datum::value() const
+datum const &datum::named_value() const
 {
-  // Must be atom or named type
-  if ((data_type != datum::ATOM) && (data_type != datum::NAMED))
+  // Must be named type
+  if (data_type != datum::NAMED)
   {
-    throw topaz_exception("Datum has no value");
+    throw topaz_exception("Datum has no named value");
   }
   
   // Return
-  return data_value;
+  return data_list[0];
 }
 
 /**
@@ -565,12 +622,13 @@ bool datum::operator==(datum const &ref)
     {
       case datum::ATOM:
 	// Compare atoms
-	return data_value == ref.data_value;
+	return data_atom == ref.data_atom;
 	break;
 	
       case datum::NAMED:
 	// Compare name and value atoms
-	return ((data_name == ref.data_name) && (data_value == ref.data_value));
+	return ((data_atom == ref.data_atom) &&
+		(data_list[0] == ref.data_list[0]));
 	break;
 	
       case datum::METHOD:
@@ -666,14 +724,14 @@ void datum::print() const
       
     case datum::ATOM:
       // Single atom
-      data_value.print();
+      data_atom.print();
       break;
       
     case datum::NAMED:
       // Named value
-      data_name.print();
+      data_atom.print();
       printf(" = ");
-      data_value.print();
+      data_list[0].print();
       break;
            
     case datum::LIST:

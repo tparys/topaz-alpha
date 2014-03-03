@@ -43,19 +43,21 @@ int main(int argc, char **argv)
     drive target(argv[optind]);
     
     target.login_anon(ADMIN_SP);
-    //atom pin = target.default_pin();
-    //target.login(ADMIN_SP, SID, pin.get_bytes());
     
-    // Method Call - C_PIN_SID.Get[]
-    io.object_uid() = SP_INFO;
-    io.method_uid() = GET;
-    io[0] = datum(datum::LIST);
-    target.sendrecv(io);
+    atom mpin = target.default_pin();
+    atom tpin = atom::new_bin("hello world");
     
-    io.print();
+    if (1)
+    {
+      target.login(ADMIN_SP, SID, mpin.get_bytes());
+    }
+    
+    target.table_set(_UID_MAKE(0xb, 1), 3, tpin);
+    
+    target.login(ADMIN_SP, SID, tpin.get_bytes());
+    
+    //io.print();
     printf("\n");
-   
-    
   }
   catch (topaz_exception &e)
   {

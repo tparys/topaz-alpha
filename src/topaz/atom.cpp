@@ -204,22 +204,19 @@ atom atom::new_bin(byte const *data, size_t len)
 }
 
 /**
+ * \brief Factory Method - Binary Data (C String)
+ */
+atom atom::new_bin(char const *str)
+{
+  return atom::new_bin((byte const*)str, strlen(str));
+}
+
+/**
  * \brief Factory Method - Binary Data
  */
 atom atom::new_bin(byte_vector data)
 {
-  atom ret;
-  
-  // Intialize
-  ret.data_type = atom::BYTES;
-  
-  // Pick data encoding
-  ret.pick_encoding(data.size());
-  
-  // Copy data over
-  ret.bytes = data;
-  
-  return ret;
+  return atom::new_bin(&(data[0]), data.size());
 }
 
 /**

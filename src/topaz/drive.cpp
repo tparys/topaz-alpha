@@ -129,10 +129,10 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin)
   io[2].value()   = atom::new_uint(1);       // Read/Write Session
   
   // Optional Arguments (Named Atoms)
-  io[3].name()    = atom::new_uint(0);       // Host Challenge
-  io[3].value()   = atom::new_bin(pin);
-  io[4].name()    = atom::new_uint(3);       // Host Signing Authority (User)
-  io[4].value()   = atom::new_uid(auth_uid);
+  io[3].name()        = atom::new_uint(0);       // Host Challenge
+  io[3].named_value() = atom::new_bin(pin);
+  io[4].name()        = atom::new_uint(3);       // Host Signing Authority (User)
+  io[4].named_value() = atom::new_uid(auth_uid);
   
   // Off it goes
   sendrecv(io, io);
@@ -155,22 +155,44 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin)
  * @param tbl_col Column number of data to retrieve (table specific)
  * @return Queried parameter
  */
-atom drive::query_table(uint64_t tbl_uid, uint64_t tbl_col)
+atom drive::table_get(uint64_t tbl_uid, uint64_t tbl_col)
 {
   // Method Call - UID.Get[]
   datum io;
-  io.object_uid()  = C_PIN_MSID;
-  io.method_uid()  = GET;
-  io[0][0].name()  = atom::new_uint(3);       // Starting Table Column
-  io[0][0].value() = atom::new_uint(tbl_col);
-  io[0][1].name()  = atom::new_uint(4);       // Ending Tabling Column
-  io[0][1].value() = atom::new_uint(tbl_col);
+  io.object_uid()        = tbl_uid;
+  io.method_uid()        = GET;
+  io[0][0].name()        = atom::new_uint(3);       // Starting Table Column
+  io[0][0].named_value() = atom::new_uint(tbl_col);
+  io[0][1].name()        = atom::new_uint(4);       // Ending Tabling Column
+  io[0][1].named_value() = atom::new_uint(tbl_col);
   
   // Off it goes
   sendrecv(io, io);
   
   // Return first element of nested array
-  return io[0][0].value();
+  return io[0][0].named_value().value();
+}
+
+/**
+ * \brief Query Value from Specified Table
+ *
+ * @param tbl_uid Identifier of target table
+ * @param tbl_col Column number of data to retrieve (table specific)
+ * @param val Value to set in column
+ */
+void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val)
+{
+  // Method Call - UID.Get[]
+  datum io;
+  io.object_uid()        = tbl_uid;
+  io.method_uid()        = SET;
+  
+  io[0].name()                         = atom::new_uint(1);       // Values
+  io[0].named_value()[0].name()        = atom::new_uint(tbl_col);
+  io[0].named_value()[0].named_value() = val;
+  
+  // Off it goes
+  sendrecv(io, io);
 }
 
 /**
@@ -178,7 +200,7 @@ atom drive::query_table(uint64_t tbl_uid, uint64_t tbl_col)
  */
 atom drive::default_pin()
 {
-  return query_table(C_PIN_MSID, 3);
+  return table_get(C_PIN_MSID, 3);
 }
 
 /**
@@ -203,7 +225,7 @@ void drive::sendrecv(datum const &data_out, datum &data_in)
   send(data_out);
   
   // Give the drive a moment to work
-  usleep(1000);
+  usleep(2500);
   
   // Retrieve response
   recv(data_in);
@@ -602,7 +624,7 @@ void drive::probe_level1()
     string name = props[i].name().get_string();
     
     // Value
-    uint64_t val = props[i].value().get_uint();
+    uint64_t val = props[i].named_value().value().get_uint();
     
     // Only one we want here is the MaxComPacketSize,
     // which specifies the maximum I/O packet length
@@ -627,10 +649,17 @@ void drive::logout()
 			  tper_session_id, host_session_id);
     
     // Gin up an end of session
-    datum eos(datum::END_SESSION);
+    datum io(datum::END_SESSION);
     
     // Off it goes
-    sendrecv(eos);
+    try
+    {
+      sendrecv(io);
+    }
+    catch (topaz_exception &e)
+    {
+      // Nada
+    }
     
     // Mark state
     tper_session_id = 0;

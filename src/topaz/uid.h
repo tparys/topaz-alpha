@@ -87,8 +87,14 @@ namespace topaz
   enum
   {
     REVERT_SP     = _UID_MAKE(6,   0x11), // RevertSP
-    GET           = _UID_MAKE(6,   0x16), // Get Table Data
-    SET           = _UID_MAKE(6,   0x17), // Set Table Data
+    
+    // Get[] - SWG Core Spec - 5.3.3.6
+    // Note: cellblocks listed in Core Spec - 5.1.2.3
+    GET           = _UID_MAKE(6,   0x16),
+    
+    // Set[] - SWG Core Spec - 5.3.3.7
+    // Note: cellblocks listed in Core Spec - 5.1.2.3
+    SET           = _UID_MAKE(6,   0x17),
     REVERT        = _UID_MAKE(6,  0x202), // Revert
     ACTIVATE      = _UID_MAKE(6,  0x203)  // Activate
   };

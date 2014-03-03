@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <topaz/atom.h>
+#include <topaz/exceptions.h>
 using namespace std;
 using namespace topaz;
 
@@ -190,89 +191,98 @@ void test_uid(uint64_t val)
 
 int main()
 {
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Unsigned Integers
-  //
   
-  // Trivial
-  test_unsigned(atom::UINT, atom::TINY, 1, 0);
-  
-  // Max Tiny Atom
-  test_unsigned(atom::UINT, atom::TINY, 1, 0x3f);
-  
-  // Min Short
-  test_unsigned(atom::UINT, atom::SHORT, 1, 0x40);
-  
-  // Variable byte encoding
-  for (uint64_t val = 0x100, i = 1; i < 8; i++, val <<= 8)
+  try
   {
-    test_unsigned(atom::UINT, atom::SHORT, i    , val - 1);
-    test_unsigned(atom::UINT, atom::SHORT, i + 1, val);
-  }
+    
+    //////////////////////////////////////////////////////////////////////////////
+    // Unsigned Integers
+    //
+    
+    // Trivial
+    test_unsigned(atom::UINT, atom::TINY, 1, 0);
+    
+    // Max Tiny Atom
+    test_unsigned(atom::UINT, atom::TINY, 1, 0x3f);
+    
+    // Min Short
+    test_unsigned(atom::UINT, atom::SHORT, 1, 0x40);
+    
+    // Variable byte encoding
+    for (uint64_t val = 0x100, i = 1; i < 8; i++, val <<= 8)
+    {
+      test_unsigned(atom::UINT, atom::SHORT, i    , val - 1);
+      test_unsigned(atom::UINT, atom::SHORT, i + 1, val);
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////
+    // Signed Integers
+    //
   
-  //////////////////////////////////////////////////////////////////////////////
-  // Signed Integers
-  //
+    // Trivial
+    test_signed(atom::INT, atom::TINY, 1, 0);
   
-  // Trivial
-  test_signed(atom::INT, atom::TINY, 1, 0);
+    // Max Tiny Atom
+    test_signed(atom::INT, atom::TINY, 1, 0x1f);
+    test_signed(atom::INT, atom::TINY, 1, -0x20);
   
-  // Max Tiny Atom
-  test_signed(atom::INT, atom::TINY, 1, 0x1f);
-  test_signed(atom::INT, atom::TINY, 1, -0x20);
+    // Min Short
+    test_signed(atom::INT, atom::SHORT, 1, 0x20);
+    test_signed(atom::INT, atom::SHORT, 1, -0x21);
   
-  // Min Short
-  test_signed(atom::INT, atom::SHORT, 1, 0x20);
-  test_signed(atom::INT, atom::SHORT, 1, -0x21);
-  
-  // Variable byte encoding
-  for (int64_t val = 0x80, i = 1; i < 8; i++, val <<= 8)
-  {
-    // Positive encoding
-    test_signed(atom::INT, atom::SHORT, i    , val - 1);
-    test_signed(atom::INT, atom::SHORT, i + 1, val);
+    // Variable byte encoding
+    for (int64_t val = 0x80, i = 1; i < 8; i++, val <<= 8)
+    {
+      // Positive encoding
+      test_signed(atom::INT, atom::SHORT, i    , val - 1);
+      test_signed(atom::INT, atom::SHORT, i + 1, val);
 
-    // Negative encoding
-    test_signed(atom::INT, atom::SHORT, i    , (0 - val));
-    test_signed(atom::INT, atom::SHORT, i + 1, (0 - val) - 1);
+      // Negative encoding
+      test_signed(atom::INT, atom::SHORT, i    , (0 - val));
+      test_signed(atom::INT, atom::SHORT, i + 1, (0 - val) - 1);
+    }
+  
+    //////////////////////////////////////////////////////////////////////////////
+    // Binary Data
+    //
+  
+    // Min Short
+    test_binary(atom::SHORT, 0);
+  
+    // Max Short
+    test_binary(atom::SHORT, 0xf);
+  
+    // Min Medium
+    test_binary(atom::MEDIUM, 0x10);
+  
+    // Max Medium
+    test_binary(atom::MEDIUM, 0x7ff);
+  
+    // Min Long
+    test_binary(atom::LONG, 0x800);
+  
+    // Max Long
+    test_binary(atom::LONG, 0xffffff);
+  
+    //////////////////////////////////////////////////////////////////////////////
+    // Misc Types
+    //
+  
+    // Unique ID (Crazy integer that looks like a binary thing)
+    test_uid(0x0f);
+  
+    // Empty Atom
+    printf("\n");
+    atom empty;
+    check(empty, atom::EMPTY, atom::NONE, 1);
+  
+    printf("\n******** %d Tests Passed ********\n\n", test_count);
+    
   }
-  
-  //////////////////////////////////////////////////////////////////////////////
-  // Binary Data
-  //
-  
-  // Min Short
-  test_binary(atom::SHORT, 0);
-  
-  // Max Short
-  test_binary(atom::SHORT, 0xf);
-  
-  // Min Medium
-  test_binary(atom::MEDIUM, 0x10);
-  
-  // Max Medium
-  test_binary(atom::MEDIUM, 0x7ff);
-  
-  // Min Long
-  test_binary(atom::LONG, 0x800);
-  
-  // Max Long
-  test_binary(atom::LONG, 0xffffff);
-  
-  //////////////////////////////////////////////////////////////////////////////
-  // Misc Types
-  //
-  
-  // Unique ID (Crazy integer that looks like a binary thing)
-  test_uid(0x0f);
-  
-  // Empty Atom
-  printf("\n");
-  atom empty;
-  check(empty, atom::EMPTY, atom::NONE, 1);
-  
-  printf("\n******** %d Tests Passed ********\n\n", test_count);
+  catch (topaz_exception &e)
+  {
+    printf("Exception raised: %s\n", e.what());
+  }
   
   return 0;
 }
