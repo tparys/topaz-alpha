@@ -39,16 +39,21 @@ int main(int argc, char **argv)
   // Open the device
   try
   {
-    datum io;
     drive target(argv[optind]);
     
-    target.login_anon(ADMIN_SP);
+    // Current PIN
+    atom pin = atom::new_bin("password");
     
-    atom pin = target.default_pin();
-    
+    // Login with Current PIN  
     target.login(ADMIN_SP, SID, pin.get_bytes());
     
-    printf("\n");
+    // Admin_SP.Revert[]
+    datum io;
+    io.object_uid() = ADMIN_SP;
+    io.method_uid() = REVERT;
+    
+    // Execute method
+    target.sendrecv(io);
   }
   catch (topaz_exception &e)
   {

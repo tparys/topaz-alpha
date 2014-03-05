@@ -39,16 +39,21 @@ int main(int argc, char **argv)
   // Open the device
   try
   {
-    datum io;
+    // Create the drive object
     drive target(argv[optind]);
     
+    // Login w/ anonymous session
     target.login_anon(ADMIN_SP);
     
+    // Get Factory default PIN
     atom pin = target.default_pin();
     
+    // Login with Manufactured PIN
     target.login(ADMIN_SP, SID, pin.get_bytes());
     
-    printf("\n");
+    // Set PIN of SID (Drive Owner) in Admin SP
+    pin = atom::new_bin("password");
+    target.table_set(C_PIN_SID, 3, pin);
   }
   catch (topaz_exception &e)
   {
