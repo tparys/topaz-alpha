@@ -225,7 +225,7 @@ void drive::sendrecv(datum const &data_out, datum &data_in)
   send(data_out);
   
   // Give the drive a moment to work
-  usleep(2500);
+  usleep(10000); // 10 ms
   
   // Retrieve response
   recv(data_in);

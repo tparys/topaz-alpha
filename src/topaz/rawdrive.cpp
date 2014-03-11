@@ -38,8 +38,6 @@ using namespace topaz;
 // Set to nonzero to use ATA12 commands
 #define USE_ATA12 1
 
-#define ARGLEBARGLE 10
-
 /**
  * \brief Topaz Raw Hard Drive Constructor
  *
@@ -94,41 +92,24 @@ rawdrive::~rawdrive()
  * @param bcount   Size of data buffer in 512 byte blocks
  */
 void rawdrive::if_send(uint8_t proto, uint16_t comid,
-			      void *data, uint8_t bcount)
+		       void *data, uint8_t bcount)
 {
-  if (USE_ATA12)
-  {
-    // Blank ATA12 command
-    unsigned char cmd[7] = {0};
-    
-    // Fill in TCG Opal command
-    cmd[0] = proto;
-    cmd[1] = bcount;
-    cmd[3] = comid & 0xff;
-    cmd[4] = comid >> 8;
-    cmd[6] = 0x5e;         // Trusted send
-    
-    // Off it goes
-    ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 1);
-  }
-  else
-  {
-    // Blank ATA command
-    ata_cmd_t cmd = {0};
-    
-    // Fill in TCG Opal command
-    cmd.feature.low  = proto;
-    cmd.count.low    = bcount;
-    cmd.lba_low.high = comid & 0xff;
-    cmd.command      = 0x5e;
-    
-    // Off it goes
-    ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 1);
-  }
+  // Blank ATA12 command
+  unsigned char cmd[7] = {0};
+  
+  // Fill in TCG Opal command
+  cmd[0] = proto;
+  cmd[1] = bcount;
+  cmd[3] = comid & 0xff;
+  cmd[4] = comid >> 8;
+  cmd[6] = 0x5e;         // Trusted send
+  
+  // Off it goes
+  ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
 }
 
 /**
- * if_send (TCG Opal IF-SEND)
+ * if_send (TCG Opal IF-RECV)
  *
  * Low level interface to receive data from Drive TPM
  *
@@ -138,38 +119,20 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
  * @param bcount   Size of data buffer in 512 byte blocks
  */
 void rawdrive::if_recv(uint8_t proto, uint16_t comid,
-			      void *data, uint8_t bcount)
+		       void *data, uint8_t bcount)
 {
-  if (USE_ATA12)
-  {
-    // Blank ATA12 command
-    unsigned char cmd[7] = {0};
-    
-    // Fill in TCG Opal command
-    cmd[0] = proto;
-    cmd[1] = bcount;
-    cmd[3] = comid & 0xff;
-    cmd[4] = comid >> 8;
-    cmd[6] = 0x5c;         // Trusted receive
-    
-    // Off it goes
-    ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 1);
-  }
-  else
-  {
-    // Blank ATA command
-    ata_cmd_t cmd = {0};
-    
-    // Fill in TCG Opal command
-    cmd.feature.low  = proto;
-    cmd.count.low    = bcount;
-    cmd.lba_mid.low  = comid & 0xff;
-    cmd.lba_mid.high = comid >> 8;
-    cmd.command      = 0x5c;
-    
-    // Off it goes
-    ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 1);
-  }
+  // Blank ATA12 command
+  unsigned char cmd[7] = {0};
+  
+  // Fill in TCG Opal command
+  cmd[0] = proto;
+  cmd[1] = bcount;
+  cmd[3] = comid & 0xff;
+  cmd[4] = comid >> 8;
+  cmd[6] = 0x5c;         // Trusted receive
+  
+  // Off it goes
+  ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
 }
 
 /**

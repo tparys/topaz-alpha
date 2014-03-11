@@ -47,8 +47,6 @@ int main(int argc, char **argv)
     atom pin = target.default_pin();
     
     target.login(ADMIN_SP, SID, pin.get_bytes());
-    
-    printf("\n");
   }
   catch (topaz_exception &e)
   {

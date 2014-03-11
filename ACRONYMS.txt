@@ -7,7 +7,7 @@ ATA: AT Attachment
   An interface standard for talking to storage media over a parallel bus.
 
 CDB: Command Descriptor Block
-  A SCSI command bl1ock (may contain SAT translated ATA commands).
+  A SCSI command block (may contain SAT translated ATA commands).
 
 C_PIN: Current PIN
   A table defined within the Opal protocol specifying credentials for a defined

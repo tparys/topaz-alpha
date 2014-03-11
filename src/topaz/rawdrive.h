@@ -79,7 +79,7 @@ namespace topaz
 		 void *data, uint8_t bcount);
     
     /**
-     * if_send (TCG Opal IF-SEND)
+     * if_send (TCG Opal IF-RECV)
      *
      * Low level interface to receive data from Drive TPM
      *
