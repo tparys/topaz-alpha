@@ -61,14 +61,18 @@ namespace topaz
   // Defined UIDs within Locking SP
   enum
   {
-    C_PIN_ADMIN_BASE = _UID_MAKE(   0xb, 0x10000), // Base UID of Admins (+1, +2, +3 ...)
-    C_PIN_USER_BASE  = _UID_MAKE(   0xb, 0x30000), // Base UID of Users (+1, +2, +3 ...)
-    
-    // Master Locking SP table
-    LOCKING          = _UID_MAKE( 0x802,     0x1),
+    ADMINS           = _UID_MAKE(   0x9,     0x2), // ?
+    ADMIN_BASE       = _UID_MAKE(   0x9, 0x10000), // Base UID of Admins (+1, +2, +3 ...)
+    USER_BASE        = _UID_MAKE(   0x9, 0x30000), // Base UID of Users (+1, +2, +3 ...)
+    C_PIN_ADMIN_BASE = _UID_MAKE(   0xb, 0x10000), // Base UID of Admins PIN (+1, +2, +3 ...)
+    C_PIN_USER_BASE  = _UID_MAKE(   0xb, 0x30000), // Base UID of Users PIN (+1, +2, +3 ...)
+
+    LOCKINGINFO      = _UID_MAKE( 0x801,     0x1), // LockingInfo (max ranges & such)
+    LOCKING          = _UID_MAKE( 0x802,     0x1), // Locking Table (current ranges)
     
     // LBA Ranges Objects
-    LBA_RANGE_BASE   = _UID_MAKE( 0x802, 0x30001)
+    LBA_RANGE_GLOBAL = _UID_MAKE( 0x802,     0x1),
+    LBA_RANGE_BASE   = _UID_MAKE( 0x802, 0x30000)
   };
   
   ////
@@ -86,6 +90,7 @@ namespace topaz
   // TCG Opal Method Calls
   enum
   {
+    GENKEY        = _UID_MAKE(6,   0x10), // Generate new key
     REVERT_SP     = _UID_MAKE(6,   0x11), // RevertSP
     
     // Get[] - SWG Core Spec - 5.3.3.6

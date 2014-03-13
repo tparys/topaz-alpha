@@ -74,6 +74,22 @@ drive::~drive()
 }
 
 /**
+ * \brief Query max number of admin objects in Locking SP
+ */
+uint64_t drive::get_max_admins()
+{
+  return admin_count;
+}
+
+/**
+ * \brief Query max number of user objects in Locking SP
+ */
+uint64_t drive::get_max_users()
+{
+  return user_count;
+}
+
+/**
  * \brief Combined I/O to TCG Opal drive
  *
  * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
@@ -192,7 +208,7 @@ void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val)
   io[0].named_value()[0].named_value() = val;
   
   // Off it goes
-  sendrecv(io, io);
+  sendrecv(io);
 }
 
 /**
@@ -224,8 +240,8 @@ void drive::sendrecv(datum const &data_out, datum &data_in)
   // Send the command
   send(data_out);
   
-  // Give the drive a moment to work
-  usleep(10000); // 10 ms
+  // Enforce a minimum pause to allow operation to happen
+  usleep(10000);
   
   // Retrieve response
   recv(data_in);
@@ -325,24 +341,28 @@ void drive::recv(datum &inbuf)
 {
   unsigned char block[ATA_BLOCK_SIZE] = {0}, *payload;
   opal_header_t *header;
-  size_t count, min = sizeof(opal_packet_header_t) + sizeof(opal_sub_packet_header_t);
+  size_t count;
   
   // Set up pointers
   header = (opal_header_t*)block;
   payload = block + sizeof(opal_header_t);
   
-  // Receive formatted Com Packet
-  raw.if_recv(1, com_id, block, 1);
-  
-  // Do some cursory verification here
-  if (be16toh(header->com_hdr.com_id) != com_id)
+  do
   {
-    throw topaz_exception("Unexpected ComID in drive response");
-  }
-  if (be32toh(header->com_hdr.length) <= min)
-  {
-    throw topaz_exception("Invalid Com Packet length in drive response");
-  }
+    // Receive formatted Com Packet
+    raw.if_recv(1, com_id, block, 1);
+    
+    // Do some cursory verification here
+    if (be16toh(header->com_hdr.com_id) != com_id)
+    {
+      throw topaz_exception("Unexpected ComID in drive response");
+    }
+    if (be32toh(header->com_hdr.length) == 0)
+    {
+      // Response is not yet ready ... wait a bit and try again
+      usleep(10000);
+    }
+  } while (be32toh(header->com_hdr.length) == 0);
   
   // Ready the receiver buffer
   count = be32toh(header->sub_hdr.length);

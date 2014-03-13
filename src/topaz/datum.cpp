@@ -608,6 +608,54 @@ datum_vector const &datum::list() const
 }
 
 /**
+ * \brief Query Named Value in List
+ */
+datum &datum::find_by_name(uint64_t id)
+{
+  // Must be list
+  if (data_type != datum::LIST)
+  {
+    throw topaz_exception("Datum has no list");
+  }
+  
+  // Search for named value
+  for (size_t i = 0; i < data_list.size(); i++)
+  {
+    if ((data_list[i].get_type() == datum::NAMED) &&
+	(data_list[i].name().get_uint() == id))
+    {
+      return data_list[i].named_value();
+    }
+  }
+  
+  throw topaz_exception("Named value not found in list");
+}
+
+/**
+ * \brief Query Named Value in List (const)
+ */
+datum const &datum::find_by_name(uint64_t id) const
+{
+  // Must be list
+  if (data_type != datum::LIST)
+  {
+    throw topaz_exception("Datum has no list");
+  }
+  
+  // Search for named value
+  for (size_t i = 0; i < data_list.size(); i++)
+  {
+    if ((data_list[i].get_type() == datum::NAMED) &&
+	(data_list[i].name().get_uint() == id))
+    {
+      return data_list[i].named_value();
+    }
+  }
+  
+  throw topaz_exception("Named value not found in list");
+}
+
+/**
  * \brief Equality Operator
  *
  * @return True when equal

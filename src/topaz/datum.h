@@ -207,6 +207,16 @@ namespace topaz
     datum_vector const &list() const;
     
     /**
+     * \brief Query Named Value in List
+     */
+    datum &find_by_name(uint64_t id);
+    
+    /**
+     * \brief Query Named Value in List (const)
+     */
+    datum const &find_by_name(uint64_t id) const;
+    
+    /**
      * \brief Equality Operator
      *
      * @return True when equal

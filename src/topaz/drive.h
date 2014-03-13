@@ -47,6 +47,16 @@ namespace topaz
     ~drive();
     
     /**
+     * \brief Query max number of Admins in Locking SP
+     */
+    uint64_t get_max_admins();
+    
+    /**
+     * \brief Query max number of users in Locking SP
+     */
+    uint64_t get_max_users();
+    
+    /**
      * \brief Combined I/O to TCG Opal drive
      *
      * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
