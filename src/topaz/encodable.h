@@ -72,8 +72,9 @@ namespace topaz
      * \brief Decode from Container
      *
      * @param data Specifed container
+     * @return Number of bytes processed
      */
-    void decode_vector(byte_vector const &data);
+    size_t decode_vector(byte_vector const &data);
     
     /**
      * \brief Debug print

@@ -72,6 +72,14 @@ namespace topaz
     void login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin);
     
     /**
+     * \brief Query Whole Table
+     *
+     * @param tbl_uid Identifier of target table
+     * @return Queried parameters
+     */
+    datum table_get(uint64_t tbl_uid);
+    
+    /**
      * \brief Query Value from Specified Table
      *
      * @param tbl_uid Identifier of target table
@@ -95,35 +103,32 @@ namespace topaz
     atom default_pin();
     
     /**
-     * \brief Combined I/O to TCG Opal drive
+     * \brief Method invocation
      *
-     * @param data Read and write buffer for I/O
+     * \param object_uid UID indicating object to use for invocation
+     * \param method_uid UID indicating method to call on object
+     * \param params List datum with parameters for method call
+     * \return Any data returned from method call
      */
-    void sendrecv(datum &data);
+    datum invoke(uint64_t object_uid, uint64_t method_uid,
+		 datum params = datum(datum::LIST));
     
-    /**
-     * \brief Combined I/O to TCG Opal drive
-     *
-     * @param data_out Datum to write to drive
-     * @param data_in  Datum read from drive
-     */
-    void sendrecv(datum const &data_out, datum &data_in);
+  protected:
     
     /**
      * \brief Send payload to TCG Opal drive
      *
      * @param outbuf Outbound data buffer
+     * \param session_ids Include TPer session IDs in ComPkt?
      */
-    void send(datum const &outbuf);
+    void send(byte_vector const &outbuf, bool session_ids = true);
     
     /**
      * \brief Receive payload from TCG Opal drive
      *
      * @param inbuf Inbound data buffer
      */
-    void recv(datum &inbuf);
-    
-  protected:
+    void recv(byte_vector &inbuf);
     
     /**
      * \brief Probe Available TPM Security Protocols

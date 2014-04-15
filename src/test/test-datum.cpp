@@ -125,7 +125,7 @@ int main()
     test = datum();
     test.object_uid() = SESSION_MGR;
     test.method_uid() = PROPERTIES;
-    check(test, datum::METHOD, 27);
+    check(test, datum::METHOD, 21);
     
     printf("\n******** %d Tests Passed ********\n\n", test_count);
   }

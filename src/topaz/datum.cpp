@@ -36,7 +36,6 @@ datum::datum()
   data_type = datum::UNSET;
   data_object_uid = 0;
   data_method_uid = 0;
-  data_status = STA_SUCCESS;
 }
 
 /**
@@ -48,7 +47,6 @@ datum::datum(datum::type_t data_type)
   // Specified datum type
   data_object_uid = 0;
   data_method_uid = 0;
-  data_status = STA_SUCCESS;
   
   // Make room for named value, if needed
   if (data_type == datum::NAMED)
@@ -67,7 +65,6 @@ datum::datum(atom val)
   data_atom = val;
   data_object_uid = 0;
   data_method_uid = 0;
-  data_status = STA_SUCCESS;
 }
 
 /**
@@ -102,18 +99,15 @@ size_t datum::size() const
       count += data_list[0].size();
       break;
       
+    case datum::METHOD:
+      // Method call
+      count += 19; // Token overhead
+      
+      // No break - fall through to handle parameters
+      
     case datum::LIST:
       // List 'o Things ...
       count += 2; // Token overhead
-      for (i = 0; i < data_list.size(); i++)
-      {
-	count += data_list[i].size();
-      }
-      break;
-      
-    case datum::METHOD:
-      // Method call
-      count += 27; // Token overhead
       for (i = 0; i < data_list.size(); i++)
       {
 	count += data_list[i].size();
@@ -162,6 +156,18 @@ size_t datum::encode_bytes(byte *data) const
       *data++ = datum::TOK_END_NAME;
       break;
       
+    case datum::METHOD: // Method call
+      // Beginning of method call
+      *data++ = datum::TOK_CALL;
+      
+      // Object UID
+      data += atom::new_uid(data_object_uid).encode_bytes(data);
+      
+      // Method UID
+      data += atom::new_uid(data_method_uid).encode_bytes(data);
+      
+      // No break - fall through to handle parameters
+      
     case datum::LIST: // List 'o things
       // Beginning of list
       *data++ = datum::TOK_START_LIST;
@@ -173,45 +179,6 @@ size_t datum::encode_bytes(byte *data) const
       }
       
       // End of list
-      *data++ = datum::TOK_END_LIST;
-      break;
-      
-    case datum::METHOD: // Method call
-      // Beginning of method call
-      *data++ = datum::TOK_CALL;
-      
-      // Object UID
-      data += atom::new_uid(data_object_uid).encode_bytes(data);
-      
-      // Method UID
-      data += atom::new_uid(data_method_uid).encode_bytes(data);
-      
-      // Beginning of parameter list (arguments)
-      *data++ = datum::TOK_START_LIST;
-      
-      // Each item in the list
-      for (size_t i = 0; i < data_list.size(); i++)
-      {
-	data += data_list[i].encode_bytes(data);
-      }
-      
-      // End of parameter list (arguments)
-      *data++ = datum::TOK_END_LIST;
-      
-      // End of data
-      *data++ = datum::TOK_END_OF_DATA;
-      
-      // Beginning of method status list
-      *data++ = datum::TOK_START_LIST;
-      
-      // Method status
-      *data++ = 0xff & data_status;
-      
-      // Reserved fields
-      *data++ = 0x00;
-      *data++ = 0x00;
-      
-      // End of method status list
       *data++ = datum::TOK_END_LIST;
       break;
       
@@ -322,25 +289,6 @@ size_t datum::decode_bytes(byte const *data, size_t len)
       size += tmp.decode_bytes(data + size, len - size);
       data_list.push_back(tmp);
     }
-    
-    // End of data
-    decode_check_token(data, len, size++, datum::TOK_END_OF_DATA);
-    
-    // Method status list - 5 bytes
-    decode_check_size(len, size + 5);
-    
-    // First and last token are required
-    if ((data[size] != datum::TOK_START_LIST) ||
-	(data[size + 4] != datum::TOK_END_LIST))
-    {
-      throw topaz_exception("Unexpected token in datum encoding");
-    }
-    
-    // Second byte has method status
-    data_status = (status_t)data[size + 1];
-    
-    // 5 Bytes total
-    size += 5;
   }
   else if (data[size] == datum::TOK_END_SESSION)
   {
@@ -537,39 +485,6 @@ uint64_t const &datum::method_uid() const
   }
   
   return data_method_uid;
-}
-
-/**
- * \brief Query Method Status Code
- */
-datum::status_t &datum::status()
-{
-  // Must be method
-  if ((data_type == datum::UNSET) || (data_type == datum::LIST))
-  {
-    // Automatic promotion
-    data_type = datum::METHOD;
-  }
-  else if (data_type != datum::METHOD)
-  {
-    throw topaz_exception("Datum has no status");
-  }
-  
-  return data_status;
-}
-
-/**
- * \brief Query Method Status Code (const)
- */
-datum::status_t const &datum::status() const
-{
-  // Must be method
-  if (data_type != datum::METHOD)
-  {
-    throw topaz_exception("Datum has no status");
-  }
-  
-  return data_status;
 }
 
 /**
@@ -781,7 +696,15 @@ void datum::print() const
       printf(" = ");
       data_list[0].print();
       break;
-           
+      
+    case datum::METHOD:
+      // Method Call
+      atom::new_uid(data_object_uid).print();
+      printf(".");
+      atom::new_uid(data_method_uid).print();
+      
+      // No break - fall through to handle parameters
+      
     case datum::LIST:
       // List o' things
       printf("[");
@@ -793,25 +716,6 @@ void datum::print() const
       printf("]");
       break;
       
-    case datum::METHOD:
-      // Method Call
-      atom::new_uid(data_object_uid).print();
-      printf(".");
-      atom::new_uid(data_method_uid).print();
-      printf("[");
-      for (i = 0; i < data_list.size(); i++)
-      {
-	if (i > 0) printf(", ");
-	data_list[i].print();
-      }
-      printf("]");
-      if (data_status)
-      {
-	printf("<STATUS=0x%x>", data_status);
-      }
-      break;
-      
-      // No break, fall through to list
     default: // datum::END_SESSION
       // End of session
       printf("(END SESSION)");

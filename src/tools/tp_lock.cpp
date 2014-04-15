@@ -364,14 +364,10 @@ void query_acct(drive &target, uint64_t uid, char const *name, int num)
 
 void query_range(drive &target, uint64_t id)
 {
-  datum io, val;
   uint64_t key_uid, key_mode, start, size, last;
   
-  // LBA_Range.GET[[]] (Everything and everything)
-  io.object_uid() = range_id_to_uid(id);
-  io.method_uid() = GET;
-  io[0] = datum(datum::LIST);
-  target.sendrecv(io);
+  // Query LBA_Range table
+  datum table = target.table_get(range_id_to_uid(id));
   
   // Range ID
   cout << (int)id;
@@ -380,7 +376,7 @@ void query_range(drive &target, uint64_t id)
   cout << '\t';
   
   // Key type
-  key_uid = io[0].find_by_name(10).value().get_uid();
+  key_uid = table.find_by_name(10).value().get_uid();
   cout << key_uid_to_str(key_uid) << '\t';
   
   // Block cipher mode
@@ -395,10 +391,10 @@ void query_range(drive &target, uint64_t id)
   }
   
   // Read Lock State
-  if (io[0].find_by_name(5).value().get_uint())
+  if (table.find_by_name(5).value().get_uint())
   {
     // Read lock is enabled
-    if (io[0].find_by_name(7).value().get_uint())
+    if (table.find_by_name(7).value().get_uint())
     {
       // And is currently on
       cout << 'R';
@@ -416,10 +412,10 @@ void query_range(drive &target, uint64_t id)
   }
   
   // Write Lock State
-  if (io[0].find_by_name(6).value().get_uint())
+  if (table.find_by_name(6).value().get_uint())
   {
     // Write lock is enabled
-    if (io[0].find_by_name(8).value().get_uint())
+    if (table.find_by_name(8).value().get_uint())
     {
       // And is currently on
       cout << 'W';
@@ -438,8 +434,8 @@ void query_range(drive &target, uint64_t id)
   cout << '\t';
   
   // Start(3) and Size(4) of LBA Range
-  start = io[0].find_by_name(3).value().get_uint();
-  size  = io[0].find_by_name(4).value().get_uint();
+  start = table.find_by_name(3).value().get_uint();
+  size  = table.find_by_name(4).value().get_uint();
   
   // Figure out last sector of range
   last = (size ? start + size - 1 : 0);
@@ -473,17 +469,9 @@ void lock_ctl(drive &target, uint64_t id, bool on_reset, bool rd_lock, bool wr_l
     col_base = 7;
   }
   
-  // LBA_Range.SET[]
-  io.object_uid()                      = range_id_to_uid(id);
-  io.method_uid()                      = SET;
-  io[0].name()                         = atom::new_uint(1);
-  io[0].named_value()[0].name()        = atom::new_uint(col_base + 0);
-  io[0].named_value()[0].named_value() = atom::new_uint(rd_lock);
-  io[0].named_value()[1].name()        = atom::new_uint(col_base + 1);
-  io[0].named_value()[1].named_value() = atom::new_uint(wr_lock);
-  
-  // Off it goes
-  target.sendrecv(io);
+  // Enable locks
+  target.table_set(range_id_to_uid(id), col_base + 0, atom::new_uint(rd_lock));
+  target.table_set(range_id_to_uid(id), col_base + 1, atom::new_uint(wr_lock));
 }
 
 void range_ctl(drive &target, uint64_t id, uint64_t first, uint64_t last)
@@ -491,17 +479,9 @@ void range_ctl(drive &target, uint64_t id, uint64_t first, uint64_t last)
   datum io;
   uint64_t size = last + 1 - first;
   
-  // Range.SET[]
-  io.object_uid()                      = range_id_to_uid(id);
-  io.method_uid()                      = SET;
-  io[0].name()                         = atom::new_uint(1);
-  io[0].named_value()[0].name()        = atom::new_uint(3);     // Start
-  io[0].named_value()[0].named_value() = atom::new_uint(first);
-  io[0].named_value()[1].name()        = atom::new_uint(4);     // Length
-  io[0].named_value()[1].named_value() = atom::new_uint(size);
-  
-  // Off it goes
-  target.sendrecv(io);
+  // Set range boundaries
+  target.table_set(range_id_to_uid(id), 3, atom::new_uint(first));
+  target.table_set(range_id_to_uid(id), 4, atom::new_uint(size));
 }
 
 void wipe_range(drive &target, uint64_t id)
@@ -512,11 +492,9 @@ void wipe_range(drive &target, uint64_t id)
   // UID of desired range
   range_uid = range_id_to_uid(id);
   
-  // Associated Key UID of range
+  // Find UID of range's crypto key
   key_uid = target.table_get(range_uid, 10).get_uid();
   
-  // Range.GENKEY[]
-  io.object_uid() = key_uid;
-  io.method_uid() = GENKEY;
-  target.sendrecv(io);
+  // Key.GENKEY[] -> Crypto scramble
+  target.invoke(key_uid, GENKEY);
 }

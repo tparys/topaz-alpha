@@ -63,9 +63,10 @@ byte_vector encodable::encode_vector() const
  * \brief Decode from Container
  *
  * @param data Specifed container
+ * @return Number of bytes processed
  */
-void encodable::decode_vector(byte_vector const &data)
+size_t encodable::decode_vector(byte_vector const &data)
 {
   // Pass it on
-  decode_bytes(&(data[0]), data.size());
+  return decode_bytes(&(data[0]), data.size());
 }

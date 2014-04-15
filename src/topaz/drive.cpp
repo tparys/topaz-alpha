@@ -34,6 +34,12 @@ using namespace topaz;
 
 #define PAD_TO_MULTIPLE(val, mult) (((val + (mult - 1)) / mult) * mult)
 
+// How often to poll the device for data (millisecs)
+#define POLL_MS 10
+
+// How long to wait before timeout thrown
+#define TIMEOUT_SECS 5
+
 /**
  * \brief Topaz Hard Drive Constructor
  *
@@ -99,24 +105,20 @@ void drive::login_anon(uint64_t sp_uid)
   // If present, end any session in progress
   logout();
   
-  // Method Call - SessionMgr.StartSession[]
-  datum io;
-  io.object_uid() = SESSION_MGR;
-  io.method_uid() = START_SESSION;
-  
-  // Required Arguments (Simple Atoms)
-  io[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
-  io[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
-  io[2].value()   = atom::new_uint(1);       // Read/Write Session
+  // Parameters - Required Arguments (Simple Atoms)
+  datum params;
+  params[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
+  params[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
+  params[2].value()   = atom::new_uint(1);       // Read/Write Session
   
   // Off it goes
-  sendrecv(io, io);
+  datum rc = invoke(SESSION_MGR, START_SESSION, params);
   
   // Host session ID
-  host_session_id = io[0].value().get_uint();
+  host_session_id = rc[0].value().get_uint();
   
   // TPer session ID
-  tper_session_id = io[1].value().get_uint();
+  tper_session_id = rc[1].value().get_uint();
   
   // Debug
   TOPAZ_DEBUG(1) printf("Anonymous Session %lx:%lx Started\n",
@@ -134,34 +136,49 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin)
   // If present, end any session in progress
   logout();
   
-  // Method Call - SessionMgr.StartSession[]
-  datum io;
-  io.object_uid() = SESSION_MGR;
-  io.method_uid() = START_SESSION;
-  
-  // Required Arguments (Simple Atoms)
-  io[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
-  io[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
-  io[2].value()   = atom::new_uint(1);       // Read/Write Session
+  // Parameters - Required Arguments (Simple Atoms)
+  datum params;
+  params[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
+  params[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
+  params[2].value()   = atom::new_uint(1);       // Read/Write Session
   
   // Optional Arguments (Named Atoms)
-  io[3].name()        = atom::new_uint(0);       // Host Challenge
-  io[3].named_value() = atom::new_bin(pin);
-  io[4].name()        = atom::new_uint(3);       // Host Signing Authority (User)
-  io[4].named_value() = atom::new_uid(auth_uid);
+  params[3].name()        = atom::new_uint(0);       // Host Challenge
+  params[3].named_value() = atom::new_bin(pin);
+  params[4].name()        = atom::new_uint(3);       // Host Signing Authority (User)
+  params[4].named_value() = atom::new_uid(auth_uid);
   
   // Off it goes
-  sendrecv(io, io);
+  datum rc = invoke(SESSION_MGR, START_SESSION, params);
   
   // Host session ID
-  host_session_id = io[0].value().get_uint();
+  host_session_id = rc[0].value().get_uint();
   
   // TPer session ID
-  tper_session_id = io[1].value().get_uint();
+  tper_session_id = rc[1].value().get_uint();
   
   // Debug
   TOPAZ_DEBUG(1) printf("Authorized Session %lx:%lx Started\n",
 			tper_session_id, host_session_id);
+}
+
+/**
+ * \brief Query Value from Specified Table
+ *
+ * @param tbl_uid Identifier of target table
+ * @return Queried parameter
+ */
+datum drive::table_get(uint64_t tbl_uid)
+{
+  // Parameters - Required Arguments (Simple Atoms)
+  datum params;
+  params[0] = datum(datum::LIST); // Empty list
+  
+  // Method Call - UID.Get[]
+  datum rc = invoke(tbl_uid, GET, params);
+  
+  // Return first element of nested array
+  return rc[0];
 }
 
 /**
@@ -173,20 +190,18 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin)
  */
 atom drive::table_get(uint64_t tbl_uid, uint64_t tbl_col)
 {
-  // Method Call - UID.Get[]
-  datum io;
-  io.object_uid()        = tbl_uid;
-  io.method_uid()        = GET;
-  io[0][0].name()        = atom::new_uint(3);       // Starting Table Column
-  io[0][0].named_value() = atom::new_uint(tbl_col);
-  io[0][1].name()        = atom::new_uint(4);       // Ending Tabling Column
-  io[0][1].named_value() = atom::new_uint(tbl_col);
+  // Parameters - Required Arguments (Simple Atoms)
+  datum params;
+  params[0][0].name()        = atom::new_uint(3);       // Starting Table Column
+  params[0][0].named_value() = atom::new_uint(tbl_col);
+  params[0][1].name()        = atom::new_uint(4);       // Ending Tabling Column
+  params[0][1].named_value() = atom::new_uint(tbl_col);
   
-  // Off it goes
-  sendrecv(io, io);
+  // Method Call - UID.Get[]
+  datum rc = invoke(tbl_uid, GET, params);
   
   // Return first element of nested array
-  return io[0][0].named_value().value();
+  return rc[0][0].named_value().value();
 }
 
 /**
@@ -198,17 +213,14 @@ atom drive::table_get(uint64_t tbl_uid, uint64_t tbl_col)
  */
 void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val)
 {
-  // Method Call - UID.Get[]
-  datum io;
-  io.object_uid()        = tbl_uid;
-  io.method_uid()        = SET;
+  // Parameters - Required Arguments (Simple Atoms)
+  datum params;
+  params[0].name()                         = atom::new_uint(1);       // Values
+  params[0].named_value()[0].name()        = atom::new_uint(tbl_col);
+  params[0].named_value()[0].named_value() = val;
   
-  io[0].name()                         = atom::new_uint(1);       // Values
-  io[0].named_value()[0].name()        = atom::new_uint(tbl_col);
-  io[0].named_value()[0].named_value() = val;
-  
-  // Off it goes
-  sendrecv(io);
+  // Method Call - UID.Set[]
+  datum rc = invoke(tbl_uid, SET, params);
 }
 
 /**
@@ -220,51 +232,90 @@ atom drive::default_pin()
 }
 
 /**
- * \brief Combined I/O to TCG Opal drive
+ * \brief Method invocation
  *
- * @param data Read and write buffer for I/O
+ * \param object_uid UID indicating object to use for invocation
+ * \param method_uid UID indicating method to call on object
+ * \param params Parameters for method call
+ * \return Any data returned from method call
  */
-void drive::sendrecv(datum &data)
+datum drive::invoke(uint64_t object_uid, uint64_t method_uid, datum params)
 {
-  sendrecv(data, data);
-}
-
-/**
- * \brief Combined I/O to TCG Opal drive
- *
- * @param data_out Datum to write to drive
- * @param data_in  Datum read from drive
- */
-void drive::sendrecv(datum const &data_out, datum &data_in)
-{
-  // Send the command
-  send(data_out);
+  // Set up basic method call
+  datum call;
+  call.object_uid() = object_uid;
+  call.method_uid() = method_uid;
+  call.list()       = params.list();
   
-  // Enforce a minimum pause to allow operation to happen
-  usleep(10000);
+  // Debug
+  TOPAZ_DEBUG(3)
+  {
+    printf("Opal Call: ");
+    call.print();
+    printf("\n");
+  }
   
-  // Retrieve response
-  recv(data_in);
+  // Convert to byte vector
+  byte_vector bytes = call.encode_vector();
+  
+  // Tack on method status / control code (TBD - Something cleaner?)
+  bytes.push_back(datum::TOK_END_OF_DATA);
+  bytes.push_back(datum::TOK_START_LIST);
+  bytes.push_back(0); // 0 for execute, some values cancel operations .. (TBD?)
+  bytes.push_back(0); // Reserved
+  bytes.push_back(0); // Reserved
+  bytes.push_back(datum::TOK_END_LIST);
+  
+  // Send packet to drive.
+  // NOTE: Session manager is stateless and doesn't use session ID's ...
+  send(bytes, (object_uid != SESSION_MGR));
+  
+  // Gather response
+  recv(bytes);
+  
+  // Decode response
+  datum rc;
+  size_t count = rc.decode_vector(bytes);
+  
+  // Check status code (TBD - Clean this up)
+  if (bytes.size() - count != 6)
+  {
+    throw topaz_exception("Invalid method status on return");
+  }
+  unsigned status = bytes[count + 2];
+  
+  // Debug
+  TOPAZ_DEBUG(3)
+  {
+    printf("Opal Return : ");
+    rc.print();
+    if (status)
+    {
+      printf(" <STATUS=%u>", status);
+    }
+    printf("\n");
+  }
+  
+  // Fail out
+  if (status)
+  {
+    throw topaz_exception("Method call failed");
+  }
+  
+  return rc;
 }
 
 /**
  * \brief Send payload to TCG Opal drive
  *
  * @param outbuf Outbound data buffer
+ * \param session_ids Include TPer session IDs in ComPkt?
  */
-void drive::send(datum const &outbuf)
+void drive::send(byte_vector const &outbuf, bool session_ids)
 {
   unsigned char *block, *payload;
   opal_header_t *header;
   size_t sub_size, pkt_size, com_size, tot_size;
-  
-  // Debug
-  TOPAZ_DEBUG(3)
-  {
-    printf("Opal TX: ");
-    outbuf.print();
-    printf("\n");
-  }
   
   // Sub Packet contains the actual data
   sub_size = outbuf.size();
@@ -306,24 +357,15 @@ void drive::send(datum const &outbuf)
   header->pkt_hdr.length = htobe32(pkt_size);
   header->sub_hdr.length = htobe32(sub_size);
   
-  // Method calls to session manager don't need a session
-  if ((outbuf.get_type() == datum::METHOD) &&
-      (outbuf.object_uid() == SESSION_MGR))
-  {
-    // Leave TPer & Host session IDs at 0
-  }
-  else if (host_session_id == 0) // All others require it ...
-  {
-    throw topaz_exception("Failed send(): No TPer Session");
-  }
-  else // Include current TPer & Host session IDs
+  // Include TPer and Host sessions IDs? (All but session manager)
+  if (session_ids)
   {
     header->pkt_hdr.tper_session_id = htobe32(tper_session_id);
     header->pkt_hdr.host_session_id = htobe32(host_session_id);
   }
   
   // Copy over payload data
-  outbuf.encode_bytes(payload);
+  memcpy(payload, &(outbuf[0]), outbuf.size());
   
   // Hand off formatted Com Packet
   raw.if_send(1, com_id, block, tot_size / ATA_BLOCK_SIZE);
@@ -337,16 +379,21 @@ void drive::send(datum const &outbuf)
  *
  * @param inbuf Inbound data buffer
  */
-void drive::recv(datum &inbuf)
+void drive::recv(byte_vector &inbuf)
 {
   unsigned char block[ATA_BLOCK_SIZE] = {0}, *payload;
   opal_header_t *header;
   size_t count;
+  byte_vector bytes;
+  
+  // Maximum poll attempts before timeout
+  int max_iters = (TIMEOUT_SECS * 1000) / POLL_MS;
   
   // Set up pointers
   header = (opal_header_t*)block;
   payload = block + sizeof(opal_header_t);
   
+  // If still processing, drive may respond with "no data yet" ...
   do
   {
     // Receive formatted Com Packet
@@ -360,30 +407,22 @@ void drive::recv(datum &inbuf)
     if (be32toh(header->com_hdr.length) == 0)
     {
       // Response is not yet ready ... wait a bit and try again
-      usleep(10000);
+      usleep(POLL_MS * 1000);
     }
-  } while (be32toh(header->com_hdr.length) == 0);
+  } while ((be32toh(header->com_hdr.length) == 0) && (--max_iters > 0));
+  
+  // Check for timeout
+  if (max_iters == 0)
+  {
+    throw topaz_exception("Timeout waiting for response");
+  }
   
   // Ready the receiver buffer
   count = be32toh(header->sub_hdr.length);
   
-  // Decode response
-  inbuf.decode_bytes(payload, count);
-  
-  // Debug
-  TOPAZ_DEBUG(3)
-  {
-    printf("Opal RX: ");
-    inbuf.print();
-    printf("\n");
-  }
-  
-  // If a method call, verify return status
-  if ((inbuf.get_type() == datum::METHOD) &&
-      (inbuf.status() != datum::STA_SUCCESS))
-  {
-    throw topaz_exception("Nonzero status on method call (failed)");
-  }
+  // Extract response
+  inbuf.resize(count);
+  memcpy(&(inbuf[0]), payload, count);
 }
 
 /**
@@ -625,17 +664,12 @@ void drive::probe_level0()
 void drive::probe_level1()
 {
   TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
-  
-  // Gin up a Properties call on Session Manager
-  datum io;
-  io.object_uid() = SESSION_MGR;
-  io.method_uid() = PROPERTIES;
-  
-  // Query communication properties
-  sendrecv(io, io);
+
+  // Ask session manager about it's comms properties
+  datum rc = invoke(SESSION_MGR, PROPERTIES);
   
   // Comm props stored in list (first element) of named items
-  datum_vector const &props = io[0].list();
+  datum_vector const &props = rc[0].list();
   TOPAZ_DEBUG(2) printf("  Received %lu items\n", props.size());
   
   for (size_t i = 0; i < props.size(); i++)
@@ -668,17 +702,21 @@ void drive::logout()
     TOPAZ_DEBUG(1) printf("Stopping TPM Session %lx:%lx\n",
 			  tper_session_id, host_session_id);
     
-    // Gin up an end of session
-    datum io(datum::END_SESSION);
-    
     // Off it goes
     try
     {
-      sendrecv(io);
+      // End of session is a single byte
+      byte_vector bytes;
+      bytes.push_back(datum::TOK_END_SESSION);
+      
+      // Bye!
+      send(bytes);
+      recv(bytes);
     }
     catch (topaz_exception &e)
     {
-      // Nada
+      // Logout might time out, such as on TPer revert
+      // no big deal, and is expected behavior
     }
     
     // Mark state

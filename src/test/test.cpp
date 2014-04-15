@@ -44,9 +44,7 @@ int main(int argc, char **argv)
     
     target.login_anon(ADMIN_SP);
     
-    atom pin = target.default_pin();
-    
-    target.login(ADMIN_SP, SID, pin.get_bytes());
+    target.invoke(ADMIN_SP, REVERT);
   }
   catch (topaz_exception &e)
   {

@@ -122,11 +122,7 @@ int main(int argc, char **argv)
       do_auth_login(target, cur_pin);
       
       // Locking_SP.Activate[]
-      io.object_uid() = LOCKING_SP;
-      io.method_uid() = ACTIVATE;
-      
-      // Fire in the hole
-      target.sendrecv(io);
+      target.invoke(LOCKING_SP, ACTIVATE);
     }
     // Revert TPer (Admin & anything else)
     else if (strcmp(argv[optind + 1], "revert") == 0)
@@ -135,11 +131,7 @@ int main(int argc, char **argv)
       do_auth_login(target, cur_pin);
       
       // Admin_SP.Revert[]
-      io.object_uid() = ADMIN_SP;
-      io.method_uid() = REVERT;
-      
-      // Fire in the hole
-      target.sendrecv(io);
+      target.invoke(ADMIN_SP, REVERT);
     }
     else
     {

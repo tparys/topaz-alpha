@@ -187,16 +187,6 @@ namespace topaz
     uint64_t const &method_uid() const;
     
     /**
-     * \brief Query Value Method UID
-     */
-    status_t &status();
-    
-    /**
-     * \brief Query Value Method UID (const)
-     */
-    status_t const &status() const;
-    
-    /**
      * \brief Query List
      */
     datum_vector &list();
@@ -273,9 +263,6 @@ namespace topaz
     // Method call specific parameters
     uint64_t data_object_uid; // Object reference
     uint64_t data_method_uid; // Method reference
-    status_t data_status;     // Method call status code
-    
-    // Storage of other datums (lists / method calls)
     
   };
   
