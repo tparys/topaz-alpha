@@ -10,3 +10,6 @@ target_link_libraries(tp_admin topaz)
 add_executable(tp_lock pinutil.cpp tp_lock.cpp)
 target_link_libraries(tp_lock topaz)
 
+# TPer Crypto Wipe
+add_executable(tp_erase pinutil.cpp tp_erase.cpp)
+target_link_libraries(tp_erase topaz)

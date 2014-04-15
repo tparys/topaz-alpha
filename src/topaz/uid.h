@@ -53,6 +53,9 @@ namespace topaz
     // Admin SP User Security Identifier (SID)
     SID              = _UID_MAKE(   0x9,     0x6),
     
+    // Physical Security ID
+    PSID             = _UID_MAKE(   0x9, 0x1ff01),
+    
     // C_PIN Tables documented in Opal 1.0 Spec - Section 4.3.1.9
     C_PIN_SID        = _UID_MAKE(   0xb,     0x1), // Current PIN of SID
     C_PIN_MSID       = _UID_MAKE(   0xb,  0x8402)  // Factory Default PIN of SID
