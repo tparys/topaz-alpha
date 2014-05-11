@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <signal.h>
 #include <cstdio>
 #include <cstring>
 #include <ctype.h>
@@ -12,6 +13,7 @@
 using namespace std;
 using namespace topaz;
 
+void ctl_c_handler(int sig);
 void usage();
 char const *lifecycle_to_string(uint64_t val);
 void do_auth_login(drive &target, atom &prov_pin);
@@ -21,6 +23,9 @@ int main(int argc, char **argv)
   atom cur_pin, new_pin;
   char c;
   datum io;
+  
+  // Install handler for Ctl-C to restore terminal to sane state
+  signal(SIGINT, ctl_c_handler);
   
   // Process command line switches */
   opterr = 0;
@@ -147,6 +152,13 @@ int main(int argc, char **argv)
   }
   
   return 0;
+}
+
+void ctl_c_handler(int sig)
+{
+  // Make sure this is on when program terminates
+  enable_terminal_echo();
+  exit(0);
 }
 
 void usage()

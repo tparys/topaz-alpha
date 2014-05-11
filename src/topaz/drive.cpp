@@ -351,6 +351,19 @@ datum drive::invoke(uint64_t object_uid, uint64_t method_uid, datum params)
 }
 
 /**
+ * \brief Invoke Revert[] on Admin_SP, and handle session termination
+ */
+void drive::admin_sp_revert()
+{
+  // Call it
+  invoke(ADMIN_SP, REVERT);
+  
+  // If this succeeds, the session is terminated immediately
+  tper_session_id = 0;
+  host_session_id = 0;
+}
+
+/**
  * \brief Send payload to TCG Opal drive
  *
  * @param outbuf Outbound data buffer

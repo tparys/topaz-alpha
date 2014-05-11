@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <signal.h>
 #include <cstdio>
 #include <cstring>
 #include <ctype.h>
@@ -13,6 +14,7 @@
 using namespace std;
 using namespace topaz;
 
+void ctl_c_handler(int sig);
 void usage();
 bool require_args(int min, int passed);
 uint64_t range_id_to_uid(uint64_t id);
@@ -32,6 +34,9 @@ int main(int argc, char **argv)
   uint64_t user_uid = ADMIN_BASE + 1, range_id, start, size;
   char c;
   datum io;
+  
+  // Install handler for Ctl-C to restore terminal to sane state
+  signal(SIGINT, ctl_c_handler);
   
   // Process command line switches */
   opterr = 0;
@@ -235,6 +240,13 @@ int main(int argc, char **argv)
   }
   
   return 0;
+}
+
+void ctl_c_handler(int sig)
+{
+  // Make sure this is on when program terminates
+  enable_terminal_echo();
+  exit(0);
 }
 
 void usage()

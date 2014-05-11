@@ -23,6 +23,9 @@ LBA: Logical Block Addressing
 P1667:
   IEEE standard for authenticating to storage devices.
 
+PSID: Physical SID
+  A PIN on the outside of a Opal drive used to recover SID credentials.
+
 MSID: Manufactured [Default] SID
   The factory default state of the drive owner credentials (SID).
 
@@ -56,7 +59,8 @@ SD: Storage Device
 
 SID: Security Identifier
   From spec: "The authority that represents the TPer owner."
-  In English: The owner of the drive
+  In English: A set of user credentials that represent the owner, capable
+    of enabling locking features and recovering the drive to factory state.
 
 SP: Security Provider
   A security function of a TPM, such as locking or authentication.

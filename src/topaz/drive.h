@@ -120,6 +120,11 @@ namespace topaz
     datum invoke(uint64_t object_uid, uint64_t method_uid,
 		 datum params = datum(datum::LIST));
     
+    /**
+     * \brief Invoke Revert[] on Admin_SP, and handle session termination
+     */
+    void admin_sp_revert();
+
   protected:
     
     /**
