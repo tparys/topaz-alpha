@@ -29,7 +29,7 @@ void wipe_range(drive &target, uint64_t id);
 int main(int argc, char **argv)
 {
   atom cur_pin, new_pin;
-  uint64_t user_uid = 0, range_id, start, size;
+  uint64_t user_uid = ADMIN_BASE + 1, range_id, start, size;
   char c;
   datum io;
   
@@ -83,12 +83,6 @@ int main(int argc, char **argv)
     usage();
     return -1;
   }
-  if (user_uid == 0)
-  {
-    cerr << "User ID not specified" << endl;
-    usage();
-    return -1;
-  }
   
   // Open the device
   try
@@ -127,6 +121,28 @@ int main(int argc, char **argv)
       {
 	query_acct(target, USER_BASE + i, "user", i);
       }
+    }
+    // MBR stuff
+    else if  (strcmp(argv[optind + 1], "mbr") == 0)
+    {
+      //target.table_get(MBR_CONTROL);
+      //target.table_set(MBR_CONTROL, 1, atom::new_uint(1));
+      
+      size_t len = 128 * 1024 * 1024;
+      char *raw = new char[len];
+      memset(raw, 0x00, len);
+      target.table_set_bin(MBR_UID, 0, raw, len);
+      delete [] raw;
+
+      /*
+      datum params;
+      params[0].name()        = atom::new_uint(0); // Where
+      params[0].named_value() = atom::new_uint(0); // Offset of 0
+      params[1].name()        = atom::new_uint(1); // Values
+      params[1].named_value() = atom::new_bin(buf, sizeof(buf));
+      
+      datum rc = target.invoke(MBR_UID, SET, params);
+      */
     }
     // Display locking ranges
     else if (strcmp(argv[optind + 1], "ranges") == 0)

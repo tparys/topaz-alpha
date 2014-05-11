@@ -89,13 +89,20 @@ namespace topaz
     atom table_get(uint64_t tbl_uid, uint64_t tbl_col);
     
     /**
-     * \brief Query Value from Specified Table
+     * \brief Set Value in Specified Table
      *
      * @param tbl_uid Identifier of target table
      * @param tbl_col Column number of data to retrieve (table specific)
      * @param val Value to set in column
      */
     void table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val);
+    
+    /**
+     * \brief Set Binary Table
+     *
+     */
+    void table_set_bin(uint64_t tbl_uid, uint64_t offset,
+		       void const *ptr, uint64_t len);
     
     /**
      * \brief Retrieve default device PIN

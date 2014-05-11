@@ -44,7 +44,10 @@ int main(int argc, char **argv)
     
     target.login_anon(ADMIN_SP);
     
-    target.invoke(ADMIN_SP, REVERT);
+    //target.invoke(ADMIN_SP, REVERT);
+    
+    target.table_get(MBR_CONTROL);
+    
   }
   catch (topaz_exception &e)
   {

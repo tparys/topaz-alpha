@@ -55,7 +55,7 @@ drive::drive(char const *path)
   has_opal2 = false;
   lba_align = 1;
   com_id = 0;
-  max_com_pkt_size = -1;
+  max_com_pkt_size = 512; // Until otherwise identified
   
   // Check for drive TPM
   probe_tpm();
@@ -205,7 +205,52 @@ atom drive::table_get(uint64_t tbl_uid, uint64_t tbl_col)
 }
 
 /**
- * \brief Query Value from Specified Table
+ * \brief Set Binary Table
+ *
+ */
+void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
+			  void const *ptr, uint64_t len)
+{
+  byte const *raw = (byte const *)ptr;
+  uint64_t chunk_size, send_size;
+  
+  // First, estimate how much data we can send with each set call
+  chunk_size  = max_com_pkt_size;      // Maximum IF-SEND() size
+  chunk_size -= sizeof(opal_header_t); // Header bytes
+  chunk_size -= 21;                    // Min size of method call
+  chunk_size -= 2 + 1 + 1 + 8;         // First arg, offset (short uint atom)
+  chunk_size -= 2 + 1 + 4 + 0;         // Second arg, data (long bin atom)
+  chunk_size -= 5;                     // Method status
+  chunk_size -= 3;                     // Packet padding (0-3 bytes)
+  
+  // Biggest multiple of 4096 up to this number
+  chunk_size = (chunk_size / 4096) * 4096;
+  
+  // Send data in one or more chunks
+  while (len)
+  {
+    // Next send is at most chunk_size
+    send_size = (len > chunk_size ? chunk_size : len);
+    
+    // Cook up parameter list for table set
+    datum params;
+    params[0].name()        = atom::new_uint(0);             // Where
+    params[0].named_value() = atom::new_uint(offset);        // Offset of 0
+    params[1].name()        = atom::new_uint(1);             // Values
+    params[1].named_value() = atom::new_bin(raw, send_size); // Data
+    
+    // Invoke method
+    invoke(tbl_uid, SET, params);
+    
+    // Bump counters, pointers
+    len    -= send_size;
+    raw    += send_size;
+    offset += send_size;
+  }
+}
+
+/**
+ * \brief Set Value in Specified Table
  *
  * @param tbl_uid Identifier of target table
  * @param tbl_col Column number of data to retrieve (table specific)

@@ -73,6 +73,11 @@ namespace topaz
     LOCKINGINFO      = _UID_MAKE( 0x801,     0x1), // LockingInfo (max ranges & such)
     LOCKING          = _UID_MAKE( 0x802,     0x1), // Locking Table (current ranges)
     
+    // MBR Shadowing (Size of MBR in descriptor object, 1:804
+    MBR_CONTROL      = _UID_MAKE( 0x803,     0x1), // MBR Control Register
+    MBR_UID          = _UID_MAKE( 0x804,     0x0), // MBR ?
+    MBR              = _UID_MAKE( 0x804,     0x1), // MBR ?
+
     // LBA Ranges Objects
     LBA_RANGE_GLOBAL = _UID_MAKE( 0x802,     0x1),
     LBA_RANGE_BASE   = _UID_MAKE( 0x802, 0x30000)
