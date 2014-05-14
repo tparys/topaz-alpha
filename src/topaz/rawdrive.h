@@ -36,7 +36,19 @@ namespace topaz
     uint8_t low;
   } ata_word_t;
   
-  // ATA Command
+  // ATA12 Command
+  typedef struct
+  {
+    uint8_t feature;
+    uint8_t count;
+    uint8_t lba_low;
+    uint8_t lba_mid;
+    uint8_t lba_high;
+    uint8_t device;
+    uint8_t command;
+  } ata12_cmd_t;
+  
+  // ATA16 Command
   typedef struct
   {
     ata_word_t feature;
@@ -46,7 +58,7 @@ namespace topaz
     ata_word_t lba_high;
     uint8_t    device;
     uint8_t    command;
-  } ata_cmd_t;
+  } ata16_cmd_t;
   
   class rawdrive
   {
@@ -149,7 +161,7 @@ namespace topaz
      * @param bcount Length of data buffer in blocks (512 bytes)
      * @param wait   Command timeout (seconds)
      */
-    void ata_exec_12(unsigned char const *cmd, int type,
+    void ata_exec_12(ata12_cmd_t &cmd, int type,
 		     void *data, uint8_t bcount, int wait);
     
     /**
@@ -158,13 +170,13 @@ namespace topaz
      * Execute ATA16 command through SCSI/ATA translation layer,
      * using Linux SGIO ioctl interface.
      *
-     * @param cmd    7 byte buffer to valid ATA16 command
+     * @param cmd    12 byte buffer to valid ATA16 command
      * @param type   IO type (SG_DXFER_NONE/SG_DXFER_FROM_DEV/SG_DXFER_TO_DEV)
      * @param data   Data buffer for ATA operation, NULL on SGIO_DATA_NONE
      * @param bcount Length of data buffer in blocks (512 bytes)
      * @param wait   Command timeout (seconds)
      */
-    void ata_exec_16(ata_cmd_t &cmd, int type,
+    void ata_exec_16(ata16_cmd_t &cmd, int type,
 		     void *data, uint8_t bcount, int wait);
     
     /* internal data */

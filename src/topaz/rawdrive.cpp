@@ -94,22 +94,36 @@ rawdrive::~rawdrive()
 void rawdrive::if_send(uint8_t proto, uint16_t comid,
 		       void *data, uint8_t bcount)
 {
-  // Blank ATA12 command
-  unsigned char cmd[7] = {0};
-  
-  // Fill in TCG Opal command
-  cmd[0] = proto;
-  cmd[1] = bcount;
-  cmd[3] = comid & 0xff;
-  cmd[4] = comid >> 8;
-  cmd[6] = 0x5e;         // Trusted send
-  
-  // Off it goes
-  ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
+  if (USE_ATA12)
+  {
+    // ATA12 Command - Trusted Send (0x5e)
+    ata12_cmd_t cmd  = {0};
+    cmd.feature      = proto;
+    cmd.count        = bcount;
+    cmd.lba_mid      = comid & 0xff;
+    cmd.lba_high     = comid >> 8;
+    cmd.command      = 0x5e;
+    
+    // Off it goes
+    ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
+  }
+  else
+  {
+    // ATA16 Command - Trusted Send (0x5e)
+    ata16_cmd_t cmd  = {0};
+    cmd.feature.low  = proto;
+    cmd.count.low    = bcount;
+    cmd.lba_mid.low  = comid & 0xff;
+    cmd.lba_high.low = comid >> 8;
+    cmd.command      = 0x5e;
+    
+    // Off it goes
+    ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
+  }
 }
 
 /**
- * if_send (TCG Opal IF-RECV)
+ * if_recv (TCG Opal IF-RECV)
  *
  * Low level interface to receive data from Drive TPM
  *
@@ -121,18 +135,32 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
 void rawdrive::if_recv(uint8_t proto, uint16_t comid,
 		       void *data, uint8_t bcount)
 {
-  // Blank ATA12 command
-  unsigned char cmd[7] = {0};
-  
-  // Fill in TCG Opal command
-  cmd[0] = proto;
-  cmd[1] = bcount;
-  cmd[3] = comid & 0xff;
-  cmd[4] = comid >> 8;
-  cmd[6] = 0x5c;         // Trusted receive
-  
-  // Off it goes
-  ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
+  if (USE_ATA12)
+  {
+    // ATA12 Command - Trusted Receive (0x5c)
+    ata12_cmd_t cmd  = {0};
+    cmd.feature      = proto;
+    cmd.count        = bcount;
+    cmd.lba_mid      = comid & 0xff;
+    cmd.lba_high     = comid >> 8;
+    cmd.command      = 0x5c;
+    
+    // Off it goes
+    ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
+  }
+  else
+  {
+    // ATA16 Command - Trusted Receive (0x5c)
+    ata16_cmd_t cmd  = {0};
+    cmd.feature.low  = proto;
+    cmd.count.low    = bcount;
+    cmd.lba_mid.low  = comid & 0xff;
+    cmd.lba_high.low = comid >> 8;
+    cmd.command      = 0x5c;         // Trusted receive
+    
+    // Off it goes
+    ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
+  }
 }
 
 /**
@@ -198,11 +226,9 @@ void rawdrive::get_identify(uint16_t *data)
 {
   if (USE_ATA12)
   {
-    // Blank ATA12 command
-    unsigned char cmd[12] = {0};
-    
-    // IDENTIFY DEVICE
-    cmd[6] = 0xEC;
+    // ATA12 Command - Identify Device (0xec)
+    ata12_cmd_t cmd = {0};
+    cmd.command     = 0xec;
     
     // Off it goes
     TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
@@ -210,9 +236,9 @@ void rawdrive::get_identify(uint16_t *data)
   }
   else
   {
-    // Blank ATA16 command
-    ata_cmd_t cmd = {0};
-    cmd.command = 0xEC;
+    // ATA16 Command - Identify Device (0xec)
+    ata16_cmd_t cmd = {0};
+    cmd.command     = 0xec;
     
     // Off it goes
     TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
@@ -307,8 +333,8 @@ void rawdrive::dump_id_string(char const *desc, uint16_t *data, size_t max)
  * @param bcount Length of data buffer in blocks (512 bytes)
  * @param wait   Command timeout (seconds)
  */
-void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
-				  void *data, uint8_t bcount, int wait)
+void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
+			   void *data, uint8_t bcount, int wait)
 {
   struct sg_io_hdr sg_io;  // ioctl data structure
   unsigned char cdb[12];   // Command descriptor block
@@ -321,7 +347,7 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   memset(&sense, 0, sizeof(sense));
   
   ////
-  // Fill in ioctl data for ATA16 pass through
+  // Fill in ioctl data for ATA12 pass through
   //
   
   // Mandatory per interface
@@ -376,7 +402,7 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   }
   
   // Rest of ATA12 command get copied here (7 bytes)
-  memcpy(cdb + 3, cmd, 7);
+  memcpy(cdb + 3, &cmd, 7);
   
   ////
   // Run ioctl
@@ -387,7 +413,7 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
   {
     // Command descriptor block
     printf("ATA Command:\n");
-    dump(cmd, 7);
+    dump(&cmd, sizeof(cmd));
     
     // Command descriptor block
     printf("SCSI CDB:\n");
@@ -440,8 +466,8 @@ void rawdrive::ata_exec_12(unsigned char const *cmd, int type,
  * @param bcount Length of data buffer in blocks (512 bytes)
  * @param wait   Command timeout (seconds)
  */
-void rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
-				  void *data, uint8_t bcount, int wait)
+void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
+			   void *data, uint8_t bcount, int wait)
 {
   struct sg_io_hdr sg_io;  // ioctl data structure
   unsigned char cdb[16];   // Command descriptor block
@@ -518,6 +544,10 @@ void rawdrive::ata_exec_16(ata_cmd_t &cmd, int type,
   // Debug output command
   TOPAZ_DEBUG(4)
   {
+    // Command descriptor block
+    printf("ATA Command:\n");
+    dump(&cmd, sizeof(cmd));
+    
     // Command descriptor block
     printf("SCSI CDB:\n");
     dump(cdb, sizeof(cdb));
