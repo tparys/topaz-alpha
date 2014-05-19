@@ -10,6 +10,7 @@
 #include <topaz/exceptions.h>
 #include <topaz/datum.h>
 #include <topaz/uid.h>
+#include "spinner.h"
 #include "pinutil.h"
 using namespace std;
 using namespace topaz;
@@ -130,24 +131,91 @@ int main(int argc, char **argv)
     // MBR stuff
     else if  (strcmp(argv[optind + 1], "mbr") == 0)
     {
-      //target.table_get(MBR_CONTROL);
-      //target.table_set(MBR_CONTROL, 1, atom::new_uint(1));
-      
-      size_t len = 128 * 1024 * 1024;
-      char *raw = new char[len];
-      memset(raw, 0x00, len);
-      target.table_set_bin(MBR_UID, 0, raw, len);
-      delete [] raw;
-
-      /*
-      datum params;
-      params[0].name()        = atom::new_uint(0); // Where
-      params[0].named_value() = atom::new_uint(0); // Offset of 0
-      params[1].name()        = atom::new_uint(1); // Values
-      params[1].named_value() = atom::new_bin(buf, sizeof(buf));
-      
-      datum rc = target.invoke(MBR_UID, SET, params);
-      */
+      if (require_args(3, argc - optind))
+      {
+	if (strcmp(argv[optind + 2], "enable") == 0)
+	{
+	  // Set MBR Ctl column "Enable(1)" to 1
+	  target.table_set(MBR_CONTROL, 1, atom::new_uint(1));
+	}
+	else if (strcmp(argv[optind + 2], "disable") == 0)
+	{
+	  // Set MBR Ctl column "Enable(1)" to 0
+	  target.table_set(MBR_CONTROL, 1, atom::new_uint(0));
+	}
+	else if (strcmp(argv[optind + 2], "hide") == 0)
+	{
+	  // Set MBR Ctl column "Done(2)" to 1
+	  target.table_set(MBR_CONTROL, 2, atom::new_uint(1));
+	}
+	else if (strcmp(argv[optind + 2], "unhide") == 0)
+	{
+	  // Set MBR Ctl column "Done(2)" to 0
+	  target.table_set(MBR_CONTROL, 2, atom::new_uint(0));
+	}
+	else
+	{
+	  // ??
+	  throw topaz_exception("Unknown MBR command");
+	}
+      }
+    }
+    // MBR stuff
+    else if  (strcmp(argv[optind + 1], "mbr_load") == 0)
+    {
+      if (require_args(3, argc - optind))
+      {
+	size_t mbr_max = 128 * 1024 * 1024; // Maximum size of MBR (hardcode for now)
+	size_t xfer_max = 32 * 512;         // Maximum transfer size
+	size_t file_len; //, xfer_start = 0;
+	
+	// Open up input file
+	FILE *ifile = fopen(argv[optind + 2], "r");
+	if (ifile == NULL)
+	{
+	  throw topaz_exception("Cannot open input file for MBR shadow");
+	}
+	
+	// Verify size of file
+	fseek(ifile, 0, SEEK_END);
+	file_len = ftell(ifile);
+	fseek(ifile, 0, SEEK_SET);
+	if (file_len > mbr_max)
+	{
+	  throw topaz_exception("Input file too large for MBR shadow");
+	}
+	
+	// Count how many transfers are needed for write
+	size_t xfer_count = 1 + (file_len - 1) / xfer_max;
+	printf("Transfer will require %lu block operations ...\n", xfer_count);
+	
+	// Allocate space
+	char *xfer_data = new char[xfer_max];
+	
+	// Visual feedback
+	spinner spin(xfer_count);
+	
+	// Do the transfer
+	for (size_t xfer_num = 0; xfer_num < xfer_count; xfer_num++)
+	{
+	  // Read the data out of the file
+	  int rc = fread(xfer_data, 1, xfer_max, ifile);
+	  if (rc < 1)
+	  {
+	    delete [] xfer_data;
+	    throw topaz_exception("Invalid read on MBR input file");
+	  }
+	  
+	  // Flush data to MBR shadow
+	  target.table_set_bin(MBR_UID, xfer_num * xfer_max, xfer_data, rc);
+	  
+	  // Visual feedback
+	  spin.tick();
+	}
+	
+	// Cleanup
+	delete [] xfer_data;
+      }
     }
     // Display locking ranges
     else if (strcmp(argv[optind + 1], "ranges") == 0)
