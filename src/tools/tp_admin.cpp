@@ -5,7 +5,7 @@
  *
  * Topaz Tools - Admin SP Console Utility
  *
- * Console utility to manipulate administrative features within an TCG Opal
+ * Console utility to manipulate administrative features within a TCG Opal
  * compliant Self-Encrypting Hard Drive (SED).
  *
  * Copyright (c) 2014, T Parys

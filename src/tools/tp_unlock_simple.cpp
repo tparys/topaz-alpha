@@ -5,7 +5,8 @@
  *
  * Topaz Tools - Simple Unlock Program
  *
- * Demonstration application to showcase how to programatically unlock 
+ * Demonstration application to showcase how to programatically unlock a TCG
+ * compliant Self-Encrypting Hard Drive (SED).
  *
  * Copyright (c) 2014, T Parys
  * All rights reserved.
@@ -50,11 +51,14 @@ using namespace topaz;
 void ctl_c_handler(int sig);
 void usage();
 uint64_t get_uid(char const *user_str);
+bool unlock_target(char const *path, uint64_t user_uid, byte_vector pin,
+		   uint64_t range_count = 1);
 
 int main(int argc, char **argv)
 {
   atom user_pin;
   uint64_t user_uid = ADMIN_BASE + 1;
+  uint64_t lba_count = 1;
   char c;
   
   // Install handler for Ctl-C to restore terminal to sane state
@@ -62,7 +66,7 @@ int main(int argc, char **argv)
   
   // Process command line switches */
   opterr = 0;
-  while ((c = getopt (argc, argv, "u:p:")) != -1)
+  while ((c = getopt (argc, argv, "u:p:r:")) != -1)
   {
     switch (c)
     {
@@ -74,8 +78,12 @@ int main(int argc, char **argv)
 	user_pin = atom::new_bin(optarg);
 	break;
 	
+      case 'r':
+	lba_count = atoi(optarg);
+	break;
+	
       default:
-	if (optopt == 'p')
+	if ((optopt == 'u') || (optopt == 'p') || (optopt == 'r'))
 	{
 	  cerr << "Option -" << optopt << " requires an argument." << endl;
 	}
@@ -109,28 +117,22 @@ int main(int argc, char **argv)
     }
     
     // Attempt drive unlock
-    try
+    if (unlock_target(argv[optind], user_uid, user_pin.get_bytes(), lba_count))
     {
-      // Login with specified credentials
-      target.login(LOCKING_SP, user_uid, user_pin.get_bytes());
-      
-      // We are "Done"(2) with the MBR shadow (1 -> hide it)
-      target.table_set(MBR_CONTROL, 2, atom::new_uint(1));
-      
-      // Clear "Read Lock"(7) on global range (0 -> turn it off)
-      target.table_set(LBA_RANGE_GLOBAL, 7, atom::new_uint(0));
-      
-      // Clear "Write Lock"(8) on global range (0 -> turn it off)
-      target.table_set(LBA_RANGE_GLOBAL, 8, atom::new_uint(0));
-      
-      // All done
+      // Succeeded
       break;
     }
-    catch (topaz_exception &e)
+    else
     {
       // Failed, clear credentials and try again
       user_pin = atom();
     }
+  }
+  
+  // If additional drives are specified, try to unlock those too
+  while (++optind < argc)
+  {
+    unlock_target(argv[optind], user_uid, user_pin.get_bytes(), lba_count);
   }
   
   return 0;
@@ -151,7 +153,8 @@ void usage()
        << endl
        << "Options:" << endl
        << "  -p <pin>  - Provide PIN credentials" << endl
-       << "  -u <user> - Specify user (default admin1)" << endl;
+       << "  -u <user> - Specify user (default admin1)" << endl
+       << "  -r <num>  - Unlock first <num> LBA ranges (default 1)" << endl;
 }
 
 uint64_t get_uid(char const *user_str)
@@ -177,3 +180,45 @@ uint64_t get_uid(char const *user_str)
   return base + num;
 }
 
+bool unlock_target(char const *path, uint64_t user_uid, byte_vector pin,
+		   uint64_t range_count)
+{
+  try
+  {
+    // Subject target
+    drive target(path);
+    
+    // Login with specified credentials
+    target.login(LOCKING_SP, user_uid, pin);
+    
+    // MBR Shadow isn't needed when unlocked, (1 -> hide it)
+    target.table_set(MBR_CONTROL, 2, atom::new_uint(1));
+    
+    // Clear "Read Lock"(7) on global range (0 -> turn it off)
+    target.table_set(LBA_RANGE_GLOBAL, 7, atom::new_uint(0));
+      
+    // Clear "Write Lock"(8) on global range (0 -> turn it off)
+    target.table_set(LBA_RANGE_GLOBAL, 8, atom::new_uint(0));
+    
+    // If more than one LBA range specified, unlock the next few as well
+    for (uint64_t count = 1; count < range_count; count++)
+    {
+      // UID of next LBA range
+      uint64_t lba_uid = LBA_RANGE_BASE + count;
+      
+      // Clear "Read Lock"(7) on this LBA range (0 -> turn it off)
+      target.table_set(lba_uid, 7, atom::new_uint(0));
+      
+      // Clear "Write Lock"(8) on this LBA range (0 -> turn it off)
+      target.table_set(lba_uid, 8, atom::new_uint(0));
+    }
+    
+    // Succeeded
+    return true;
+  }
+  catch (topaz_exception &e)
+  {
+    // Failed
+    return false;
+  }
+}

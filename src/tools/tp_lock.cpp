@@ -5,7 +5,7 @@
  *
  * Topaz Tools - Locking SP Console Utility
  *
- * Console utility to manipulate locking features within an TCG Opal compliant
+ * Console utility to manipulate locking features within a TCG Opal compliant
  * Self-Encrypting Hard Drive (SED).
  *
  * Copyright (c) 2014, T Parys
@@ -145,8 +145,23 @@ int main(int argc, char **argv)
     // Determine our operation
     //
     
+    // Change PIN
+    if (strcmp(argv[optind + 1], "setpin") == 0)
+    {
+      // Identify C_PIN table UID for user's UID
+      uint64_t pin_uid = user_uid + (C_PIN_USER_BASE - USER_BASE);
+      
+      // If new PIN not specified, get it now
+      if (new_pin.get_type() != atom::BYTES)
+      {
+	new_pin = pin_from_console("new");
+      }
+      
+      // Set PIN of current user in Locking SP
+      target.table_set(pin_uid, 3, new_pin);
+    }
     // Display available users
-    if (strcmp(argv[optind + 1], "users") == 0)
+    else if (strcmp(argv[optind + 1], "users") == 0)
     {
       uint64_t i;
       
@@ -355,7 +370,20 @@ void usage()
 {
   cerr << endl
        << "Usage:" << endl
-       << "  tp_lock [opts] <drive> status    - View current Locking SP status" << endl
+       << "  tp_lock [opts] <drive> setpin                  - Change user pin" << endl
+       << "  tp_lock [opts] <drive> users                   - List Locking SP users" << endl
+       << "  tp_lock [opts] <drive> mbr enable              - Enable Shadow MBR" << endl
+       << "  tp_lock [opts] <drive> mbr disable             - Disable Shadow MBR" << endl
+       << "  tp_lock [opts] <drive> mbr hide                - Hide Shadow MBR (until reset)" << endl
+       << "  tp_lock [opts] <drive> mbr unhide              - Unhide Shadow MBR (until reset)" << endl
+       << "  tp_lock [opts] <drive> mbr <cmd>               - Manipulate Shadow MBR" << endl
+       << "  tp_lock [opts] <drive> mbr_load <file>         - Populate Shadow MBR" << endl
+       << "  tp_lock [opts] <drive> ranges                  - List valid locking ranges" << endl
+       << "  tp_lock [opts] <drive> lock_on_reset <range>   - Enable Lock on range" << endl
+       << "  tp_lock [opts] <drive> unlock_on_reset <range> - Disable Lock on range" << endl
+       << "  tp_lock [opts] <drive> lock <range>            - Lock range (until reset)" << endl
+       << "  tp_lock [opts] <drive> unlock <range>          - Unlock range (until reset)" << endl
+    
        << endl
        << "Options:" << endl
        << "  -p <pin>  - Provide current SID PIN" << endl
