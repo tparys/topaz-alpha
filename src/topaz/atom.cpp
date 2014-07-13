@@ -36,6 +36,7 @@
 #include <cstdio>
 #include <cstring>
 #include <endian.h>
+#include <inttypes.h>
 #include <topaz/atom.h>
 #include <topaz/exceptions.h>
 #include <topaz/uid.h>
@@ -686,12 +687,12 @@ void atom::print() const
       
     case atom::UINT:
       // Unsigned integer
-      printf("%lu(u)", uint_val);
+      printf("%" PRIu64 "(u)", uint_val);
       break;
       
     case atom::INT:
       // Signed integer
-      printf("%ld(s)", int_val);
+      printf("%" PRId64 "(s)", int_val);
       break;
       
     case atom::BYTES:
@@ -727,9 +728,9 @@ void atom::print() const
 	// Assuming UID ...
 	uint64_t uid = get_uid();
 	
-	printf("%llx", _UID_HIGH(uid));
+	printf("%x", (unsigned int)_UID_HIGH(uid));
 	printf(":");
-	printf("%llx", _UID_LOW(uid));
+	printf("%x", (unsigned int)_UID_LOW(uid));
       }
       // Plain ol' byte sequence ...
       else

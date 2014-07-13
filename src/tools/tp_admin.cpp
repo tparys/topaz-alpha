@@ -41,7 +41,6 @@
 #include <topaz/debug.h>
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
-#include <topaz/datum.h>
 #include <topaz/uid.h>
 #include "pinutil.h"
 using namespace std;
@@ -50,13 +49,13 @@ using namespace topaz;
 void ctl_c_handler(int sig);
 void usage();
 char const *lifecycle_to_string(uint64_t val);
-void do_auth_login(drive &target, atom &prov_pin);
+void do_auth_login(drive &target, string pin, bool pin_valid);
 
 int main(int argc, char **argv)
 {
-  atom cur_pin, new_pin;
+  string cur_pin, new_pin;
+  bool cur_pin_valid = false, new_pin_valid = false;
   char c;
-  datum io;
   
   // Install handler for Ctl-C to restore terminal to sane state
   signal(SIGINT, ctl_c_handler);
@@ -68,19 +67,23 @@ int main(int argc, char **argv)
     switch (c)
     {
       case 'p':
-	cur_pin = atom::new_bin(optarg);
+	cur_pin = optarg;
+	cur_pin_valid = true;
 	break;
 	
       case 'P':
 	cur_pin = pin_from_file(optarg);
+	cur_pin_valid = true;
 	break;
 	
       case 'n':
-	new_pin = atom::new_bin(optarg);
+	new_pin = optarg;
+	new_pin_valid = true;
 	break;
 	
       case 'N':
 	new_pin = pin_from_file(optarg);
+	new_pin_valid = true;
 	break;
 	
       case 'v':
@@ -113,7 +116,6 @@ int main(int argc, char **argv)
   {
     // Open the device, start as anonymous mode
     drive target(argv[optind]);
-    datum io;
     target.login_anon(ADMIN_SP);
     
     // Determine our operation
@@ -133,7 +135,7 @@ int main(int argc, char **argv)
     else if (strcmp(argv[optind + 1], "login") == 0)
     {
       // Authorized session needed
-      do_auth_login(target, cur_pin);
+      do_auth_login(target, cur_pin, cur_pin_valid);
       
       // Let user know status
       cout << "Login credentials OK" << endl;
@@ -142,23 +144,26 @@ int main(int argc, char **argv)
     else if (strcmp(argv[optind + 1], "setpin") == 0)
     {
       // Authorized session needed
-      do_auth_login(target, cur_pin);
+      do_auth_login(target, cur_pin, cur_pin_valid);
       
       // Ensure new pin was provided
-      if (new_pin.get_type() != atom::BYTES)
+      if (!new_pin_valid)
       {
 	// No, query for one now
 	new_pin = pin_from_console("new SID(admin)");
       }
       
+      // Convert PIN to atom for table I/O
+      atom new_pin_atom = atom::new_bin(new_pin.c_str());
+      
       // Set PIN of SID (Drive Owner) in Admin SP
-      target.table_set(C_PIN_SID, 3, new_pin);
+      target.table_set(C_PIN_SID, 3, new_pin_atom);
     }
     // Activate Locking SP
     else if (strcmp(argv[optind + 1], "activate") == 0)
     {
       // Authorized session needed
-      do_auth_login(target, cur_pin);
+      do_auth_login(target, cur_pin, cur_pin_valid);
       
       // Locking_SP.Activate[]
       target.invoke(LOCKING_SP, ACTIVATE);
@@ -167,7 +172,7 @@ int main(int argc, char **argv)
     else if (strcmp(argv[optind + 1], "revert") == 0)
     {
       // Authorized session needed
-      do_auth_login(target, cur_pin);
+      do_auth_login(target, cur_pin, cur_pin_valid);
       
       // Admin_SP.Revert[]
       target.invoke(ADMIN_SP, REVERT);
@@ -257,21 +262,21 @@ char const *lifecycle_to_string(uint64_t val)
 }
 
 // Perform authorized login to Admin SP
-void do_auth_login(drive &target, atom &prov_pin)
+void do_auth_login(drive &target, string pin, bool pin_valid)
 {
   // Was a PIN provided?
-  if (prov_pin.get_type() == atom::BYTES)
+  if (pin_valid)
   {
     // Try and use that
-    target.login(ADMIN_SP, SID, prov_pin.get_bytes());
+    target.login(ADMIN_SP, SID, pin);
     return;
   }
   
   // Failing that, try the default PIN
-  atom pin = target.default_pin();
+  pin = target.default_pin();
   try
   {
-    target.login(ADMIN_SP, SID, pin.get_bytes());
+    target.login(ADMIN_SP, SID, pin);
     return;
   }
   catch (topaz_exception &e)
@@ -281,5 +286,5 @@ void do_auth_login(drive &target, atom &prov_pin)
   
   // Last effort - prompt user for PIN to use ...
   pin = pin_from_console("SID(admin)");
-  target.login(ADMIN_SP, SID, pin.get_bytes());
+  target.login(ADMIN_SP, SID, pin);
 }

@@ -35,6 +35,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
 #include <topaz/rawdrive.h>
 #include <topaz/datum.h>
 
@@ -81,7 +82,7 @@ namespace topaz
      * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
      * @param user_uid 
      */
-    void login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin);
+    void login(uint64_t sp_uid, uint64_t auth_uid, std::string pin);
     
     /**
      * \brief Query Whole Table
@@ -110,6 +111,15 @@ namespace topaz
     void table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val);
     
     /**
+     * \brief Set Unsigned Value in Specified Table
+     *
+     * @param tbl_uid Identifier of target table
+     * @param tbl_col Column number of data to retrieve (table specific)
+     * @param val Value to set in column
+     */
+    void table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val);
+    
+    /**
      * \brief Set Binary Table
      *
      */
@@ -119,7 +129,7 @@ namespace topaz
     /**
      * \brief Retrieve default device PIN
      */
-    atom default_pin();
+    std::string default_pin();
     
     /**
      * \brief Method invocation

@@ -36,6 +36,7 @@
 #include <cstdio>
 #include <cstring>
 #include <endian.h>
+#include <inttypes.h>
 #include <topaz/defs.h>
 #include <topaz/debug.h>
 #include <topaz/drive.h>
@@ -119,9 +120,9 @@ void drive::login_anon(uint64_t sp_uid)
   
   // Parameters - Required Arguments (Simple Atoms)
   datum params;
-  params[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
-  params[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
-  params[2].value()   = atom::new_uint(1);       // Read/Write Session
+  params[0].value()   = atom::new_uint(getpid()); // Host Session ID (Process ID)
+  params[1].value()   = atom::new_uid(sp_uid);    // Admin SP or Locking SP
+  params[2].value()   = atom::new_uint(1);        // Read/Write Session
   
   // Off it goes
   datum rc = invoke(SESSION_MGR, START_SESSION, params);
@@ -133,7 +134,7 @@ void drive::login_anon(uint64_t sp_uid)
   tper_session_id = rc[1].value().get_uint();
   
   // Debug
-  TOPAZ_DEBUG(1) printf("Anonymous Session %lx:%lx Started\n",
+  TOPAZ_DEBUG(1) printf("Anonymous Session %" PRIx64 ":%" PRIx64 " Started\n",
 			tper_session_id, host_session_id);
 }
 
@@ -143,20 +144,20 @@ void drive::login_anon(uint64_t sp_uid)
  * @param sp_uid Target Security Provider for session (ADMIN_SP / LOCKING_SP)
  * @param user_uid 
  */
-void drive::login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin)
+void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
 {
   // If present, end any session in progress
   logout();
   
   // Parameters - Required Arguments (Simple Atoms)
   datum params;
-  params[0].value()   = atom::new_uint(1);       // Host Session ID (left at one)
-  params[1].value()   = atom::new_uid(sp_uid);   // Admin SP or Locking SP
-  params[2].value()   = atom::new_uint(1);       // Read/Write Session
+  params[0].value()   = atom::new_uint(getpid()); // Host Session ID (Process ID)
+  params[1].value()   = atom::new_uid(sp_uid);    // Admin SP or Locking SP
+  params[2].value()   = atom::new_uint(1);        // Read/Write Session
   
   // Optional Arguments (Named Atoms)
   params[3].name()        = atom::new_uint(0);       // Host Challenge
-  params[3].named_value() = atom::new_bin(pin);
+  params[3].named_value() = atom::new_bin(pin.c_str());
   params[4].name()        = atom::new_uint(3);       // Host Signing Authority (User)
   params[4].named_value() = atom::new_uid(auth_uid);
   
@@ -170,7 +171,7 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, byte_vector pin)
   tper_session_id = rc[1].value().get_uint();
   
   // Debug
-  TOPAZ_DEBUG(1) printf("Authorized Session %lx:%lx Started\n",
+  TOPAZ_DEBUG(1) printf("Authorized Session %" PRIx64 ":%" PRIx64 " Started\n",
 			tper_session_id, host_session_id);
 }
 
@@ -281,11 +282,35 @@ void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val)
 }
 
 /**
+ * \brief Set Unsigned Value in Specified Table
+ *
+ * @param tbl_uid Identifier of target table
+ * @param tbl_col Column number of data to retrieve (table specific)
+ * @param val Value to set in column
+ */
+void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val)
+{
+  // Convenience / clarity wrapper ...
+  return table_set(tbl_uid, tbl_col, atom::new_uint(val));
+}
+
+/**
  * \brief Retrieve default device PIN
  */
-atom drive::default_pin()
+string drive::default_pin()
 {
-  return table_get(C_PIN_MSID, 3);
+  // MSID PIN is encoded as a byte_vector atom
+  byte_vector pin_bytes = table_get(C_PIN_MSID, 3).get_bytes();
+  
+  // Reroll to string
+  string pin;
+  for (size_t i = 0; i < pin_bytes.size(); i++)
+  {
+    pin += pin_bytes[i];
+  }
+ 
+  // Completed PIN as string
+  return pin;
 }
 
 /**
@@ -613,10 +638,10 @@ void drive::probe_level0()
       TOPAZ_DEBUG(2)
       {
 	printf("Geometry Reporting\n");
-	printf("    Align Required: %d\n",     0x01 & geo->align); 
-	printf("    LBA Size: %d\n",           be32toh(geo->lba_size));
-	printf("    Align Granularity: %ld\n", be64toh(geo->align_gran));
-	printf("    Lowest Align: %lu\n",      lba_align);
+	printf("    Align Required: %d\n",    0x01 & geo->align); 
+	printf("    LBA Size: %d\n",          be32toh(geo->lba_size));
+	printf("    Align Granularity: %u\n", (unsigned int)be64toh(geo->align_gran));
+	printf("    Lowest Align: %u\n",      (unsigned int)lba_align);
       }
     }
     else if (code == FEAT_OPAL1)
@@ -740,7 +765,7 @@ void drive::probe_level1()
   
   // Comm props stored in list (first element) of named items
   datum_vector const &props = rc[0].list();
-  TOPAZ_DEBUG(2) printf("  Received %lu items\n", props.size());
+  TOPAZ_DEBUG(2) printf("  Received %u items\n", (unsigned int)props.size());
   
   for (size_t i = 0; i < props.size(); i++)
   {
@@ -755,7 +780,7 @@ void drive::probe_level1()
     if (name == "MaxComPacketSize")
     {
       max_com_pkt_size = val;
-      TOPAZ_DEBUG(2) printf("  Max ComPkt Size is %lu (%lu blocks)\n",
+      TOPAZ_DEBUG(2) printf("  Max ComPkt Size is %" PRIu64 " (%" PRIu64 " blocks)\n",
 			    val, val / ATA_BLOCK_SIZE);
     }
   }
@@ -769,7 +794,7 @@ void drive::logout()
   if (tper_session_id)
   {
     // Debug
-    TOPAZ_DEBUG(1) printf("Stopping TPM Session %lx:%lx\n",
+    TOPAZ_DEBUG(1) printf("Stopping TPM Session %" PRIx64 ":%" PRIx64 "\n",
 			  tper_session_id, host_session_id);
     
     // Off it goes

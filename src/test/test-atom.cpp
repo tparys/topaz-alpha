@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <topaz/atom.h>
 #include <topaz/exceptions.h>
 using namespace std;
@@ -92,7 +93,7 @@ char const *atom_enc_to_string(atom::enc_t enc)
 void dump(byte_vector test_bytes)
 {
   size_t i;
-  printf("Encoded Data: %lu bytes\n", test_bytes.size());
+  printf("Encoded Data: %u bytes\n", (unsigned int)test_bytes.size());
   for (i = 0; (i < test_bytes.size()) && (i < 16); i++)
   {
     printf(" %02X", test_bytes[i]);
@@ -140,7 +141,8 @@ void check(atom test, atom::type_t type, atom::enc_t enc, size_t size)
   // Check total size
   if (test.get_header_size() + size != test_bytes.size())
   {
-    printf("*** Failed (expected %lu bytes) ***\n", test.get_header_size() + size);
+    printf("*** Failed (expected %u bytes) ***\n",
+	   (unsigned int)(test.get_header_size() + size));
     exit(1);
   }
   
@@ -160,7 +162,7 @@ void check(atom test, atom::type_t type, atom::enc_t enc, size_t size)
 void test_unsigned(atom::type_t type, atom::enc_t enc, size_t size, uint64_t val)
 {
   // Debug
-  printf("\nUnsigned Integer: %lu (0x%lx)\n", val, val);
+  printf("\nUnsigned Integer: %" PRIu64 " (0x%" PRIx64 ")\n", val, val);
   
   // Check
   check(atom::new_uint(val), type, enc, size);
@@ -169,7 +171,7 @@ void test_unsigned(atom::type_t type, atom::enc_t enc, size_t size, uint64_t val
 void test_signed(atom::type_t type, atom::enc_t enc, size_t size, int64_t val)
 {
   // Debug
-  printf("\nSigned Integer: %ld (0x%lx)\n", val, val);
+  printf("\nSigned Integer: %" PRId64 " (0x%" PRIx64 ")\n", val, val);
   
   // Check
   check(atom::new_int(val), type, enc, size);
@@ -197,7 +199,7 @@ void test_binary(atom::enc_t enc, size_t size)
 void test_uid(uint64_t val)
 {
   // Debug
-  printf("\nUnique ID: 0x%lx\n", val);
+  printf("\nUnique ID: 0x%" PRIx64 "\n", val);
   
   // Encode
   atom first = atom::new_uid(val);

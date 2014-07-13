@@ -71,7 +71,7 @@ char const *datum_type_to_string(datum::type_t type)
 void dump(byte_vector test_bytes)
 {
   size_t i;
-  printf("Encoded Data: %lu bytes", test_bytes.size());
+  printf("Encoded Data: %u bytes", (unsigned int)test_bytes.size());
   for (i = 0; i < test_bytes.size(); i++)
   {
     if ((i % 16) == 0)
@@ -112,7 +112,7 @@ void check(datum &test, datum::type_t type, size_t size)
   // Check total size
   if (size != test_bytes.size())
   {
-    printf("*** Failed (expected %lu bytes) ***\n", size);
+    printf("*** Failed (expected %u bytes) ***\n", (unsigned int)size);
     exit(1);
   }
   

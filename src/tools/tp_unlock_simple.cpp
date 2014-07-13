@@ -42,7 +42,6 @@
 #include <topaz/debug.h>
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
-#include <topaz/datum.h>
 #include <topaz/uid.h>
 #include "pinutil.h"
 using namespace std;
@@ -51,12 +50,13 @@ using namespace topaz;
 void ctl_c_handler(int sig);
 void usage();
 uint64_t get_uid(char const *user_str);
-bool unlock_target(char const *path, uint64_t user_uid, byte_vector pin,
+bool unlock_target(char const *path, uint64_t user_uid, string pin,
 		   uint64_t range_count = 1);
 
 int main(int argc, char **argv)
 {
-  atom user_pin;
+  string pin;
+  bool pin_valid = false;
   uint64_t user_uid = ADMIN_BASE + 1;
   uint64_t lba_count = 1;
   char c;
@@ -75,7 +75,8 @@ int main(int argc, char **argv)
 	break;
 	
       case 'p':
-	user_pin = atom::new_bin(optarg);
+	pin = optarg;
+	pin_valid = true;
 	break;
 	
       case 'r':
@@ -110,14 +111,14 @@ int main(int argc, char **argv)
   while (1)
   {
     // Do we have credentials?
-    if (user_pin.get_type() != atom::BYTES)
+    if (!pin_valid)
     {
       // No, query for them now ...
-      user_pin = pin_from_console("user");
+      pin = pin_from_console("user");
     }
     
     // Attempt drive unlock
-    if (unlock_target(argv[optind], user_uid, user_pin.get_bytes(), lba_count))
+    if (unlock_target(argv[optind], user_uid, pin, lba_count))
     {
       // Succeeded
       break;
@@ -125,14 +126,14 @@ int main(int argc, char **argv)
     else
     {
       // Failed, clear credentials and try again
-      user_pin = atom();
+      pin_valid = false;
     }
   }
   
   // If additional drives are specified, try to unlock those too
   while (++optind < argc)
   {
-    unlock_target(argv[optind], user_uid, user_pin.get_bytes(), lba_count);
+    unlock_target(argv[optind], user_uid, pin, lba_count);
   }
   
   return 0;
@@ -180,7 +181,7 @@ uint64_t get_uid(char const *user_str)
   return base + num;
 }
 
-bool unlock_target(char const *path, uint64_t user_uid, byte_vector pin,
+bool unlock_target(char const *path, uint64_t user_uid, string pin,
 		   uint64_t range_count)
 {
   try
@@ -192,13 +193,13 @@ bool unlock_target(char const *path, uint64_t user_uid, byte_vector pin,
     target.login(LOCKING_SP, user_uid, pin);
     
     // MBR Shadow isn't needed when unlocked, (1 -> hide it)
-    target.table_set(MBR_CONTROL, 2, atom::new_uint(1));
+    target.table_set(MBR_CONTROL, 2, 1);
     
     // Clear "Read Lock"(7) on global range (0 -> turn it off)
-    target.table_set(LBA_RANGE_GLOBAL, 7, atom::new_uint(0));
+    target.table_set(LBA_RANGE_GLOBAL, 7, 0);
       
     // Clear "Write Lock"(8) on global range (0 -> turn it off)
-    target.table_set(LBA_RANGE_GLOBAL, 8, atom::new_uint(0));
+    target.table_set(LBA_RANGE_GLOBAL, 8, 0);
     
     // If more than one LBA range specified, unlock the next few as well
     for (uint64_t count = 1; count < range_count; count++)
@@ -207,10 +208,10 @@ bool unlock_target(char const *path, uint64_t user_uid, byte_vector pin,
       uint64_t lba_uid = LBA_RANGE_BASE + count;
       
       // Clear "Read Lock"(7) on this LBA range (0 -> turn it off)
-      target.table_set(lba_uid, 7, atom::new_uint(0));
+      target.table_set(lba_uid, 7, 0);
       
       // Clear "Write Lock"(8) on this LBA range (0 -> turn it off)
-      target.table_set(lba_uid, 8, atom::new_uint(0));
+      target.table_set(lba_uid, 8, 0);
     }
     
     // Succeeded

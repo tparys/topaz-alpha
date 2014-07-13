@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 {
   char c;
   uint64_t uid = 0;
-  atom pin;
+  string pin;
   
   // Process command line switches */
   opterr = 0;
@@ -64,13 +64,13 @@ int main(int argc, char **argv)
       case 's':
 	// SID credentials
 	uid = SID;
-	pin = atom::new_bin(optarg);
+	pin = optarg;
 	break;
 	
       case 'p':
 	// PSID credentials
 	uid = PSID;
-	pin = atom::new_bin(optarg);
+	pin = optarg;
 	break;
 	
       case 'v':
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     // Attempt authenticated login
     try
     {
-      target.login(ADMIN_SP, uid, pin.get_bytes());
+      target.login(ADMIN_SP, uid, pin);
     }
     catch (exception &e)
     {
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
       pin = target.default_pin();
       
       // Authenticated login
-      target.login(ADMIN_SP, uid, pin.get_bytes());
+      target.login(ADMIN_SP, uid, pin);
     }
     
     ////

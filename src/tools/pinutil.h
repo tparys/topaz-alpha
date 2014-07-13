@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <topaz/atom.h>
+#include <string>
 
 // Turn on character echo on terminal
 void enable_terminal_echo();
@@ -41,9 +41,9 @@ void enable_terminal_echo();
 void disable_terminal_echo();
 
 // Read a PIN from file
-topaz::atom pin_from_file(char const *path);
+std::string pin_from_file(char const *path);
 
 // Read a PIN from console
-topaz::atom pin_from_console(char const *prompt);
+std::string pin_from_console(char const *prompt);
 
 #endif

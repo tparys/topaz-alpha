@@ -42,7 +42,6 @@
 #include <topaz/debug.h>
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
-#include <topaz/datum.h>
 #include <topaz/uid.h>
 #include "spinner.h"
 #include "pinutil.h"
@@ -65,10 +64,10 @@ void wipe_range(drive &target, uint64_t id);
 
 int main(int argc, char **argv)
 {
-  atom cur_pin, new_pin;
+  string cur_pin, new_pin;
+  bool cur_pin_valid = false, new_pin_valid = false;
   uint64_t user_uid = ADMIN_BASE + 1, range_id, start, size;
   char c;
-  datum io;
   
   // Install handler for Ctl-C to restore terminal to sane state
   signal(SIGINT, ctl_c_handler);
@@ -84,19 +83,23 @@ int main(int argc, char **argv)
 	break;
 	
       case 'p':
-	cur_pin = atom::new_bin(optarg);
+	cur_pin = optarg;
+	cur_pin_valid = true;
 	break;
 	
       case 'P':
 	cur_pin = pin_from_file(optarg);
+	cur_pin_valid = true;
 	break;
 	
       case 'n':
-	new_pin = atom::new_bin(optarg);
+	new_pin = optarg;
+	new_pin_valid = true;
 	break;
 	
       case 'N':
 	new_pin = pin_from_file(optarg);
+	new_pin_valid = true;
 	break;
 	
       case 'v':
@@ -104,7 +107,8 @@ int main(int argc, char **argv)
         break;
         
       default:
-	if ((optopt == 'p') || (optopt == 'P') || (optopt == 'n') || (optopt == 'N'))
+	if ((optopt == 'u') || (optopt == 'p') || (optopt == 'P') ||
+	    (optopt == 'n') || (optopt == 'N'))
 	{
 	  cerr << "Option -" << optopt << " requires an argument." << endl;
 	}
@@ -129,17 +133,16 @@ int main(int argc, char **argv)
   {
     // Open the device
     drive target(argv[optind]);
-    datum cmd, resp;
     uint64_t max_range, i;
     
     // Query pin if not yet specified
-    if (cur_pin.get_type() != atom::BYTES)
+    if (!cur_pin_valid)
     {
       cur_pin = pin_from_console("current");
     }
     
     // Login
-    target.login(LOCKING_SP, user_uid, cur_pin.get_bytes());
+    target.login(LOCKING_SP, user_uid, cur_pin);
     
     ////
     // Determine our operation
@@ -152,13 +155,16 @@ int main(int argc, char **argv)
       uint64_t pin_uid = user_uid + (C_PIN_USER_BASE - USER_BASE);
       
       // If new PIN not specified, get it now
-      if (new_pin.get_type() != atom::BYTES)
+      if (!new_pin_valid)
       {
 	new_pin = pin_from_console("new");
       }
       
+      // Convert PIN to atom for table I/O
+      atom new_pin_atom = atom::new_bin(new_pin.c_str());
+      
       // Set PIN of current user in Locking SP
-      target.table_set(pin_uid, 3, new_pin);
+      target.table_set(pin_uid, 3, new_pin_atom);
     }
     // Display available users
     else if (strcmp(argv[optind + 1], "users") == 0)
@@ -185,22 +191,22 @@ int main(int argc, char **argv)
 	if (strcmp(argv[optind + 2], "enable") == 0)
 	{
 	  // Set MBR Ctl column "Enable(1)" to 1
-	  target.table_set(MBR_CONTROL, 1, atom::new_uint(1));
+	  target.table_set(MBR_CONTROL, 1, 1);
 	}
 	else if (strcmp(argv[optind + 2], "disable") == 0)
 	{
 	  // Set MBR Ctl column "Enable(1)" to 0
-	  target.table_set(MBR_CONTROL, 1, atom::new_uint(0));
+	  target.table_set(MBR_CONTROL, 1, 0);
 	}
 	else if (strcmp(argv[optind + 2], "hide") == 0)
 	{
 	  // Set MBR Ctl column "Done(2)" to 1
-	  target.table_set(MBR_CONTROL, 2, atom::new_uint(1));
+	  target.table_set(MBR_CONTROL, 2, 1);
 	}
 	else if (strcmp(argv[optind + 2], "unhide") == 0)
 	{
 	  // Set MBR Ctl column "Done(2)" to 0
-	  target.table_set(MBR_CONTROL, 2, atom::new_uint(0));
+	  target.table_set(MBR_CONTROL, 2, 0);
 	}
 	else
 	{
@@ -236,7 +242,8 @@ int main(int argc, char **argv)
 	
 	// Count how many transfers are needed for write
 	size_t xfer_count = 1 + (file_len - 1) / xfer_max;
-	printf("Transfer will require %lu block operations ...\n", xfer_count);
+	printf("Transfer will require %u block operations ...\n",
+	       (unsigned int)xfer_count);
 	
 	// Allocate space
 	char *xfer_data = new char[xfer_max];
@@ -612,7 +619,6 @@ void query_range(drive &target, uint64_t id)
 
 void lock_ctl(drive &target, uint64_t id, bool on_reset, bool rd_lock, bool wr_lock)
 {
-  datum io;
   uint64_t col_base;
   
   // Determine what locking configuration to set
@@ -628,23 +634,21 @@ void lock_ctl(drive &target, uint64_t id, bool on_reset, bool rd_lock, bool wr_l
   }
   
   // Enable locks
-  target.table_set(range_id_to_uid(id), col_base + 0, atom::new_uint(rd_lock));
-  target.table_set(range_id_to_uid(id), col_base + 1, atom::new_uint(wr_lock));
+  target.table_set(range_id_to_uid(id), col_base + 0, rd_lock);
+  target.table_set(range_id_to_uid(id), col_base + 1, wr_lock);
 }
 
 void range_ctl(drive &target, uint64_t id, uint64_t first, uint64_t last)
 {
-  datum io;
   uint64_t size = last + 1 - first;
   
   // Set range boundaries
-  target.table_set(range_id_to_uid(id), 3, atom::new_uint(first));
-  target.table_set(range_id_to_uid(id), 4, atom::new_uint(size));
+  target.table_set(range_id_to_uid(id), 3, first);
+  target.table_set(range_id_to_uid(id), 4, size);
 }
 
 void wipe_range(drive &target, uint64_t id)
 {
-  datum io;
   uint64_t range_uid, key_uid;
   
   // UID of desired range

@@ -82,7 +82,7 @@ void disable_terminal_echo()
 }
 
 // Read a PIN from file
-atom pin_from_file(char const *path)
+string pin_from_file(char const *path)
 {
   // Open input file
   ifstream ifile(path);
@@ -92,32 +92,32 @@ atom pin_from_file(char const *path)
   }
 
   // Read data
-  byte_vector bytes;
+  string pin;
   int in_char;
-  while ((in_char = ifile.good()) != EOF)
+  while ((ifile.good()) && ((in_char = ifile.get()) != EOF))
   {
-    bytes.push_back(in_char);
+    pin += (char)in_char;
   }
   
-  return atom::new_bin(bytes);
+  return pin;
 }
 
 // Read a PIN from console
-atom pin_from_console(char const *prompt)
+string pin_from_console(char const *prompt)
 {
-  string pin_str;
+  string pin;
   
   // Supress password echo to screen
   disable_terminal_echo();
   
   // Set up a simple prompt
   cout << "Please enter " << prompt << " PIN: " << flush;
-  getline(cin, pin_str);
+  getline(cin, pin);
   cout << endl;
   
   // Restore typical behavior
   enable_terminal_echo();
   
   // Convert to atom
-  return atom::new_bin(pin_str.c_str());
+  return pin;
 }
