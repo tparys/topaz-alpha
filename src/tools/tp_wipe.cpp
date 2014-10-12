@@ -1,8 +1,4 @@
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz Tools - Cryptographic Wipe
  *
  * Demonstration application showcasing cryptographic wipe within a TCG Opal

@@ -1,8 +1,4 @@
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz Tools - Locking SP Console Utility
  *
  * Console utility to manipulate locking features within a TCG Opal compliant

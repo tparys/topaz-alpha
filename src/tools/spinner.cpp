@@ -1,9 +1,4 @@
-
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz Tools - Spinning progress bar
  *
  * Copyright (c) 2014, T Parys

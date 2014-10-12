@@ -2,10 +2,6 @@
 #define TOPAZ_ENCODABLE_H
 
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Encodable Object Interface Class
  *
  * This file an object class that can be serialized into a TCG Opal byte stream,

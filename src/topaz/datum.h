@@ -2,10 +2,6 @@
 #define TOPAZ_DATUM_H
 
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Datum
  *
  * This class implements a TCG Opal Data Item, that is a higher level, possibly

@@ -2,10 +2,6 @@
 #define TOPAZ_RAWDRIVE_H
 
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Low Level Hard Drive Interface
  *
  * This file implements low level APIs used to communicate with Linux ATA

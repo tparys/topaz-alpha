@@ -1,8 +1,4 @@
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Atom
  *
  * This class implements a TCG Opal Atom, that is a base data type which

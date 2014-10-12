@@ -2,10 +2,6 @@
 #define TOPAZ_DRIVE_H
 
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Hard Drive Interface
  *
  * This file implements high level APIs used to communicate with compatible

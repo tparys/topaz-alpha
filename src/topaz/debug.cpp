@@ -1,8 +1,4 @@
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Debug Definitions
  *
  * Copyright (c) 2014, T Parys

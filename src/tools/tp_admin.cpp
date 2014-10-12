@@ -1,8 +1,4 @@
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz Tools - Admin SP Console Utility
  *
  * Console utility to manipulate administrative features within a TCG Opal

@@ -1,8 +1,4 @@
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz Tools - Simple Unlock Program
  *
  * Demonstration application to showcase how to programatically unlock a TCG

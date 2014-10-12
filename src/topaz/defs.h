@@ -2,10 +2,6 @@
 #define TOPAZ_DEFS_H
 
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Common Definitions
  *
  * This file defines important types and structures used throughout TCG Opal.

@@ -1,8 +1,4 @@
 /**
- * File:   $URL $
- * Date:   $Date $
- * Rev:    $Revision $
- *
  * Topaz - Unique ID's
  *
  * This file implements the known Object and Method UIDs used within the
