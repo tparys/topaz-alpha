@@ -73,11 +73,15 @@ int main(int argc, char **argv)
     datum io;
     drive target(argv[optind]);
     
-    target.login_anon(ADMIN_SP);
+    uint64_t next_uid = _UID_MAKE(  0x6, 0x8);
+    uint64_t obj_uid  = _UID_MAKE(0x802, 0x0);
     
-    //target.invoke(ADMIN_SP, REVERT);
+    target.login(LOCKING_SP, ADMIN_BASE + 1, "password");
+    //target.login_anon(ADMIN_SP);
     
-    target.table_get(MBR_CONTROL);
+    target.invoke(obj_uid, next_uid);
+    
+    //target.table_get(MBR_CONTROL);
     
   }
   catch (topaz_exception &e)

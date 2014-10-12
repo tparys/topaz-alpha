@@ -648,7 +648,7 @@ void drive::probe_level0()
     {
       feat_opal1_t *opal1 = (feat_opal1_t*)feat_data;
       has_opal1 = true;
-      lba_align = 1;     // Opal 1.0 doesn't work on large sector drives
+      lba_align = 1;     // Opal 1.0 doesn't work on advanced format (4k) drives
       com_id = be16toh(opal1->comid_base);
       TOPAZ_DEBUG(2)
       { 
