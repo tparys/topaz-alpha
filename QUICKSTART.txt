@@ -1,0 +1,166 @@
+
+=== Overview ===
+
+Topaz is a library to control advanced security features available in newer self
+encrypting hard drives. These allow granular security of read/write privileges
+with enforcement of user roles and full lifecycle management. However, in simple
+terms, it addresses the following use cases:
+
+ - Providing a tamper-resistant, OS-independent pre-boot authentication
+ - Very fast cryptographic blank of storage media
+   - Speeds range from 0.2 - 15 s, independent of drive size
+ - Recovering and repurposing drives locked with other authentication software
+   - Windows Bitlocker
+   - Trend Micro Endpoint Encryption
+   - Wave Systems Embassy
+   - others ..
+
+=== Capabilities ===
+
+Opal drives have the following capabilities
+
+ - A secondary read-only MBR presented to the system when drive is locked
+ - Independent read/write locks that reset on power off / reset
+
+=== Pre-Requisites ===
+
+ - Linux system
+   - Must have kernel argument 'libata.allow_tpm=1'
+ - SATA hard drive supporting TCG Opal
+   - Seagate Momentus Thin w/ FDE
+   - Samsung 840 EVO / 850 Pro
+   - Crucial M500 / M550 (might be buggy, YMMV)
+   - Many others
+ - Direct SATA link to drive
+   - USB to SATA adapters don't always work
+ - Software
+   - C++ compiler (g++)
+   - cmake
+
+=== Getting the Code ===
+
+  ~ $ git clone https://github.com/tparys/topaz-alpha topaz-alpha
+  ~ $ cd topaz-alpha
+  topaz-alpha $ cmake .
+  topaz-alpha $ make
+
+=== Initial Tests ===
+
+Try running one of the built executables. You'll need to open the drive read/write
+(sudo / root permissions are required).
+
+  topaz-alpha $ sudo ./build/tp_admin /dev/sdc login
+  Login credentials OK
+
+If you get the "credentials OK" message, you are all set and ready for science!
+Be aware that increased levels of verbosity are available with the -v flag, with
+a maximum of four times (which will display the raw ATA blocks sent/received).
+
+Common Failures:
+
+  - Cannot open specified device
+    - Device doesn't exist, or missing root permissions
+
+  - libata blocking TPM calls
+    - Missing kernel parameter
+
+  - No TPM Detected in Specified Drive
+    - Drive is not a self-encrypting drive
+
+  - Drive does not support TCG Opal
+    - Drive is self-encrypting, but lacks Opal
+
+  - Method call failed
+    - Generally a badly named login failure (it's an alpha, after all)
+
+===============================================================================
+=================================== WARNING ===================================
+===============================================================================
+
+THE FOLLOWING EXAMPLES INITIALIZE, MANIPULATE, AND ULTIMATELY WIPE THE CONTENTS
+OF THE TARGET DRIVE. DON'T RUN THEM ON ANY DRIVE WITH DATA YOU WANT TO SAVE.
+MASSIVE DATA LOSS FOLLOWS. YOU'VE BEEN WARNED.
+
+=== Admin - Initializing Opal ===
+
+First take ownership of the drive by setting the PIN for the SID user. Don't
+forget this PIN. If you do, you'll need to wipe the drive with the PSID
+(printed on the side of the drive).
+
+  topaz-alpha $ sudo ./build/tp_admin -n password /dev/sdc setpin
+
+The next step is to activate Opal. This enables the locking features of the
+drive, and creates a user account (admin1) for the Locking controls, with the
+same PIN as selected above. This is the point of no return. Do not expect to
+deactivate Opal without destroying the contents of your drive.
+
+  topaz-alpha $ sudo ./build/tp_admin -p password /dev/sdc activate
+
+=== Locking - Manipulating I/O Locks ===
+
+Locks have an enable (presistent) and state (reset on poweroff). For the current
+state to have any effect, the lock must be enabled.
+
+Enabling read/write locks:
+
+  topaz-alpha $ sudo ./build/tp_lock -p password /dev/sdc lock_on_reset 0
+
+The drive is now locked. Further I/O to the drive will be disallowed and result
+in "Data Protection Errors" which will appear in the kernel log. 
+
+Unlocking the drive for the session (until power off):
+
+  topaz-alpha $ sudo ./build/tp_lock -p password /dev/sdc unlock 0
+
+On reboot, the drive will revert to the locked state and be inaccessible until
+unlocked.
+
+Disabling read/write locks:
+
+  topaz-alpha $ sudo ./build/tp_lock -p password /dev/sdc unlock_on_reset 0
+
+=== Locking - MBR Shadow ===
+
+The drive has a secondary MBR (min 128 MB), which can be presented to the system
+when locked. This is a secure image which must be programmed with special means.
+Software stored in this image generally would perform pre-boot authentication,
+unlock the drive, and then chain load into a supported OS, or reboot into an OS
+which contains no Opal support. Like I/O locks, there is an persistent enable,
+and current state, which will revert on poweroff.
+
+Programming image.bin to the MBR Shadow:
+
+  topaz-alpha $ sudo ./build/tp_lock -p password /dev/sdc mbr_load image.bin
+  Transfer will require XXX block operations ...
+  |===========================================================================
+
+Enabling the MBR Shadow:
+
+  topaz-alpha $ sudo ./build/tp_lock -p password /dev/sdc mbr enable
+
+Hiding the MBR Shadow (until poweroff):
+
+  topaz-alpha $ sudo ./build/tp_lock -p password /dev/sdc mbr hide
+
+Disable the MBR Shadow:
+
+  topaz-alpha $ sudo ./build/tp_lock -p password /dev/sdc mbr disable
+
+=== Lifecycle - Wiping / Repurposing the Drive ===
+
+A revert operation has the following effects:
+  - If Opal was enabled, destroys all data (cryptographic wipe)
+  - Resets all user accounts & PINs to Original Factory State
+  - Blanks MBR shadow
+
+Using SID PIN/password (primary):
+
+  topaz-alpha $ sudo ./build/tp_wipe -s password /dev/sdc
+
+Using PSID PIN (backup on side of drive):
+
+  topaz-alpha $ sudo ./build/tp_wipe -p <32 CHAR PSID> /dev/sdc
+
+Using MSID PIN (initial default, if PIN never changed):
+
+  topaz-alpha $ sudo ./build/tp_wipe /dev/sdc
