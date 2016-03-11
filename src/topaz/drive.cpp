@@ -29,6 +29,7 @@
  */
 
 #include <unistd.h>
+#define __STDC_FORMAT_MACROS
 #include <cstdio>
 #include <cstring>
 #include <endian.h>
