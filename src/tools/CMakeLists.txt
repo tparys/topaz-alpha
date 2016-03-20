@@ -17,3 +17,7 @@ target_link_libraries(tp_wipe topaz)
 # TPer example unlock
 add_executable(tp_unlock_simple pinutil.cpp tp_unlock_simple.cpp)
 target_link_libraries(tp_unlock_simple topaz)
+
+# MBR Shadow -> NBD bridge
+add_executable(tp_mbr_bridge pinutil.cpp tp_mbr_bridge.cpp)
+target_link_libraries(tp_mbr_bridge topaz pthread)

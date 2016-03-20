@@ -48,7 +48,7 @@ using namespace topaz;
 #define POLL_MS 10
 
 // How long to wait before timeout thrown
-#define TIMEOUT_SECS 5
+#define TIMEOUT_SECS 10
 
 /**
  * \brief Topaz Hard Drive Constructor
@@ -215,6 +215,81 @@ atom drive::table_get(uint64_t tbl_uid, uint64_t tbl_col)
 }
 
 /**
+ * \brief Get Binary Table
+ *
+ */
+void drive::table_get_bin(uint64_t tbl_uid, uint64_t offset,
+			  void *ptr, uint64_t len)
+{
+  char *out_ptr = (char*)ptr;
+  
+  while (len > 0)
+  {
+    // make sure response fits in a single ATA block
+    uint64_t max_read = 256; 
+    uint64_t read_len = len;
+    if (read_len > max_read)
+    {
+      read_len = max_read;
+    }
+    
+    // Last byte to read
+    uint64_t end_byte = offset + read_len - 1;
+    
+    // Cook up parameter list for table set
+    datum params;
+    params[0][0].name()        = atom::new_uint(1);             // Start row
+    params[0][0].named_value() = atom::new_uint(offset);        // Offset of 0
+    params[0][1].name()        = atom::new_uint(2);             // End row
+    params[0][1].named_value() = atom::new_uint(end_byte);      // Data
+    
+    // Invoke method
+    datum rc = invoke(tbl_uid, GET, params);
+    
+    // Copy data out
+    byte_vector const &rc_data = rc[0].value().get_bytes();
+    memcpy(out_ptr, &(rc_data[0]), read_len);
+    
+    // update pointers
+    out_ptr += read_len;
+    offset += read_len;
+    len -= read_len;
+  }
+}
+
+/**
+ * \brief Set Value in Specified Table
+ *
+ * @param tbl_uid Identifier of target table
+ * @param tbl_col Column number of data to retrieve (table specific)
+ * @param val Value to set in column
+ */
+void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val)
+{
+  // Parameters - Required Arguments (Simple Atoms)
+  datum params;
+  params[0].name()                         = atom::new_uint(1);       // Values
+  params[0].named_value()[0].name()        = atom::new_uint(tbl_col);
+  params[0].named_value()[0].named_value() = val;
+  
+  // Method Call - UID.Set[]
+  datum rc = invoke(tbl_uid, SET, params);
+}
+
+/**
+ * \brief Set Unsigned Value in Specified Table
+ *
+ * @param tbl_uid Identifier of target table
+ * @param tbl_col Column number of data to retrieve (table specific)
+ * @param val Value to set in column
+ */
+void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val)
+{
+  // Convenience / clarity wrapper ...
+  return table_set(tbl_uid, tbl_col, atom::new_uint(val));
+}
+
+/**
  * \brief Set Binary Table
  *
  */
@@ -257,38 +332,6 @@ void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
     raw    += send_size;
     offset += send_size;
   }
-}
-
-/**
- * \brief Set Value in Specified Table
- *
- * @param tbl_uid Identifier of target table
- * @param tbl_col Column number of data to retrieve (table specific)
- * @param val Value to set in column
- */
-void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val)
-{
-  // Parameters - Required Arguments (Simple Atoms)
-  datum params;
-  params[0].name()                         = atom::new_uint(1);       // Values
-  params[0].named_value()[0].name()        = atom::new_uint(tbl_col);
-  params[0].named_value()[0].named_value() = val;
-  
-  // Method Call - UID.Set[]
-  datum rc = invoke(tbl_uid, SET, params);
-}
-
-/**
- * \brief Set Unsigned Value in Specified Table
- *
- * @param tbl_uid Identifier of target table
- * @param tbl_col Column number of data to retrieve (table specific)
- * @param val Value to set in column
- */
-void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val)
-{
-  // Convenience / clarity wrapper ...
-  return table_set(tbl_uid, tbl_col, atom::new_uint(val));
 }
 
 /**

@@ -98,6 +98,17 @@ namespace topaz
     atom table_get(uint64_t tbl_uid, uint64_t tbl_col);
     
     /**
+     * \brief Get Binary Table
+     *
+     * @param tbl_uid Identifier of target table
+     * @param offset Starting byte of binary table
+     * @param ptr Pointer to copy data to
+     * @param len Length of data to copy
+     */
+    void table_get_bin(uint64_t tbl_uid, uint64_t offset,
+		       void *ptr, uint64_t len);
+    
+    /**
      * \brief Set Value in Specified Table
      *
      * @param tbl_uid Identifier of target table
@@ -118,6 +129,10 @@ namespace topaz
     /**
      * \brief Set Binary Table
      *
+     * @param tbl_uid Identifier of target table
+     * @param offset Starting byte of binary table
+     * @param ptr Pointer to copy data from
+     * @param len Length of data to copy
      */
     void table_set_bin(uint64_t tbl_uid, uint64_t offset,
 		       void const *ptr, uint64_t len);
