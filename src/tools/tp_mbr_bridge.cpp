@@ -78,7 +78,7 @@ typedef struct
 } prog_state_t;
 
 /* lone global for signal handler */
-int kill_fd;
+int kill_fd = -1;
 
 /* prototypes */
 int main2(prog_state_t *state);
@@ -202,6 +202,7 @@ int main2(prog_state_t *state)
     perror("Cannot open pipe");
     return 1;
   }
+  kill_fd = state->sig_pipe[1];
   
   // install final signal handler
   set_sig_handler(sig_handler_nbd); // in case of ctl-c
@@ -242,7 +243,7 @@ int main2(prog_state_t *state)
     
     // only need to set this once
     reply.magic = htobe32(NBD_REPLY_MAGIC);
-  
+    
     // main program loop
     printf("And we're up!\n");
     while (1)
@@ -362,7 +363,7 @@ void usage()
 {
   cerr << endl
        << "Usage:" << endl
-       << "  tp_mbr_bridge [opts] <drive>                   - Change user pin" << endl
+       << "  tp_mbr_bridge [opts] <drive>" << endl
     
        << endl
        << "Options:" << endl
