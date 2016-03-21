@@ -226,7 +226,7 @@ void drive::table_get_bin(uint64_t tbl_uid, uint64_t offset,
   while (len > 0)
   {
     // make sure response fits in a single ATA block
-    uint64_t max_read = 256; 
+    uint64_t max_read = 446; // 512 - (header bytes + formatting)
     uint64_t read_len = len;
     if (read_len > max_read)
     {
