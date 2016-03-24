@@ -100,13 +100,14 @@ namespace topaz
   // Enumerations of known features
   typedef enum
   {
-    FEAT_TPER   = 0x0001,
-    FEAT_LOCK   = 0x0002,
-    FEAT_GEO    = 0x0003,
-    FEAT_OPAL1  = 0x0200,
-    FEAT_SINGLE = 0x0201,
-    FEAT_TABLES = 0x0202,
-    FEAT_OPAL2  = 0x0203
+    FEAT_TPER       = 0x0001,
+    FEAT_LOCK       = 0x0002,
+    FEAT_GEO        = 0x0003,
+    FEAT_ENTERPRISE = 0x0100,
+    FEAT_OPAL1      = 0x0200,
+    FEAT_SINGLE     = 0x0201,
+    FEAT_TABLES     = 0x0202,
+    FEAT_OPAL2      = 0x0203
   } level0_feat_id_t;
   
   // TCG Opal Geometry Feature Data (0x003)
@@ -118,6 +119,14 @@ namespace topaz
     uint64_t align_gran;   // Alignment Granularity
     uint64_t lowest_align; // Lowest Aligned LBA
   } feat_geo_t;
+  
+  // TCG Enterprise SSC Feature Data (0x100)
+  typedef struct
+  {
+    uint16_t comid_base;
+    uint16_t comid_count;
+    uint8_t  range_bhv;   // bits 1-7 reserved
+  } feat_enterprise_t;
   
   // TCG Opal 1.0 SSC Feature Data (0x200)
   typedef struct

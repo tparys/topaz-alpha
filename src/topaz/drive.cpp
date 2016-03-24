@@ -684,6 +684,20 @@ void drive::probe_level0()
 	printf("    Lowest Align: %u\n",      (unsigned int)lba_align);
       }
     }
+    else if (code == FEAT_ENTERPRISE)
+    {
+      feat_enterprise_t *enter = (feat_enterprise_t*)feat_data;
+      has_enterprise = true;
+      lba_align = 1;
+      com_id = be16toh(enter->comid_base);
+      TOPAZ_DEBUG(2)
+      {
+	printf("Enterprise SSC 1.0\n");
+	printf("    Base ComID: %u\n",            com_id);
+	printf("    Number of ComIDs: %d\n",      be16toh(enter->comid_count));
+	printf("    Range cross BHV: %d\n",       0x01 & (enter->range_bhv));
+      }
+    }
     else if (code == FEAT_OPAL1)
     {
       feat_opal1_t *opal1 = (feat_opal1_t*)feat_data;
@@ -692,7 +706,7 @@ void drive::probe_level0()
       com_id = be16toh(opal1->comid_base);
       TOPAZ_DEBUG(2)
       { 
-	printf("Opal SSC 2.0\n");
+	printf("Opal SSC 1.0\n");
 	printf("    Base ComID: %u\n",            com_id);
 	printf("    Number of ComIDs: %d\n",      be16toh(opal1->comid_count));
 	printf("    Range cross BHV: %d\n",       0x01 & (opal1->range_bhv));

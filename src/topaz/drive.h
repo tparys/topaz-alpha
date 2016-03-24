@@ -216,6 +216,7 @@ namespace topaz
     uint64_t host_session_id;
     
     // Internal info describing drive
+    bool has_enterprise;
     bool has_opal1;
     bool has_opal2;
     uint32_t com_id;
