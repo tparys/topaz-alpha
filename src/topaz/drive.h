@@ -210,6 +210,8 @@ namespace topaz
     
     // Underlying Device implementing IF-SEND/RECV
     rawdrive raw;
+    byte_vector raw_buffer;
+    uint64_t max_token;
     
     // TPM session data
     uint64_t tper_session_id;

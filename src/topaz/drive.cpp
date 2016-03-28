@@ -45,7 +45,7 @@ using namespace topaz;
 #define PAD_TO_MULTIPLE(val, mult) (((val + (mult - 1)) / mult) * mult)
 
 // How often to poll the device for data (millisecs)
-#define POLL_MS 10
+#define POLL_MS 1
 
 // How long to wait before timeout thrown
 #define TIMEOUT_SECS 10
@@ -65,7 +65,7 @@ drive::drive(char const *path)
   has_opal2 = false;
   lba_align = 1;
   com_id = 0;
-  max_com_pkt_size = 512; // Until otherwise identified
+  raw_buffer.resize(512); // Until otherwise identified
   
   // Check for drive TPM
   probe_tpm();
@@ -300,7 +300,7 @@ void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
   uint64_t chunk_size, send_size;
   
   // First, estimate how much data we can send with each set call
-  chunk_size  = max_com_pkt_size;      // Maximum IF-SEND() size
+  chunk_size  = raw_buffer.size();     // Maximum IF-SEND() size
   chunk_size -= sizeof(opal_header_t); // Header bytes
   chunk_size -= 21;                    // Min size of method call
   chunk_size -= 2 + 1 + 1 + 8;         // First arg, offset (short uint atom)
@@ -471,13 +471,13 @@ void drive::send(byte_vector const &outbuf, bool session_ids)
   tot_size = PAD_TO_MULTIPLE(tot_size, ATA_BLOCK_SIZE);
   
   // Check that the drive can accept this data
-  if (tot_size > max_com_pkt_size)
+  if (tot_size > raw_buffer.size())
   {
     throw topaz_exception("ComPkt too large for drive");
   }
   
-  // Allocate some mem to work with
-  block = new unsigned char[tot_size];
+  // Use managed buffer
+  block = &(raw_buffer[0]);
   
   // Set up pointers
   header = (opal_header_t*)block;
@@ -504,9 +504,6 @@ void drive::send(byte_vector const &outbuf, bool session_ids)
   
   // Hand off formatted Com Packet
   raw.if_send(1, com_id, block, tot_size / ATA_BLOCK_SIZE);
-  
-  // Cleanup
-  delete [] block;
 }
 
 /**
@@ -516,10 +513,16 @@ void drive::send(byte_vector const &outbuf, bool session_ids)
  */
 void drive::recv(byte_vector &inbuf)
 {
-  unsigned char block[ATA_BLOCK_SIZE] = {0}, *payload;
+  unsigned char *block, *payload;
   opal_header_t *header;
   size_t count;
   byte_vector bytes;
+  
+  // Use managed buffer
+  block = &(raw_buffer[0]);
+  
+  // Clear it out
+  memset(block, 0, raw_buffer.size());
   
   // Maximum poll attempts before timeout
   int max_iters = (TIMEOUT_SECS * 1000) / POLL_MS;
@@ -532,7 +535,7 @@ void drive::recv(byte_vector &inbuf)
   do
   {
     // Receive formatted Com Packet
-    raw.if_recv(1, com_id, block, 1);
+    raw.if_recv(1, com_id, block, raw_buffer.size() / ATA_BLOCK_SIZE);
     
     // Do some cursory verification here
     if (be16toh(header->com_hdr.com_id) != com_id)
@@ -813,7 +816,12 @@ void drive::probe_level0()
 void drive::probe_level1()
 {
   TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
-
+  
+  // Establish some HostProperties - Inform drive
+  // about our maximum comms sizes
+  //uint64_t max_host_tx = 64 * 1024; // 128 blocks
+  //datum props;
+  
   // Ask session manager about it's comms properties
   datum rc = invoke(SESSION_MGR, PROPERTIES);
   
@@ -833,7 +841,7 @@ void drive::probe_level1()
     // which specifies the maximum I/O packet length
     if (name == "MaxComPacketSize")
     {
-      max_com_pkt_size = val;
+      raw_buffer.resize(val);
       TOPAZ_DEBUG(2) printf("  Max ComPkt Size is %" PRIu64 " (%" PRIu64 " blocks)\n",
 			    val, val / ATA_BLOCK_SIZE);
     }

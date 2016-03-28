@@ -143,6 +143,7 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
 void rawdrive::if_recv(uint8_t proto, uint16_t comid,
 		       void *data, uint8_t bcount)
 {
+  printf("Recv - %d blocks\n", (int)bcount);
   if (USE_ATA12)
   {
     // ATA12 Command - Trusted Receive (0x5c)
