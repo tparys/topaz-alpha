@@ -50,6 +50,9 @@ using namespace topaz;
 // How long to wait before timeout thrown
 #define TIMEOUT_SECS 10
 
+// Max I/O size in kiB
+#define MAX_IO_KIB 64
+
 /**
  * \brief Topaz Hard Drive Constructor
  *
@@ -65,7 +68,7 @@ drive::drive(char const *path)
   has_opal2 = false;
   lba_align = 1;
   com_id = 0;
-  raw_buffer.resize(512); // Until otherwise identified
+  raw_buffer.resize(1024); // Until otherwise identified
   
   // Check for drive TPM
   probe_tpm();
@@ -225,13 +228,8 @@ void drive::table_get_bin(uint64_t tbl_uid, uint64_t offset,
   
   while (len > 0)
   {
-    // make sure response fits in a single ATA block
-    uint64_t max_read = 446; // 512 - (header bytes + formatting)
-    uint64_t read_len = len;
-    if (read_len > max_read)
-    {
-      read_len = max_read;
-    }
+    // Make sure I/O size isn't too big ...
+    uint64_t read_len = (len > max_token ? max_token : len);
     
     // Last byte to read
     uint64_t end_byte = offset + read_len - 1;
@@ -297,25 +295,13 @@ void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
 			  void const *ptr, uint64_t len)
 {
   byte const *raw = (byte const *)ptr;
-  uint64_t chunk_size, send_size;
-  
-  // First, estimate how much data we can send with each set call
-  chunk_size  = raw_buffer.size();     // Maximum IF-SEND() size
-  chunk_size -= sizeof(opal_header_t); // Header bytes
-  chunk_size -= 21;                    // Min size of method call
-  chunk_size -= 2 + 1 + 1 + 8;         // First arg, offset (short uint atom)
-  chunk_size -= 2 + 1 + 4 + 0;         // Second arg, data (long bin atom)
-  chunk_size -= 5;                     // Method status
-  chunk_size -= 3;                     // Packet padding (0-3 bytes)
-  
-  // Biggest multiple of 4096 up to this number
-  chunk_size = (chunk_size / 4096) * 4096;
+  uint64_t send_size;
   
   // Send data in one or more chunks
   while (len)
   {
-    // Next send is at most chunk_size
-    send_size = (len > chunk_size ? chunk_size : len);
+    // Next send is at most max_token
+    send_size = (len > max_token ? max_token : len);
     
     // Cook up parameter list for table set
     datum params;
@@ -817,35 +803,55 @@ void drive::probe_level1()
 {
   TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
   
-  // Establish some HostProperties - Inform drive
-  // about our maximum comms sizes
-  //uint64_t max_host_tx = 64 * 1024; // 128 blocks
-  //datum props;
+  // Pick some reasonable I/O properties to use
+  uint64_t max_xfer = MAX_IO_KIB * 1024; // 128 blocks
+  max_token = max_xfer - 56;
+
+  // Build data structure to inform drive of our choices
+  datum host_props;
+  host_props[0].name()        = atom::new_bin("MaxComPacketSize");
+  host_props[0].named_value() = atom::new_uint(max_xfer);
+  host_props[1].name()        = atom::new_bin("MaxPacketSize");
+  host_props[1].named_value() = atom::new_uint(max_xfer - 20);
+  host_props[2].name()        = atom::new_bin("MaxIndTokenSize");
+  host_props[2].named_value() = atom::new_uint(max_xfer - 56);
+  datum tmp;
+  tmp[0].name() = atom::new_uint(0); // HostProperties
+  tmp[0].named_value() = host_props;
   
-  // Ask session manager about it's comms properties
-  datum rc = invoke(SESSION_MGR, PROPERTIES);
+  // Query drive for I/O properties
+  datum_vector drive_props = invoke(SESSION_MGR, PROPERTIES, tmp)[0].list();
+  TOPAZ_DEBUG(2) printf("  Received %u items\n", (unsigned int)drive_props.size());
   
-  // Comm props stored in list (first element) of named items
-  datum_vector const &props = rc[0].list();
-  TOPAZ_DEBUG(2) printf("  Received %u items\n", (unsigned int)props.size());
-  
-  for (size_t i = 0; i < props.size(); i++)
+  for (size_t i = 0; i < drive_props.size(); i++)
   {
-    // Name of property
-    string name = props[i].name().get_string();
-    
-    // Value
-    uint64_t val = props[i].named_value().value().get_uint();
+    // Name of property & value
+    string name = drive_props[i].name().get_string();
+    uint64_t val = drive_props[i].named_value().value().get_uint();
     
     // Only one we want here is the MaxComPacketSize,
     // which specifies the maximum I/O packet length
     if (name == "MaxComPacketSize")
     {
-      raw_buffer.resize(val);
+      if (val < max_xfer)
+      {
+	max_xfer = val;
+      }
       TOPAZ_DEBUG(2) printf("  Max ComPkt Size is %" PRIu64 " (%" PRIu64 " blocks)\n",
 			    val, val / ATA_BLOCK_SIZE);
     }
+    else if (name == "MaxIndTokenSize")
+    {
+      if (val < max_token)
+      {
+	max_token = val;
+      }
+      TOPAZ_DEBUG(2) printf("  Max Token Size is %" PRIu64 "\n", val);
+    }
   }
+  
+  // Update managed buffer
+  raw_buffer.resize(max_xfer);
 }
 
 /**
