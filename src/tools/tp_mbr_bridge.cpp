@@ -91,7 +91,7 @@ void sig_handler_nbd(int sig);
 
 int main(int argc, char **argv)
 {
-  bool cur_pin_valid;
+  bool cur_pin_valid = false;
   int i, rc;
   char c;
     
