@@ -50,8 +50,8 @@ using namespace topaz;
 // How long to wait before timeout thrown
 #define TIMEOUT_SECS 10
 
-// Max I/O size in kiB
-#define MAX_IO_KIB 64
+// Max host I/O size (64 kiB + extra 512 B block)
+#define MAX_IO_BLOCKS 129
 
 /**
  * \brief Topaz Hard Drive Constructor
@@ -804,8 +804,8 @@ void drive::probe_level1()
   TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
   
   // Pick some reasonable I/O properties to use
-  uint64_t max_xfer = MAX_IO_KIB * 1024; // 128 blocks
-  max_token = max_xfer - 56;
+  uint64_t max_xfer = MAX_IO_BLOCKS * 512;
+  max_token = max_xfer - 100;
 
   // Build data structure to inform drive of our choices
   datum host_props;
@@ -814,7 +814,7 @@ void drive::probe_level1()
   host_props[1].name()        = atom::new_bin("MaxPacketSize");
   host_props[1].named_value() = atom::new_uint(max_xfer - 20);
   host_props[2].name()        = atom::new_bin("MaxIndTokenSize");
-  host_props[2].named_value() = atom::new_uint(max_xfer - 56);
+  host_props[2].named_value() = atom::new_uint(max_token);
   datum tmp;
   tmp[0].name() = atom::new_uint(0); // HostProperties
   tmp[0].named_value() = host_props;
