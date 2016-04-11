@@ -29,6 +29,8 @@
 #include <topaz/debug.h>
 using namespace topaz;
 
+#define PAD_TO_MULTIPLE(val, mult) (((val + (mult - 1)) / mult) * mult)
+
 /* Set to verbosity level (0 = none) */
 int topaz_debug = 0;
 
@@ -43,10 +45,51 @@ int topaz_debug = 0;
 void topaz::dump(void const *data, int len)
 {
   unsigned char const *cdata = (unsigned char*)data;
-  int i, j, chunk = 16;
+  int i, j, last = 0, max = len, chunk = 16;
   
-  for (j = 0; j < len; j += chunk)
+  // Find the last nonzero byte
+  for (i = 0; i < len; i++)
   {
+    if (cdata[i])
+    {
+      last = i;
+    }
+  }
+  
+  // Pad to next multiple of chunk size
+  last = PAD_TO_MULTIPLE(last, chunk);
+  
+  // Clip zero bytes if we have more than two rows
+  if (len - last > 2 * chunk)
+  {
+    max = last + chunk;
+  }
+  
+  // Dump binary data
+  for (j = 0; j < max; j += chunk)
+  {
+    // Print row
+    printf("%04x:", j);
+    for (i = 0; (i < chunk) && (i + j < len); i++)
+    {
+      printf(" %02x", cdata[i + j]);
+    }
+    printf("\n");
+  }
+  
+  // If we clipped data, show upper bound on data
+  if (len != max)
+  {
+    printf(" . . . \n");
+    
+    // Previous multiple of chunk
+    j = len - 1;
+    while (j % chunk)
+    {
+      j--;
+    }
+    
+    // Print row
     printf("%04x:", j);
     for (i = 0; (i < chunk) && (i + j < len); i++)
     {
