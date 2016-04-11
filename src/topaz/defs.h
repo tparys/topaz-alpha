@@ -76,10 +76,10 @@ namespace topaz
   } tpm_protos_t;
   
   //////////////////////////////////////////////////////////////////////////////
-  // TCG Opal Level 0 Discovery
+  // TCG SWG Level 0 Discovery
   //
   
-  // TCG Opal Level 0 Discovery Header
+  // SWG Level 0 Discovery Header
   typedef struct
   {
     uint32_t length;      // valid data length (excluding this field)
@@ -89,7 +89,7 @@ namespace topaz
     char     vendor[32];  // vendor specific data
   } level0_header_t;
 
-  // TCG Opal Level 0 Feature Descriptor
+  // SWG Level 0 Feature Descriptor
   typedef struct
   {
     uint16_t code;
@@ -107,10 +107,12 @@ namespace topaz
     FEAT_OPAL1      = 0x0200,
     FEAT_SINGLE     = 0x0201,
     FEAT_TABLES     = 0x0202,
-    FEAT_OPAL2      = 0x0203
+    FEAT_OPAL2      = 0x0203,
+    FEAT_OPALITE    = 0x0301,
+    FEAT_PYRITE     = 0x0302
   } level0_feat_id_t;
   
-  // TCG Opal Geometry Feature Data (0x003)
+  // Geometry Feature Data (0x003)
   typedef struct
   {
     uint8_t  align;
@@ -119,22 +121,15 @@ namespace topaz
     uint64_t align_gran;   // Alignment Granularity
     uint64_t lowest_align; // Lowest Aligned LBA
   } feat_geo_t;
-  
+
   // TCG Enterprise SSC Feature Data (0x100)
+  // TCG Opal 1.0 SSC Feature Data (0x200
   typedef struct
   {
     uint16_t comid_base;
     uint16_t comid_count;
     uint8_t  range_bhv;   // bits 1-7 reserved
-  } feat_enterprise_t;
-  
-  // TCG Opal 1.0 SSC Feature Data (0x200)
-  typedef struct
-  {
-    uint16_t comid_base;
-    uint16_t comid_count;
-    uint8_t  range_bhv;   // bits 1-7 reserved
-  } feat_opal1_t;
+  } feat_ssc1_t;
   
   // TCG Opal Single User Mode Data (0x201)
   typedef struct
@@ -153,6 +148,8 @@ namespace topaz
   } feat_tables_t;
   
   // TCG Opal 2.0 SSC Feature Data (0x203)
+  // TCG Opalite 1.0 SSC Feature Data (0x301)
+  // TCG Pyrite 1.0 SSC Feature Data (0x302)
   typedef struct
   {
     uint16_t comid_base;
@@ -162,7 +159,15 @@ namespace topaz
     uint16_t user_count;  // number locking SP user supported
     uint8_t  init_pin;    // Initial PIN Indicator
     uint8_t  revert_pin;  // behavior on PIN revert
-  } feat_opal2_t;
+  } feat_ssc2_t;
+  
+  // Messaging types
+  typedef enum
+  {
+    SWG_MSG_UNKNOWN,      // Unknown
+    SWG_MSG_ENTERPRISE,   // TCG Enterprise (old SWG spec)
+    SWG_MSG_OPAL          // TCG Opal (incl Opalite & Pyrite)
+  } swg_msg_type_t;
   
   //////////////////////////////////////////////////////////////////////////////
   // TCG Opal Communications

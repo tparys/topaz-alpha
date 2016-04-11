@@ -64,8 +64,8 @@ drive::drive(char const *path)
   // Initialization
   tper_session_id = 0;
   host_session_id = 0;
-  has_opal1 = false;
-  has_opal2 = false;
+  msg_type = SWG_MSG_UNKNOWN;
+  has_proto_reset = false;
   lba_align = 1;
   com_id = 0;
   raw_buffer.resize(1024); // Until otherwise identified
@@ -73,11 +73,11 @@ drive::drive(char const *path)
   // Check for drive TPM
   probe_tpm();
   
-  // Level 0 Discovery tells us about Opal support ...
+  // Level 0 Discovery tells us about TCG Protocol support ...
   probe_level0();
   
   // If we can, make sure we're starting from a blank slate
-  if (has_opal2) reset_comid(com_id);
+  if (has_proto_reset) reset_comid(com_id);
   
   // Query Opal Comm Properties
   probe_level1();
@@ -358,7 +358,7 @@ datum drive::invoke(uint64_t object_uid, uint64_t method_uid, datum params)
   // Debug
   TOPAZ_DEBUG(3)
   {
-    printf("Opal Call: ");
+    printf("SWG Call: ");
     call.print();
     printf("\n");
   }
@@ -395,7 +395,7 @@ datum drive::invoke(uint64_t object_uid, uint64_t method_uid, datum params)
   // Debug
   TOPAZ_DEBUG(3)
   {
-    printf("Opal Return : ");
+    printf("SWG Return : ");
     rc.print();
     if (status)
     {
@@ -556,7 +556,7 @@ void drive::probe_tpm()
 {
   tpm_protos_t protos;
   int i, count;
-  bool has_opal = false;
+  bool has_tcg = false;
   
   // TPM protocols listed by IF-RECV
   TOPAZ_DEBUG(1) printf("Probe TPM Security Protocols\n");
@@ -568,10 +568,16 @@ void drive::probe_tpm()
   {
     int proto = protos.list[i];
     
-    // Ultimately, the only one we really need is 0x01
+    // Protocol 1 indicates drive is TCG SWG capable
     if (proto == 0x01)
     {
-      has_opal = true;
+      has_tcg = true;
+    }
+    
+    // Protocol 2 additional protocol resets
+    else if (proto == 0x02)
+    {
+      has_proto_reset = true;
     }
     
     // Though verbose output is also helpful
@@ -581,10 +587,10 @@ void drive::probe_tpm()
     }
   }
   
-  // Verify we found 0x01
-  if (!has_opal)
+  // Verify we have TCG SWG comms
+  if (!has_tcg)
   {
-    throw topaz_exception("Drive does not support TCG Opal");
+    throw topaz_exception("Drive does not support TCG SWG");
   }
 }
 
@@ -675,31 +681,15 @@ void drive::probe_level0()
     }
     else if (code == FEAT_ENTERPRISE)
     {
-      feat_enterprise_t *enter = (feat_enterprise_t*)feat_data;
-      has_enterprise = true;
-      lba_align = 1;
-      com_id = be16toh(enter->comid_base);
-      TOPAZ_DEBUG(2)
-      {
-	printf("Enterprise SSC 1.0\n");
-	printf("    Base ComID: %u\n",            com_id);
-	printf("    Number of ComIDs: %d\n",      be16toh(enter->comid_count));
-	printf("    Range cross BHV: %d\n",       0x01 & (enter->range_bhv));
-      }
+      msg_type = SWG_MSG_ENTERPRISE;
+      TOPAZ_DEBUG(2) printf("Enterprise SSC 1.0\n");
+      parse_level0_feat_ssc1(feat_data);
     }
     else if (code == FEAT_OPAL1)
     {
-      feat_opal1_t *opal1 = (feat_opal1_t*)feat_data;
-      has_opal1 = true;
-      lba_align = 1;     // Opal 1.0 doesn't work on advanced format (4k) drives
-      com_id = be16toh(opal1->comid_base);
-      TOPAZ_DEBUG(2)
-      { 
-	printf("Opal SSC 1.0\n");
-	printf("    Base ComID: %u\n",            com_id);
-	printf("    Number of ComIDs: %d\n",      be16toh(opal1->comid_count));
-	printf("    Range cross BHV: %d\n",       0x01 & (opal1->range_bhv));
-      }
+      msg_type = SWG_MSG_OPAL;
+      TOPAZ_DEBUG(2) printf("Opal SSC 1.0\n");
+      parse_level0_feat_ssc1(feat_data);
     }
     else if (code == FEAT_SINGLE)
     {
@@ -740,46 +730,21 @@ void drive::probe_level0()
     }
     else if (code == FEAT_OPAL2)
     {
-      feat_opal2_t *opal2 = (feat_opal2_t*)feat_data;
-      com_id = be16toh(opal2->comid_base);
-      has_opal2 = true;
-      admin_count = be16toh(opal2->admin_count);
-      user_count = be16toh(opal2->user_count);
-      TOPAZ_DEBUG(2)
-      { 
-	printf("Opal SSC 2.0\n");
-	printf("    Base ComID: %u\n",       com_id);
-	printf("    Number of ComIDs: %d\n", be16toh(opal2->comid_count));
-	printf("    Range cross BHV: %d\n",  0x01 & (opal2->range_bhv));
-	printf("    Max SP Admin: %d\n",     admin_count);
-	printf("    Max SP User: %d\n",      user_count);
-	printf("    C_PIN_SID Initial: ");
-	if (opal2->init_pin == 0x00)
-	{
-	  printf("C_PIN_MSID\n");
-	}
-	else if (opal2->init_pin == 0xff)
-	{
-	  printf("Vendor Defined\n");
-	}
-	else
-	{
-	  printf("Reserved (%02x)\n", opal2->init_pin);
-	}
-	printf("    C_PIN_SID Revert: ");
-	if (opal2->revert_pin == 0x00)
-	{
-	  printf("C_PIN_MSID\n");
-	}
-	else if (opal2->revert_pin == 0xff)
-	{
-	  printf("Vendor Defined\n");
-	}
-	else
-	{
-	  printf("Reserved (%02x)\n", opal2->revert_pin);
-	}
-      }
+      msg_type = SWG_MSG_OPAL;
+      TOPAZ_DEBUG(2) printf("Opal SSC 2.0\n");
+      parse_level0_feat_ssc2(feat_data);
+    }
+    else if (code == FEAT_OPALITE)
+    {
+      msg_type = SWG_MSG_OPAL;
+      TOPAZ_DEBUG(2) printf("Opalite SSC 1.0\n");
+      parse_level0_feat_ssc2(feat_data);
+    }
+    else if (code == FEAT_PYRITE)
+    {
+      msg_type = SWG_MSG_OPAL;
+      TOPAZ_DEBUG(2) printf("Pyrite SSC 1.0\n");
+      parse_level0_feat_ssc2(feat_data);
     }
     else if ((code >= 0x1000) && (code < 0x4000))
     {
@@ -889,6 +854,66 @@ void drive::logout()
 }
 
 /**
+ * \brief Read Level0 Data for Old SSC Feature Data
+ */
+void drive::parse_level0_feat_ssc1(void const *feat_data)
+{
+  feat_ssc1_t *ssc = (feat_ssc1_t*)feat_data;
+  com_id = be16toh(ssc->comid_base);
+  TOPAZ_DEBUG(2)
+  {
+    printf("    Base ComID: %u\n",            com_id);
+    printf("    Number of ComIDs: %d\n",      be16toh(ssc->comid_count));
+    printf("    Range cross BHV: %d\n",       0x01 & (ssc->range_bhv));
+  }
+}
+
+/**
+ * \brief Read Level0 Data for Newer SSC Feature Data
+ */
+void drive::parse_level0_feat_ssc2(void const *feat_data)
+{
+  feat_ssc2_t *ssc = (feat_ssc2_t*)feat_data;
+  com_id = be16toh(ssc->comid_base);
+  admin_count = be16toh(ssc->admin_count);
+  user_count = be16toh(ssc->user_count);
+  TOPAZ_DEBUG(2)
+  {
+    printf("    Base ComID: %u\n",       com_id);
+    printf("    Number of ComIDs: %d\n", be16toh(ssc->comid_count));
+    printf("    Range cross BHV: %d\n",  0x01 & (ssc->range_bhv));
+    printf("    Max SP Admin: %d\n",     admin_count);
+    printf("    Max SP User: %d\n",      user_count);
+    printf("    C_PIN_SID Initial: ");
+    if (ssc->init_pin == 0x00)
+    {
+      printf("C_PIN_MSID\n");
+    }
+    else if (ssc->init_pin == 0xff)
+    {
+      printf("Vendor Defined\n");
+    }
+    else
+    {
+      printf("Reserved (%02x)\n", ssc->init_pin);
+    }
+    printf("    C_PIN_SID Revert: ");
+    if (ssc->revert_pin == 0x00)
+    {
+      printf("C_PIN_MSID\n");
+    }
+    else if (ssc->revert_pin == 0xff)
+    {
+      printf("Vendor Defined\n");
+    }
+    else
+    {
+      printf("Reserved (%02x)\n", ssc->revert_pin);
+    }
+  }
+}
+
+/**
  * \brief Probe TCG Opal Communication Properties
  */
 void drive::reset_comid(uint32_t com_id)
@@ -930,9 +955,17 @@ char const *drive::lookup_tpm_proto(uint8_t proto)
   {
     return "Security Protocol Discovery";
   }
-  else if ((proto >= 1) && (proto <= 6))
+  else if (proto == 1)
   {
-    return "TCG Opal";
+    return "TCG SWG (General Comms)";
+  }
+  else if (proto == 2)
+  {
+    return "TCG SWG (Proto Reset)";
+  }
+  else if (proto <= 6)
+  {
+    return "TCG SWG (Reserved)";
   }
   else if ((proto == 0x20) || (proto == 0xef))
   {

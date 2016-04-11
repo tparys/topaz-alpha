@@ -196,6 +196,16 @@ namespace topaz
     void logout();
     
     /**
+     * \brief Read Level0 Data for Old SSC Feature Data
+     */
+    void parse_level0_feat_ssc1(void const *feat_data);
+    
+    /**
+     * \brief Read Level0 Data for Newer SSC Feature Data
+     */
+    void parse_level0_feat_ssc2(void const *feat_data);
+    
+    /**
      * \brief Probe TCG Opal Communication Properties
      */
     void reset_comid(uint32_t com_id);
@@ -218,9 +228,8 @@ namespace topaz
     uint64_t host_session_id;
     
     // Internal info describing drive
-    bool has_enterprise;
-    bool has_opal1;
-    bool has_opal2;
+    swg_msg_type_t msg_type;   // Enterprise or Opal
+    bool has_proto_reset;
     uint32_t com_id;
     uint64_t lba_align;
     uint64_t max_com_pkt_size;
