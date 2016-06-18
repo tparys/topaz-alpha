@@ -262,7 +262,7 @@ void drive::table_get_bin(uint64_t tbl_uid, uint64_t offset,
  * @param tbl_col Column number of data to retrieve (table specific)
  * @param val Value to set in column
  */
-void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val)
+void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, datum val)
 {
   // Parameters - Required Arguments (Simple Atoms)
   datum params;

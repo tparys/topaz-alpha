@@ -346,6 +346,88 @@ int main(int argc, char **argv)
 	wipe_range(target, range_id);
       }
     }
+    else if (strcmp(argv[optind + 1], "ds_load") == 0)
+    {
+      if (require_args(2, argc - optind))
+      {
+	int rc = 0;
+	size_t xfer_len = 1024;
+	size_t file_len, file_offset;
+	char xfer[xfer_len];
+
+	// First make sure an ACL is set so we can read this back
+	// unauthenticated
+	datum arg;
+	arg[0].name() = atom::new_half_uid(0xc05);
+	arg[0].named_value() = atom::new_uid(ANYBODY);
+	target.table_set(ACE_DATASTORE_GET, 3, arg);
+	
+	// Open up input file
+	FILE *ifile = fopen(argv[optind + 2], "r");
+	if (ifile == NULL)
+	{
+	  throw topaz_exception("Cannot open input file for DataStore");
+	}
+	
+	// Find size of file
+	fseek(ifile, 0, SEEK_END);
+	file_len = ftell(ifile);
+	fseek(ifile, 0, SEEK_SET);
+
+	// Write size to datastore
+	target.table_set_bin(DATASTORE, 0, &file_len, sizeof(file_len));
+
+	// Do transfer
+	for (file_offset = 0; file_offset < file_len; file_offset += rc)
+	{
+	  // Read one block
+	  rc = fread(xfer, 1, sizeof(xfer), ifile);
+	  if (rc < 1)
+	  {
+	    throw topaz_exception("Invalid read on DataStore input file");
+	  }
+
+	  // Write to DataStore
+	  target.table_set_bin(DATASTORE, file_offset + sizeof(file_len),
+			       xfer, rc);
+	}
+      }
+    }
+    else if (strcmp(argv[optind + 1], "ds_read") == 0)
+    {
+      size_t xfer_len = 1024;
+      size_t file_len, file_offset, read_size;
+      char xfer[xfer_len];
+
+      // Figure out size of file in DataStore
+      target.table_get_bin(DATASTORE, 0, &file_len, sizeof(file_len));
+      if (file_len > (64 * 1024))
+      {
+	// Probably bogus
+	throw topaz_exception("Data in DataStore seems corrupt? ...");
+      }
+
+      // Do transfer
+      for (file_offset = 0; file_offset < file_len; file_offset += sizeof(xfer))
+      {
+	// How big is the next read?
+	if (file_offset + sizeof(xfer) > file_len)
+	{
+	  read_size = file_len - file_offset;
+	}
+	else
+	{
+	  read_size = sizeof(xfer);
+	}
+
+	// Perform read
+	target.table_get_bin(DATASTORE, file_offset + sizeof(file_len),
+			     xfer, read_size);
+
+	// Dump output
+	fwrite(xfer, 1, read_size, stdout);
+      }
+    }
     else
     {
       // Nada

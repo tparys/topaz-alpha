@@ -58,6 +58,9 @@ namespace topaz
     // Info
     SP_INFO          = _UID_MAKE(   0x1,     0x2),
     
+    // An unauthenticated user (anon login)
+    ANYBODY          = _UID_MAKE(   0x9,     0x1),
+    
     // Admin SP User Security Identifier (SID)
     SID              = _UID_MAKE(   0x9,     0x6),
     
@@ -72,6 +75,10 @@ namespace topaz
   // Defined UIDs within Locking SP
   enum
   {
+    // Access Control Entries
+    ACE_DATASTORE_GET = _UID_MAKE(  0x8,  0x3fc00), // Read access to DataStore Table
+    ACE_DATASTORE_SET = _UID_MAKE(  0x8,  0x3fc01), // Write access to DataStore Table
+    
     ADMINS           = _UID_MAKE(   0x9,     0x2), // ?
     ADMIN_BASE       = _UID_MAKE(   0x9, 0x10000), // Base UID of Admins (+1, +2, +3 ...)
     USER_BASE        = _UID_MAKE(   0x9, 0x30000), // Base UID of Users (+1, +2, +3 ...)
@@ -88,7 +95,10 @@ namespace topaz
 
     // LBA Ranges Objects
     LBA_RANGE_GLOBAL = _UID_MAKE( 0x802,     0x1),
-    LBA_RANGE_BASE   = _UID_MAKE( 0x802, 0x30000)
+    LBA_RANGE_BASE   = _UID_MAKE( 0x802, 0x30000),
+
+    // DataStore
+    DATASTORE        = _UID_MAKE( 0x1001, 0),
   };
   
   ////

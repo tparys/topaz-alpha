@@ -115,7 +115,7 @@ namespace topaz
      * @param tbl_col Column number of data to retrieve (table specific)
      * @param val Value to set in column
      */
-    void table_set(uint64_t tbl_uid, uint64_t tbl_col, atom val);
+    void table_set(uint64_t tbl_uid, uint64_t tbl_col, datum val);
     
     /**
      * \brief Set Unsigned Value in Specified Table
