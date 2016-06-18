@@ -191,6 +191,42 @@ atom atom::new_uid(uint64_t value)
 }
 
 /**
+ * \brief Factory Method - Unique ID (Half Sized)
+ */
+atom atom::new_half_uid(uint32_t value)
+{
+  union
+  {
+    uint32_t flip;
+    byte     raw[4];
+  };
+  atom ret;
+  
+  // Half Unique ID's (UIDs) are also quirky. They are 32 bit
+  // integers, stored as a four byte sequence.
+  
+  // Intitialize
+  ret.data_type = atom::UINT;
+  ret.uint_val = value;
+  
+  // Stored as binary
+  ret.data_type = atom::BYTES;
+  ret.data_enc = atom::SHORT;
+  
+  // Flip integer big endian
+  flip = htobe32(value);
+  
+  // Now binary
+  ret.bytes.resize(4);
+  for (size_t i = 0; i < 4; i++)
+  {
+    ret.bytes[i] = raw[i];
+  }
+    
+  return ret;
+}
+
+/**
  * \brief Factory Method - Binary Data
  */
 atom atom::new_bin(byte const *data, size_t len)
@@ -608,6 +644,30 @@ uint64_t atom::get_uid() const
 }
 
 /**
+ * \brief Get Unsigned Integer Stored as Half UID (Bytes)
+ */
+uint32_t atom::get_half_uid() const
+{
+  union
+  {
+    uint32_t flip;
+    char     raw[4];
+  };
+  
+  // Unique ID's (Half) are similar to UID's, but stored as 4 byte binary
+  if ((data_type != atom::BYTES) || (data_enc != atom::SHORT) || (bytes.size() != 4))
+  {
+    throw topaz_exception("Invalid UID Atom");
+  }
+  
+  // Extract the bytes
+  memcpy(raw, &(bytes[0]), 4);
+  
+  // Flip to native endianess
+  return be32toh(flip);
+}
+
+/**
  * \brief Get Unsigned Integer Value
  */
 uint64_t atom::get_uint() const
@@ -728,6 +788,16 @@ void atom::print() const
 	printf("%x", (unsigned int)_UID_HIGH(uid));
 	printf(":");
 	printf("%x", (unsigned int)_UID_LOW(uid));
+      }
+      // Half UIDs are UIDs, but half as big, so same thing applies. If it's
+      // four bytes, assume a half UID type
+      else if ((bytes.size() == 4) &&
+	       ((bytes[0] == 0x00) || (bytes[0] == 0xff)))
+      {
+	// Assuming Half UID ...
+	uint32_t half = get_half_uid();
+	
+	printf("%x:", half);
       }
       // Plain ol' byte sequence ...
       else

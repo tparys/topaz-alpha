@@ -115,6 +115,11 @@ namespace topaz
     static topaz::atom new_uid(uint64_t val);
     
     /**
+     * \brief Factory Method - Unique ID (Half Sized)
+     */
+    static topaz::atom new_half_uid(uint32_t val);
+    
+    /**
      * \brief Factory Method - Binary Data
      */
     static topaz::atom new_bin(byte const *data, size_t len);
@@ -192,6 +197,11 @@ namespace topaz
      * \brief Get Unsigned Integer Stored as UID (Bytes)
      */
     uint64_t get_uid() const;
+    
+    /**
+     * \brief Get Unsigned Integer Stored as Half UID (Bytes)
+     */
+    uint32_t get_half_uid() const;
     
     /**
      * \brief Get Unsigned Integer Value
