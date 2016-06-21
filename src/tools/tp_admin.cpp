@@ -38,11 +38,10 @@
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
 #include <topaz/uid.h>
-#include "pinutil.h"
+#include <topaz/pin_entry.h>
 using namespace std;
 using namespace topaz;
 
-void ctl_c_handler(int sig);
 void usage();
 char const *lifecycle_to_string(uint64_t val);
 void do_auth_login(drive &target, string pin, bool pin_valid);
@@ -52,9 +51,6 @@ int main(int argc, char **argv)
   string cur_pin, new_pin;
   bool cur_pin_valid = false, new_pin_valid = false;
   char c;
-  
-  // Install handler for Ctl-C to restore terminal to sane state
-  signal(SIGINT, ctl_c_handler);
   
   // Process command line switches */
   opterr = 0;
@@ -153,7 +149,7 @@ int main(int argc, char **argv)
       if (!new_pin_valid)
       {
 	// No, query for one now
-	new_pin = pin_from_console("new SID(admin)");
+	new_pin = pin_from_console_check("new SID(admin)");
       }
       
       // Convert PIN to atom for table I/O
@@ -194,13 +190,6 @@ int main(int argc, char **argv)
   }
   
   return 0;
-}
-
-void ctl_c_handler(int sig)
-{
-  // Make sure this is on when program terminates
-  enable_terminal_echo();
-  exit(0);
 }
 
 void usage()

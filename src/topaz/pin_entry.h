@@ -1,10 +1,12 @@
-#ifndef PINUTIL_H
-#define PINUTIL_H
+#ifndef TOPAZ_PIN_ENTRY_H
+#define TOPAZ_PIN_ENTRY_H
 
 /**
- * Topaz Tools - PIN Entry Utilities
+ * Topaz - PIN Entry
  *
- * Copyright (c) 2014, T Parys
+ * Functions and definitions for securely entering PINs and passwords.
+ *
+ * Copyright (c) 2016, T Parys
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,17 +31,46 @@
  */
 
 #include <string>
+#include <signal.h>
 
-// Turn on character echo on terminal
-void enable_terminal_echo();
+namespace topaz
+{
+  /**
+   * Set terminal echo
+   *
+   * \param echo Enable echo on true, false otherwise
+   */
+  void set_terminal_echo(bool echo);
 
-// Turn off character echo on terminal
-void disable_terminal_echo();
+  /**
+   * PIN Entry Signal Handler
+   */
+  void pin_signal_handler(int signum, siginfo_t *info, void *ctx);
 
-// Read a PIN from file
-std::string pin_from_file(char const *path);
+  /**
+   * Read a PIN from file
+   *
+   * \param path File path to read
+   * \return String containing file contents
+   */
+  std::string pin_from_file(char const *path);
 
-// Read a PIN from console
-std::string pin_from_console(char const *prompt);
+  /**
+   * Read a PIN from console
+   *
+   * \param prompt Name of PIN to request
+   * \return String containing entered PIN
+   */
+  std::string pin_from_console(char const *prompt);
+
+  /**
+   * Read a PIN from console with confirmation
+   *
+   * \param prompt Name of PIN to request
+   * \return String containing entered PIN
+   */
+  std::string pin_from_console_check(char const *prompt);
+
+};
 
 #endif

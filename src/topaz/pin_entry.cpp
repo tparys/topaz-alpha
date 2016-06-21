@@ -1,7 +1,9 @@
 /**
- * Topaz Tools - PIN Entry Utilities
+ * Topaz - PIN Entry
  *
- * Copyright (c) 2014, T Parys
+ * Functions and definitions for securely entering PINs and passwords.
+ *
+ * Copyright (c) 2016, T Parys
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,17 +28,21 @@
  */
 
 #include <unistd.h>
-#include <termios.h>
 #include <iostream>
 #include <fstream>
-#include <string>
+#include <signal.h>
+#include <termios.h>
+#include <topaz/pin_entry.h>
 #include <topaz/exceptions.h>
-#include "pinutil.h"
 using namespace std;
 using namespace topaz;
 
-// Turn on character echo on terminal
-void enable_terminal_echo()
+/**
+ * Set terminal echo
+ *
+ * \param echo Enable echo on true, false otherwise
+ */
+void topaz::set_terminal_echo(bool echo)
 {
   struct termios cur;
   
@@ -46,8 +52,15 @@ void enable_terminal_echo()
     throw topaz_exception("Error getting terminal settings");
   }
   
-  // Echo on
-  cur.c_lflag |= ECHO;
+  // Echo on or off
+  if (echo)
+  {
+    cur.c_lflag |= ECHO;
+  }
+  else
+  {
+    cur.c_lflag &= ~ECHO;
+  }
   
   // Set current terminal settings
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &cur) != 0)
@@ -56,29 +69,22 @@ void enable_terminal_echo()
   }
 }
 
-// Turn off character echo on terminal
-void disable_terminal_echo()
+/**
+ * PIN Entry Signal Handler
+ */
+void topaz::pin_signal_handler(int signum, siginfo_t *info, void *ctx)
 {
-  struct termios cur;
-  
-  // Get current terminal settings
-  if (tcgetattr(STDIN_FILENO, &cur) != 0)
-  {
-    throw topaz_exception("Error getting terminal settings");
-  }
-  
-  // Echo off
-  cur.c_lflag &= ~ECHO;
-  
-  // Set current terminal settings
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &cur) != 0)
-  {
-    throw topaz_exception("Error setting terminal settings");
-  }
+  // Restore console echo
+  set_terminal_echo(true);
 }
 
-// Read a PIN from file
-string pin_from_file(char const *path)
+/**
+ * Read a PIN from file
+ *
+ * \param path File path to read
+ * \return String containing file contents
+ */
+string topaz::pin_from_file(char const *path)
 {
   // Open input file
   ifstream ifile(path);
@@ -98,22 +104,66 @@ string pin_from_file(char const *path)
   return pin;
 }
 
-// Read a PIN from console
-string pin_from_console(char const *prompt)
+/**
+ * Read a PIN from console
+ *
+ * \param prompt Name of PIN to request
+ * \return String containing entered PIN
+ */
+string topaz::pin_from_console(char const *prompt)
 {
   string pin;
-  
-  // Supress password echo to screen
-  disable_terminal_echo();
-  
+
+  // Set up handler if someone hits Ctrl-C (INT) or sends a TERM
+  struct sigaction new_action = {0}, old_action[2];
+  new_action.sa_sigaction = pin_signal_handler;
+  new_action.sa_flags = SA_SIGINFO;
+  if ((sigaction(SIGINT, &new_action, old_action + 0) < 0) ||
+      (sigaction(SIGTERM, &new_action, old_action + 1) < 0))
+  {
+    throw topaz_exception("Cannot set PIN signal handler");
+  }
+
+  // Disable console echo
+  set_terminal_echo(false);
+
   // Set up a simple prompt
   cout << "Please enter " << prompt << " PIN: " << flush;
   getline(cin, pin);
   cout << endl;
-  
-  // Restore typical behavior
-  enable_terminal_echo();
-  
-  // Convert to atom
+
+  // Restore console echo
+  set_terminal_echo(true);
+
+  // Restore signal handlers
+  if ((sigaction(SIGINT, old_action + 0, NULL) < 0) ||
+      (sigaction(SIGTERM, old_action + 1, NULL) < 0))
+  {
+    throw topaz_exception("Cannot set PIN signal handler");
+  }
+
   return pin;
 }
+
+/**
+ * Read a PIN from console with confirmation
+ *
+ * \param prompt Name of PIN to request
+ * \return String containing entered PIN
+ */
+string topaz::pin_from_console_check(char const *prompt)
+{
+  string pin1, pin2;
+
+  pin1 = pin_from_console(prompt);
+  cout << "One more time to confirm ..." << endl;
+  pin2 = pin_from_console(prompt);
+
+  if (pin1 != pin2)
+  {
+    throw topaz_exception("Entered PINs do not match");
+  }
+
+  return pin1;
+}
+

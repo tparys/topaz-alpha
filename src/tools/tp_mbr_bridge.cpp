@@ -50,7 +50,7 @@
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
 #include <topaz/uid.h>
-#include "pinutil.h"
+#include <topaz/pin_entry.h>
 using namespace std;
 using namespace topaz;
 
@@ -86,8 +86,7 @@ void usage();
 int start_kern_process(int nbd, int sock, pthread_t *thread);
 void *kern_thread(void *ptr);
 void set_sig_handler(void (*handler)(int));
-void sig_handler_pin(int sig);
-void sig_handler_nbd(int sig);
+void sig_handler(int sig);
 
 int main(int argc, char **argv)
 {
@@ -156,7 +155,6 @@ int main(int argc, char **argv)
   state.drive = argv[optind];
   
   // Get a PIN if not provided
-  set_sig_handler(sig_handler_pin); // in case of ctl-c
   if (!cur_pin_valid)
   {
     state.cur_pin = pin_from_console("current");
@@ -204,8 +202,8 @@ int main2(prog_state_t *state)
   }
   kill_fd = state->sig_pipe[1];
   
-  // install final signal handler
-  set_sig_handler(sig_handler_nbd); // in case of ctl-c
+  // install signal handler
+  set_sig_handler(sig_handler); // in case of ctl-c
 
   // open the NBD device
   if ((state->nbd = open(state->nbd_dev.c_str(), O_RDWR)) < 0)
@@ -437,16 +435,8 @@ void set_sig_handler(void (*handler)(int))
   sigaction(SIGPIPE, &action, NULL); /* network disconnect */
 }
 
-// Initial handler to reset terminal to sane state during PIN entry
-void sig_handler_pin(int sig)
-{
-  // Make sure this is on when program terminates
-  enable_terminal_echo();
-  exit(0);
-}
-
 // Main signal handler to self-pipe a shutdown signal
-void sig_handler_nbd(int sig)
+void sig_handler(int sig)
 {
   /* Something to send. Seems appropriate */
   char msg = 'X';

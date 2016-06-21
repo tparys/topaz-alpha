@@ -9,6 +9,7 @@ set(TOPAZ_SRCS
   drive.cpp
   encodable.cpp
   rawdrive.cpp
+  pin_entry.cpp
 )
 
 add_library(topaz ${TOPAZ_SRCS})

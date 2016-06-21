@@ -38,7 +38,7 @@
 #include <topaz/exceptions.h>
 #include <topaz/datum.h>
 #include <topaz/uid.h>
-#include "pinutil.h"
+#include <topaz/pin_entry.h>
 using namespace std;
 using namespace topaz;
 

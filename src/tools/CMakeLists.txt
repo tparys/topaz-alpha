@@ -3,21 +3,21 @@
 #
 
 # TPer Admin SP tool
-add_executable(tp_admin pinutil.cpp tp_admin.cpp)
+add_executable(tp_admin tp_admin.cpp)
 target_link_libraries(tp_admin topaz)
 
 # TPer Locking SP tool
-add_executable(tp_lock pinutil.cpp spinner.cpp tp_lock.cpp)
+add_executable(tp_lock spinner.cpp tp_lock.cpp)
 target_link_libraries(tp_lock topaz)
 
 # TPer Crypto Wipe
-add_executable(tp_wipe pinutil.cpp tp_wipe.cpp)
+add_executable(tp_wipe tp_wipe.cpp)
 target_link_libraries(tp_wipe topaz)
 
 # TPer example unlock
-add_executable(tp_unlock_simple pinutil.cpp tp_unlock_simple.cpp)
+add_executable(tp_unlock_simple tp_unlock_simple.cpp)
 target_link_libraries(tp_unlock_simple topaz)
 
 # MBR Shadow -> NBD bridge
-add_executable(tp_mbr_bridge pinutil.cpp tp_mbr_bridge.cpp)
+add_executable(tp_mbr_bridge tp_mbr_bridge.cpp)
 target_link_libraries(tp_mbr_bridge topaz pthread)
