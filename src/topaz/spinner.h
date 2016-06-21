@@ -1,8 +1,8 @@
-#ifndef SPINNER_H
-#define SPINNER_H
+#ifndef TOPAZ_SPINNER_H
+#define TOPAZ_SPINNER_H
 
 /**
- * Topaz Tools - Spinning progress bar
+ * Topaz - Spinning progress bar
  *
  * Copyright (c) 2014, T Parys
  * All rights reserved.
@@ -28,25 +28,30 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-class spinner
+namespace topaz
 {
-  
-public:
-  
-  // Constructor / Destructor
-  spinner(int max);
-  ~spinner();
-  
-  // Mutator
-  void tick(int count = 1);
-  
-protected:
-  
-  int cur;
-  int max;
-  int width;
-  int old_pos;
-  
+
+  class spinner
+  {
+    
+    public:
+    
+    // Constructor / Destructor
+    spinner(int max);
+    ~spinner();
+    
+    // Mutator
+    void tick(int count = 1);
+    
+    protected:
+    
+    int cur;
+    int max;
+    int width;
+    int old_pos;
+    
+  };
+
 };
 
 #endif

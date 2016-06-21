@@ -10,6 +10,7 @@ set(TOPAZ_SRCS
   encodable.cpp
   rawdrive.cpp
   pin_entry.cpp
+  spinner.cpp
 )
 
 add_library(topaz ${TOPAZ_SRCS})

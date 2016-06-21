@@ -7,7 +7,7 @@ add_executable(tp_admin tp_admin.cpp)
 target_link_libraries(tp_admin topaz)
 
 # TPer Locking SP tool
-add_executable(tp_lock spinner.cpp tp_lock.cpp)
+add_executable(tp_lock tp_lock.cpp)
 target_link_libraries(tp_lock topaz)
 
 # TPer Crypto Wipe

@@ -28,7 +28,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
-#include "spinner.h"
+#include <topaz/spinner.h>
+using namespace topaz;
 
 // Spinner characters
 char const *spin_chars = "|/-\\";

@@ -138,6 +138,16 @@ namespace topaz
 		       void const *ptr, uint64_t len);
     
     /**
+     * \brief Set Binary Table from File
+     *
+     * @param tbl_uid Identifier of target table
+     * @param offset Starting byte of binary table
+     * @param filename File to use for input
+     */
+    void table_set_bin_file(uint64_t tbl_uid, uint64_t offset,
+			    char const *filename);
+    
+    /**
      * \brief Retrieve default device PIN
      */
     std::string default_pin();

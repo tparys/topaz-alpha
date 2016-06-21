@@ -39,6 +39,7 @@
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
 #include <topaz/uid.h>
+#include <topaz/spinner.h>
 using namespace std;
 using namespace topaz;
 
@@ -301,6 +302,10 @@ void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val)
 /**
  * \brief Set Binary Table
  *
+ * @param tbl_uid Identifier of target table
+ * @param offset Starting byte of binary table
+ * @param ptr Pointer to copy data from
+ * @param len Length of data to copy
  */
 void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
 			  void const *ptr, uint64_t len)
@@ -332,6 +337,78 @@ void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
 }
 
 /**
+ * \brief Set Binary Table from File
+ *
+ * @param tbl_uid Identifier of target table
+ * @param offset Starting byte of binary table
+ * @param filename File to use for input
+ */
+void drive::table_set_bin_file(uint64_t tbl_uid, uint64_t offset,
+			       char const *filename)
+{
+  FILE *in_file;
+  size_t file_len, count;
+  uint64_t desc_uid;
+  uint64_t table_size;
+
+  // Open input file
+  in_file = fopen(filename, "rb");
+  if (in_file == NULL)
+  {
+    throw topaz_exception("Cannot open table input file");
+  }
+
+  // Length of file
+  fseek(in_file, 0, SEEK_END);
+  file_len = ftell(in_file);
+  rewind(in_file);
+  printf("File length is %lu\n", (unsigned long)file_len);
+
+  // Let's pull open the table descriptor
+  desc_uid = _UID_MAKE(1, _UID_HIGH(tbl_uid));
+  table_get(desc_uid);
+  table_size = table_get(desc_uid, 7).get_uint();
+  printf("Table size is is %lu\n", (unsigned long)table_size);
+
+  // Sanity check
+  if (offset + file_len > table_size)
+  {
+    throw topaz_exception("File too large to fit in requested table");
+  }
+
+  // The drive may suggest an optimal access granularity
+  size_t optimal = table_get(desc_uid, 14).get_uint();
+  size_t xfer_len = max_token / optimal * optimal;
+
+  // How many blocks are we moving?
+  size_t xfer_count = 1 + (file_len - 1) / xfer_len;
+  printf("Transfer will require %u block operations ...\n",
+	 (unsigned int)xfer_count);
+  spinner spin(xfer_count);
+
+  // Begin the transfer
+  byte_vector buffer;
+  buffer.resize(xfer_len);
+  while (file_len)
+  {
+    // Read in the next block
+    count = fread(&(buffer[0]), 1, xfer_len, in_file);
+    if (count < 1)
+    {
+      break;
+    }
+
+    // Batch write to MBR
+    table_set_bin(tbl_uid, offset, &(buffer[0]), count);
+
+    // Advance pointers
+    file_len -= count;
+    offset += count;
+    spin.tick();
+  }
+}
+    
+/**
  * \brief Retrieve default device PIN
  */
 string drive::default_pin()
@@ -345,7 +422,7 @@ string drive::default_pin()
   {
     pin += pin_bytes[i];
   }
- 
+
   // Completed PIN as string
   return pin;
 }
@@ -825,7 +902,7 @@ void drive::probe_level1()
       TOPAZ_DEBUG(2) printf("  Max Token Size is %" PRIu64 "\n", val);
     }
   }
-  
+
   // Update managed buffer
   raw_buffer.resize(max_xfer);
 }

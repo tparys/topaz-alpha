@@ -40,7 +40,7 @@
 #include <topaz/exceptions.h>
 #include <topaz/uid.h>
 #include <topaz/pin_entry.h>
-#include "spinner.h"
+#include <topaz/spinner.h>
 using namespace std;
 using namespace topaz;
 
@@ -212,57 +212,7 @@ int main(int argc, char **argv)
     {
       if (require_args(3, argc - optind))
       {
-	size_t mbr_max = 128 * 1024 * 1024; // Maximum size of MBR (hardcode for now)
-	size_t xfer_max = 32 * 512;         // Maximum transfer size
-	size_t file_len; //, xfer_start = 0;
-	
-	// Open up input file
-	FILE *ifile = fopen(argv[optind + 2], "r");
-	if (ifile == NULL)
-	{
-	  throw topaz_exception("Cannot open input file for MBR shadow");
-	}
-	
-	// Verify size of file
-	fseek(ifile, 0, SEEK_END);
-	file_len = ftell(ifile);
-	fseek(ifile, 0, SEEK_SET);
-	if (file_len > mbr_max)
-	{
-	  throw topaz_exception("Input file too large for MBR shadow");
-	}
-	
-	// Count how many transfers are needed for write
-	size_t xfer_count = 1 + (file_len - 1) / xfer_max;
-	printf("Transfer will require %u block operations ...\n",
-	       (unsigned int)xfer_count);
-	
-	// Allocate space
-	char *xfer_data = new char[xfer_max];
-	
-	// Visual feedback
-	spinner spin(xfer_count);
-	
-	// Do the transfer
-	for (size_t xfer_num = 0; xfer_num < xfer_count; xfer_num++)
-	{
-	  // Read the data out of the file
-	  int rc = fread(xfer_data, 1, xfer_max, ifile);
-	  if (rc < 1)
-	  {
-	    delete [] xfer_data;
-	    throw topaz_exception("Invalid read on MBR input file");
-	  }
-	  
-	  // Flush data to MBR shadow
-	  target.table_set_bin(MBR_UID, xfer_num * xfer_max, xfer_data, rc);
-	  
-	  // Visual feedback
-	  spin.tick();
-	}
-	
-	// Cleanup
-	delete [] xfer_data;
+	target.table_set_bin_file(MBR_UID, 0, argv[optind + 2]);
       }
     }
     // Display locking ranges
@@ -346,47 +296,31 @@ int main(int argc, char **argv)
     {
       if (require_args(2, argc - optind))
       {
-	int rc = 0;
-	size_t xfer_len = 1024;
-	size_t file_len, file_offset;
-	char xfer[xfer_len];
-
+	uint32_t file_len;
+	
 	// First make sure an ACL is set so we can read this back
 	// unauthenticated
 	datum arg;
 	arg[0].name() = atom::new_half_uid(0xc05);
 	arg[0].named_value() = atom::new_uid(ANYBODY);
 	target.table_set(ACE_DATASTORE_GET, 3, arg);
-	
-	// Open up input file
-	FILE *ifile = fopen(argv[optind + 2], "r");
+
+	// Find size of file
+	FILE *ifile = fopen(argv[optind + 2], "rb");
 	if (ifile == NULL)
 	{
-	  throw topaz_exception("Cannot open input file for DataStore");
+	  throw topaz_exception("Cannot open table input file");
 	}
-	
-	// Find size of file
 	fseek(ifile, 0, SEEK_END);
 	file_len = ftell(ifile);
 	fseek(ifile, 0, SEEK_SET);
+	fclose(ifile);
 
-	// Write size to datastore
+	// Write file length first
 	target.table_set_bin(DATASTORE, 0, &file_len, sizeof(file_len));
 
-	// Do transfer
-	for (file_offset = 0; file_offset < file_len; file_offset += rc)
-	{
-	  // Read one block
-	  rc = fread(xfer, 1, sizeof(xfer), ifile);
-	  if (rc < 1)
-	  {
-	    throw topaz_exception("Invalid read on DataStore input file");
-	  }
-
-	  // Write to DataStore
-	  target.table_set_bin(DATASTORE, file_offset + sizeof(file_len),
-			       xfer, rc);
-	}
+	// And rest of data
+	target.table_set_bin_file(DATASTORE, sizeof(file_len), argv[optind + 2]);
       }
     }
     else if (strcmp(argv[optind + 1], "ds_read") == 0)
