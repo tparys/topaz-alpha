@@ -150,7 +150,7 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
   logout();
   
   // Parameters - Required Arguments (Simple Atoms)
-  datum params;
+  datum params, rc;
   params[0].value()   = atom::new_uint(getpid()); // Host Session ID (Process ID)
   params[1].value()   = atom::new_uid(sp_uid);    // Admin SP or Locking SP
   params[2].value()   = atom::new_uint(1);        // Read/Write Session
@@ -162,7 +162,18 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
   params[4].named_value() = atom::new_uid(auth_uid);
   
   // Off it goes
-  datum rc = invoke(SESSION_MGR, START_SESSION, params);
+  try
+  {
+    rc = invoke(SESSION_MGR, START_SESSION, params);
+  }
+  catch (topaz_exception &e)
+  {
+    // There's a bunch of things that could happen here, but the
+    // most likely is a login failure. Without reworking the library's
+    // entire exception handling, this is a quick fix to a horribly
+    // misnamed exception thrown when the wrong PIN is entered.
+    throw topaz_exception("Login failure");
+  }
   
   // Host session ID
   host_session_id = rc[0].value().get_uint();
