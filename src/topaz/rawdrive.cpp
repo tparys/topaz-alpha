@@ -100,7 +100,7 @@ rawdrive::~rawdrive()
  * @param bcount   Size of data buffer in 512 byte blocks
  */
 void rawdrive::if_send(uint8_t proto, uint16_t comid,
-		       void *data, uint8_t bcount)
+                       void *data, uint8_t bcount)
 {
   if (USE_ATA12)
   {
@@ -141,7 +141,7 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
  * @param bcount   Size of data buffer in 512 byte blocks
  */
 void rawdrive::if_recv(uint8_t proto, uint16_t comid,
-		       void *data, uint8_t bcount)
+                       void *data, uint8_t bcount)
 {
   if (USE_ATA12)
   {
@@ -192,8 +192,8 @@ void rawdrive::check_libata()
       // Data read
       if (in == '0')
       {
-	throw topaz_exception(
-	  "Linux libata layer configured to block TPM calls (add libata.allow_tpm=1 to kernel args)");
+        throw topaz_exception(
+          "Linux libata layer configured to block TPM calls (add libata.allow_tpm=1 to kernel args)");
       }
     }
     
@@ -324,7 +324,7 @@ void rawdrive::dump_id_string(char const *desc, uint16_t *data, size_t max)
  * @param wait   Command timeout (seconds)
  */
 void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
-			   void *data, uint8_t bcount, int wait)
+                           void *data, uint8_t bcount, int wait)
 {
   struct sg_io_hdr sg_io;  // ioctl data structure
   unsigned char cdb[12];   // Command descriptor block
@@ -457,7 +457,7 @@ void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
  * @param wait   Command timeout (seconds)
  */
 void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
-			   void *data, uint8_t bcount, int wait)
+                           void *data, uint8_t bcount, int wait)
 {
   struct sg_io_hdr sg_io;  // ioctl data structure
   unsigned char cdb[16];   // Command descriptor block

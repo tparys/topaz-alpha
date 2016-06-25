@@ -71,44 +71,44 @@ int main(int argc, char **argv)
     switch (c)
     {
       case 'u':
-	user_uid = get_uid(optarg);
-	break;
-	
+        user_uid = get_uid(optarg);
+        break;
+ 
       case 'p':
-	cur_pin = optarg;
-	cur_pin_valid = true;
-	break;
-	
+        cur_pin = optarg;
+        cur_pin_valid = true;
+        break;
+ 
       case 'P':
-	cur_pin = pin_from_file(optarg);
-	cur_pin_valid = true;
-	break;
-	
+        cur_pin = pin_from_file(optarg);
+        cur_pin_valid = true;
+        break;
+ 
       case 'n':
-	new_pin = optarg;
-	new_pin_valid = true;
-	break;
-	
+        new_pin = optarg;
+        new_pin_valid = true;
+        break;
+ 
       case 'N':
-	new_pin = pin_from_file(optarg);
-	new_pin_valid = true;
-	break;
-	
+        new_pin = pin_from_file(optarg);
+        new_pin_valid = true;
+        break;
+ 
       case 'v':
         topaz_debug++;
         break;
         
       default:
-	if ((optopt == 'u') || (optopt == 'p') || (optopt == 'P') ||
-	    (optopt == 'n') || (optopt == 'N'))
-	{
-	  cerr << "Option -" << optopt << " requires an argument." << endl;
-	}
-	else
-	{
-	  cerr << "Invalid command line option " << c << endl;
-	}
-	break;
+        if ((optopt == 'u') || (optopt == 'p') || (optopt == 'P') ||
+            (optopt == 'n') || (optopt == 'N'))
+        {
+          cerr << "Option -" << optopt << " requires an argument." << endl;
+        }
+        else
+        {
+          cerr << "Invalid command line option " << c << endl;
+        }
+        break;
     }
   }
   
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
       // If new PIN not specified, get it now
       if (!new_pin_valid)
       {
-	new_pin = pin_from_console_check("new");
+        new_pin = pin_from_console_check("new");
       }
       
       // Convert PIN to atom for table I/O
@@ -166,13 +166,13 @@ int main(int argc, char **argv)
       // Current admin accounts
       for (i = 1; i <= target.get_max_admins(); i++)
       {
-	query_acct(target, ADMIN_BASE + i, "admin", i);
+        query_acct(target, ADMIN_BASE + i, "admin", i);
       }
       
       // Current user accounts
       for (i = 1; i <= target.get_max_users(); i++)
       {
-	query_acct(target, USER_BASE + i, "user", i);
+        query_acct(target, USER_BASE + i, "user", i);
       }
     }
     // MBR stuff
@@ -180,31 +180,31 @@ int main(int argc, char **argv)
     {
       if (require_args(3, argc - optind))
       {
-	if (strcmp(argv[optind + 2], "enable") == 0)
-	{
-	  // Set MBR Ctl column "Enable(1)" to 1
-	  target.table_set(MBR_CONTROL, 1, 1);
-	}
-	else if (strcmp(argv[optind + 2], "disable") == 0)
-	{
-	  // Set MBR Ctl column "Enable(1)" to 0
-	  target.table_set(MBR_CONTROL, 1, 0);
-	}
-	else if (strcmp(argv[optind + 2], "hide") == 0)
-	{
-	  // Set MBR Ctl column "Done(2)" to 1
-	  target.table_set(MBR_CONTROL, 2, 1);
-	}
-	else if (strcmp(argv[optind + 2], "unhide") == 0)
-	{
-	  // Set MBR Ctl column "Done(2)" to 0
-	  target.table_set(MBR_CONTROL, 2, 0);
-	}
-	else
-	{
-	  // ??
-	  throw topaz_exception("Unknown MBR command");
-	}
+        if (strcmp(argv[optind + 2], "enable") == 0)
+        {
+          // Set MBR Ctl column "Enable(1)" to 1
+          target.table_set(MBR_CONTROL, 1, 1);
+        }
+        else if (strcmp(argv[optind + 2], "disable") == 0)
+        {
+          // Set MBR Ctl column "Enable(1)" to 0
+          target.table_set(MBR_CONTROL, 1, 0);
+        }
+        else if (strcmp(argv[optind + 2], "hide") == 0)
+        {
+          // Set MBR Ctl column "Done(2)" to 1
+          target.table_set(MBR_CONTROL, 2, 1);
+        }
+        else if (strcmp(argv[optind + 2], "unhide") == 0)
+        {
+          // Set MBR Ctl column "Done(2)" to 0
+          target.table_set(MBR_CONTROL, 2, 0);
+        }
+        else
+        {
+          // ??
+          throw topaz_exception("Unknown MBR command");
+        }
       }
     }
     // MBR stuff
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
     {
       if (require_args(3, argc - optind))
       {
-	target.table_set_bin_file(MBR_UID, 0, argv[optind + 2]);
+        target.table_set_bin_file(MBR_UID, 0, argv[optind + 2]);
       }
     }
     // Display locking ranges
@@ -223,104 +223,104 @@ int main(int argc, char **argv)
       max_range = get_max_lba_ranges(target);
       for (i = 0; i <= max_range; i++)
       {
-	query_range(target, i);
+        query_range(target, i);
       }
     }
     else if (strcmp(argv[optind + 1], "lock_on_reset") == 0)
     {
       if (require_args(3, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	lock_ctl(target, range_id, true, true, true);
+        range_id = atoi(argv[optind + 2]);
+        lock_ctl(target, range_id, true, true, true);
       }
     }
     else if (strcmp(argv[optind + 1], "wr_lock_on_reset") == 0)
     {
       if (require_args(3, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	lock_ctl(target, range_id, true, false, true);
+        range_id = atoi(argv[optind + 2]);
+        lock_ctl(target, range_id, true, false, true);
       }
     }
     else if (strcmp(argv[optind + 1], "unlock_on_reset") == 0)
     {
       if (require_args(3, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	lock_ctl(target, range_id, true, false, false);
+        range_id = atoi(argv[optind + 2]);
+        lock_ctl(target, range_id, true, false, false);
       }
     }
     else if (strcmp(argv[optind + 1], "lock") == 0)
     {
       if (require_args(3, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	lock_ctl(target, range_id, false, true, true);
+        range_id = atoi(argv[optind + 2]);
+        lock_ctl(target, range_id, false, true, true);
       }
     }
     else if (strcmp(argv[optind + 1], "wr_lock") == 0)
     {
       if (require_args(3, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	lock_ctl(target, range_id, false, false, true);
+        range_id = atoi(argv[optind + 2]);
+        lock_ctl(target, range_id, false, false, true);
       }
     }
     else if (strcmp(argv[optind + 1], "unlock") == 0)
     {
       if (require_args(3, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	lock_ctl(target, range_id, false, false, false);
+        range_id = atoi(argv[optind + 2]);
+        lock_ctl(target, range_id, false, false, false);
       }
     }
     else if (strcmp(argv[optind + 1], "setrange") == 0)
     {
       if (require_args(5, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	start    = atoi(argv[optind + 3]);
-	size     = atoi(argv[optind + 4]);
-	range_ctl(target, range_id, start, size);
+        range_id = atoi(argv[optind + 2]);
+        start    = atoi(argv[optind + 3]);
+        size     = atoi(argv[optind + 4]);
+        range_ctl(target, range_id, start, size);
       }
     }
     else if (strcmp(argv[optind + 1], "wipe") == 0)
     {
       if (require_args(3, argc - optind))
       {
-	range_id = atoi(argv[optind + 2]);
-	wipe_range(target, range_id);
+        range_id = atoi(argv[optind + 2]);
+        wipe_range(target, range_id);
       }
     }
     else if (strcmp(argv[optind + 1], "ds_load") == 0)
     {
       if (require_args(2, argc - optind))
       {
-	uint32_t file_len;
-	
-	// First make sure an ACL is set so we can read this back
-	// unauthenticated
-	datum arg;
-	arg[0].name() = atom::new_half_uid(0xc05);
-	arg[0].named_value() = atom::new_uid(ANYBODY);
-	target.table_set(ACE_DATASTORE_GET, 3, arg);
+        uint32_t file_len;
+ 
+        // First make sure an ACL is set so we can read this back
+        // unauthenticated
+        datum arg;
+        arg[0].name() = atom::new_half_uid(0xc05);
+        arg[0].named_value() = atom::new_uid(ANYBODY);
+        target.table_set(ACE_DATASTORE_GET, 3, arg);
 
-	// Find size of file
-	FILE *ifile = fopen(argv[optind + 2], "rb");
-	if (ifile == NULL)
-	{
-	  throw topaz_exception("Cannot open table input file");
-	}
-	fseek(ifile, 0, SEEK_END);
-	file_len = ftell(ifile);
-	fseek(ifile, 0, SEEK_SET);
-	fclose(ifile);
+        // Find size of file
+        FILE *ifile = fopen(argv[optind + 2], "rb");
+        if (ifile == NULL)
+        {
+          throw topaz_exception("Cannot open table input file");
+        }
+        fseek(ifile, 0, SEEK_END);
+        file_len = ftell(ifile);
+        fseek(ifile, 0, SEEK_SET);
+        fclose(ifile);
 
-	// Write file length first
-	target.table_set_bin(DATASTORE, 0, &file_len, sizeof(file_len));
+        // Write file length first
+        target.table_set_bin(DATASTORE, 0, &file_len, sizeof(file_len));
 
-	// And rest of data
-	target.table_set_bin_file(DATASTORE, sizeof(file_len), argv[optind + 2]);
+        // And rest of data
+        target.table_set_bin_file(DATASTORE, sizeof(file_len), argv[optind + 2]);
       }
     }
     else if (strcmp(argv[optind + 1], "ds_read") == 0)
@@ -333,29 +333,29 @@ int main(int argc, char **argv)
       target.table_get_bin(DATASTORE, 0, &file_len, sizeof(file_len));
       if (file_len > (64 * 1024))
       {
-	// Probably bogus
-	throw topaz_exception("Data in DataStore seems corrupt? ...");
+        // Probably bogus
+        throw topaz_exception("Data in DataStore seems corrupt? ...");
       }
 
       // Do transfer
       for (file_offset = 0; file_offset < file_len; file_offset += sizeof(xfer))
       {
-	// How big is the next read?
-	if (file_offset + sizeof(xfer) > file_len)
-	{
-	  read_size = file_len - file_offset;
-	}
-	else
-	{
-	  read_size = sizeof(xfer);
-	}
+        // How big is the next read?
+        if (file_offset + sizeof(xfer) > file_len)
+        {
+          read_size = file_len - file_offset;
+        }
+        else
+        {
+          read_size = sizeof(xfer);
+        }
 
-	// Perform read
-	target.table_get_bin(DATASTORE, file_offset + sizeof(file_len),
-			     xfer, read_size);
+        // Perform read
+        target.table_get_bin(DATASTORE, file_offset + sizeof(file_len),
+                             xfer, read_size);
 
-	// Dump output
-	fwrite(xfer, 1, read_size, stdout);
+        // Dump output
+        fwrite(xfer, 1, read_size, stdout);
       }
     }
     else

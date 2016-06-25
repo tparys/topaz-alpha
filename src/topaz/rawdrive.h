@@ -71,7 +71,7 @@ namespace topaz
   class rawdrive
   {
     
-  public:
+    public:
     
     /**
      * \brief Topaz Raw Hard Drive Constructor
@@ -96,7 +96,7 @@ namespace topaz
      * @param bcount   Size of data buffer in 512 byte blocks
      */
     void if_send(uint8_t proto, uint16_t comid,
-		 void *data, uint8_t bcount);
+                 void *data, uint8_t bcount);
     
     /**
      * if_send (TCG Opal IF-RECV)
@@ -109,9 +109,9 @@ namespace topaz
      * @param bcount   Size of data buffer in 512 byte blocks
      */
     void if_recv(uint8_t proto, uint16_t comid,
-		 void *data, uint8_t bcount);
+                 void *data, uint8_t bcount);
     
-  protected:
+    protected:
     
     /**
      * check_libata
@@ -160,7 +160,7 @@ namespace topaz
      * @param wait   Command timeout (seconds)
      */
     void ata_exec_12(ata12_cmd_t &cmd, int type,
-		     void *data, uint8_t bcount, int wait);
+                     void *data, uint8_t bcount, int wait);
     
     /**
      * ata_exec_16
@@ -175,7 +175,7 @@ namespace topaz
      * @param wait   Command timeout (seconds)
      */
     void ata_exec_16(ata16_cmd_t &cmd, int type,
-		     void *data, uint8_t bcount, int wait);
+                     void *data, uint8_t bcount, int wait);
     
     /* internal data */
     int fd;

@@ -115,33 +115,33 @@ int main(int argc, char **argv)
     switch (c)
     {
       case 'p':
-	state.cur_pin = optarg;
-	cur_pin_valid = true;
-	break;
-	
+        state.cur_pin = optarg;
+        cur_pin_valid = true;
+        break;
+ 
       case 'P':
-	state.cur_pin = pin_from_file(optarg);
-	cur_pin_valid = true;
-	break;
-	
+        state.cur_pin = pin_from_file(optarg);
+        cur_pin_valid = true;
+        break;
+ 
       case 'n':
-	state.nbd_dev = optarg;
-	break;
+        state.nbd_dev = optarg;
+        break;
 
       case 'v':
         topaz_debug++;
         break;
         
       default:
-	if ((optopt == 'p') || (optopt == 'P') || (optopt == 'n'))
-	{
-	  cerr << "Option -" << optopt << " requires an argument." << endl;
-	}
-	else
-	{
-	  cerr << "Invalid command line option " << c << endl;
-	}
-	break;
+        if ((optopt == 'p') || (optopt == 'P') || (optopt == 'n'))
+        {
+          cerr << "Option -" << optopt << " requires an argument." << endl;
+        }
+        else
+        {
+          cerr << "Invalid command line option " << c << endl;
+        }
+        break;
     }
   }
   
@@ -256,94 +256,94 @@ int main2(prog_state_t *state)
       rc = select(max_fd + 1, &fds, NULL, NULL, NULL);
       if ((rc == -1) && (errno == EINTR))
       {
-	// signal handler probably fired, loop and check
-	continue;
+        // signal handler probably fired, loop and check
+        continue;
       }
       else if (rc < 1)
       {
-	printf("Unexpected select error (rc=%d)\n", rc);
-	return 1;
+        printf("Unexpected select error (rc=%d)\n", rc);
+        return 1;
       }
     
       // signal handler telling us it's time?
       if (FD_ISSET(state->sig_pipe[0], &fds))
       {
-	printf("Caught signal and shutting down ...\n");
-	return 0;
+        printf("Caught signal and shutting down ...\n");
+        return 0;
       }
     
       // got something from kernel?
       if (FD_ISSET(state->kern_pipe[0], &fds))
       {
-	// read I/O request from kernel
-	rc = recv(state->kern_pipe[0], &request, sizeof(request), MSG_WAITALL);
-	if (rc < (int)sizeof(request))
-	{
-	  perror("Short read from kernel");
-	  return 1;
-	}
-	
-	TOPAZ_DEBUG(1) printf("Got a command!\n");
-	
-	// byteflips
-	request.magic = be32toh(request.magic);
-	request.type = be32toh(request.type);
-	request.len = be32toh(request.len);
-	request.from = be64toh(request.from);
+        // read I/O request from kernel
+        rc = recv(state->kern_pipe[0], &request, sizeof(request), MSG_WAITALL);
+        if (rc < (int)sizeof(request))
+        {
+          perror("Short read from kernel");
+          return 1;
+        }
+ 
+        TOPAZ_DEBUG(1) printf("Got a command!\n");
+ 
+        // byteflips
+        request.magic = be32toh(request.magic);
+        request.type = be32toh(request.type);
+        request.len = be32toh(request.len);
+        request.from = be64toh(request.from);
       
-	// sanity check
-	if (request.magic != NBD_REQUEST_MAGIC)
-	{
-	  fprintf(stderr, "Invalid NBD magic number");
-	  return 1;
-	}
-	
-	// I/O handle
-	memcpy(reply.handle, request.handle, sizeof(request.handle));
-	reply.error = 0;
-	
-	// figure out what the kernel wants ...
-	switch (request.type)
-	{
-	  case NBD_CMD_READ:
-	    TOPAZ_DEBUG(1) printf("Request for read of size %d\n", request.len);
-	    
-	    // Grab the data from the MBR
-	    buffer.resize(request.len);
-	    target.table_get_bin(MBR_UID, request.from, &(buffer[0]), request.len);
-	    
-	    // Respond
-	    send(state->kern_pipe[0], &reply, sizeof(struct nbd_reply), 0);
-	    send(state->kern_pipe[0], &(buffer[0]), request.len, 0);
-	    break;
-	  
-	  case NBD_CMD_WRITE:
-	    TOPAZ_DEBUG(1) printf("Request for write of size %d\n", request.len);
-	    
-	    // Grab data from socket
-	    buffer.resize(request.len);
-	    recv(state->kern_pipe[0], &(buffer[0]), request.len, MSG_WAITALL);
-	    target.table_set_bin(MBR_UID, request.from, &(buffer[0]), request.len);
-	    
-	    // Respond
-	    send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
-	    break;
-	  
-	  case NBD_CMD_FLUSH:
-	    TOPAZ_DEBUG(1) printf("Flush request\n");
-	    
-	    // Nothing to do, respond
-	    send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
-	    break;
-	  
-	  default:
-	    TOPAZ_DEBUG(1) printf("Invalid / unknown request type %d\n", request.type);
-	    
-	    // Respond w/ error
-	    reply.error = htobe32(EINVAL);
-	    send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
-	    break;
-	}
+        // sanity check
+        if (request.magic != NBD_REQUEST_MAGIC)
+        {
+          fprintf(stderr, "Invalid NBD magic number");
+          return 1;
+        }
+ 
+        // I/O handle
+        memcpy(reply.handle, request.handle, sizeof(request.handle));
+        reply.error = 0;
+ 
+        // figure out what the kernel wants ...
+        switch (request.type)
+        {
+          case NBD_CMD_READ:
+            TOPAZ_DEBUG(1) printf("Request for read of size %d\n", request.len);
+     
+            // Grab the data from the MBR
+            buffer.resize(request.len);
+            target.table_get_bin(MBR_UID, request.from, &(buffer[0]), request.len);
+     
+            // Respond
+            send(state->kern_pipe[0], &reply, sizeof(struct nbd_reply), 0);
+            send(state->kern_pipe[0], &(buffer[0]), request.len, 0);
+            break;
+   
+          case NBD_CMD_WRITE:
+            TOPAZ_DEBUG(1) printf("Request for write of size %d\n", request.len);
+     
+            // Grab data from socket
+            buffer.resize(request.len);
+            recv(state->kern_pipe[0], &(buffer[0]), request.len, MSG_WAITALL);
+            target.table_set_bin(MBR_UID, request.from, &(buffer[0]), request.len);
+     
+            // Respond
+            send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
+            break;
+   
+          case NBD_CMD_FLUSH:
+            TOPAZ_DEBUG(1) printf("Flush request\n");
+     
+            // Nothing to do, respond
+            send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
+            break;
+   
+          default:
+            TOPAZ_DEBUG(1) printf("Invalid / unknown request type %d\n", request.type);
+     
+            // Respond w/ error
+            reply.error = htobe32(EINVAL);
+            send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
+            break;
+        }
       }
     }
   }

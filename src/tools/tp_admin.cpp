@@ -59,39 +59,39 @@ int main(int argc, char **argv)
     switch (c)
     {
       case 'p':
-	cur_pin = optarg;
-	cur_pin_valid = true;
-	break;
-	
+        cur_pin = optarg;
+        cur_pin_valid = true;
+        break;
+ 
       case 'P':
-	cur_pin = pin_from_file(optarg);
-	cur_pin_valid = true;
-	break;
-	
+        cur_pin = pin_from_file(optarg);
+        cur_pin_valid = true;
+        break;
+ 
       case 'n':
-	new_pin = optarg;
-	new_pin_valid = true;
-	break;
-	
+        new_pin = optarg;
+        new_pin_valid = true;
+        break;
+ 
       case 'N':
-	new_pin = pin_from_file(optarg);
-	new_pin_valid = true;
-	break;
-	
+        new_pin = pin_from_file(optarg);
+        new_pin_valid = true;
+        break;
+ 
       case 'v':
         topaz_debug++;
         break;
         
       default:
-	if ((optopt == 'p') || (optopt == 'P') || (optopt == 'n') || (optopt == 'N'))
-	{
-	  cerr << "Option -" << optopt << " requires an argument." << endl;
-	}
-	else
-	{
-	  cerr << "Invalid command line option " << c << endl;
-	}
-	break;
+        if ((optopt == 'p') || (optopt == 'P') || (optopt == 'n') || (optopt == 'N'))
+        {
+          cerr << "Option -" << optopt << " requires an argument." << endl;
+        }
+        else
+        {
+          cerr << "Invalid command line option " << c << endl;
+        }
+        break;
     }
   }
   
@@ -148,8 +148,8 @@ int main(int argc, char **argv)
       // Ensure new pin was provided
       if (!new_pin_valid)
       {
-	// No, query for one now
-	new_pin = pin_from_console_check("new SID(admin)");
+        // No, query for one now
+        new_pin = pin_from_console_check("new SID(admin)");
       }
       
       // Convert PIN to atom for table I/O

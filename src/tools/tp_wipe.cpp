@@ -58,31 +58,31 @@ int main(int argc, char **argv)
     {
       
       case 's':
-	// SID credentials
-	uid = SID;
-	pin = optarg;
-	break;
-	
-      case 'p':
-	// PSID credentials
-	uid = PSID;
-	pin = optarg;
-	break;
-	
-      case 'v':
-	topaz_debug++;
+        // SID credentials
+        uid = SID;
+        pin = optarg;
         break;
-	
+ 
+      case 'p':
+        // PSID credentials
+        uid = PSID;
+        pin = optarg;
+        break;
+ 
+      case 'v':
+        topaz_debug++;
+        break;
+ 
       default:
-	if ((optopt == 's') || (optopt == 'p'))
-	{
-	  cerr << "Option -" << optopt << " requires an argument." << endl;
-	}
-	else
-	{
-	  cerr << "Invalid command line option " << c << endl;
-	}
-	break;
+        if ((optopt == 's') || (optopt == 'p'))
+        {
+          cerr << "Option -" << optopt << " requires an argument." << endl;
+        }
+        else
+        {
+          cerr << "Invalid command line option " << c << endl;
+        }
+        break;
     }
   }
   
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     {
       // Failed login
       cerr << "Invalid credentials presented to drive" << endl
-	   << "Must present valid SID or PSID pin" << endl;
+           << "Must present valid SID or PSID pin" << endl;
       return 1;
     }
     
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
       // If Locking_SP was active, it's one and done
       if (lock_active)
       {
-	return 0;
+        return 0;
       }
       
       // If not, SID credentials have been reset to

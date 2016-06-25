@@ -46,7 +46,7 @@ using namespace topaz;
 void usage();
 uint64_t get_uid(char const *user_str);
 bool unlock_target(char const *path, uint64_t user_uid, string pin,
-		   uint64_t range_count = 1);
+                   uint64_t range_count = 1);
 
 int main(int argc, char **argv)
 {
@@ -63,28 +63,28 @@ int main(int argc, char **argv)
     switch (c)
     {
       case 'u':
-	user_uid = get_uid(optarg);
-	break;
-	
+        user_uid = get_uid(optarg);
+        break;
+ 
       case 'p':
-	pin = optarg;
-	pin_valid = true;
-	break;
-	
+        pin = optarg;
+        pin_valid = true;
+        break;
+ 
       case 'r':
-	lba_count = atoi(optarg);
-	break;
-	
+        lba_count = atoi(optarg);
+        break;
+ 
       default:
-	if ((optopt == 'u') || (optopt == 'p') || (optopt == 'r'))
-	{
-	  cerr << "Option -" << optopt << " requires an argument." << endl;
-	}
-	else
-	{
-	  cerr << "Invalid command line option " << c << endl;
-	}
-	break;
+        if ((optopt == 'u') || (optopt == 'p') || (optopt == 'r'))
+        {
+          cerr << "Option -" << optopt << " requires an argument." << endl;
+        }
+        else
+        {
+          cerr << "Invalid command line option " << c << endl;
+        }
+        break;
     }
   }
   
@@ -167,7 +167,7 @@ uint64_t get_uid(char const *user_str)
 }
 
 bool unlock_target(char const *path, uint64_t user_uid, string pin,
-		   uint64_t range_count)
+                   uint64_t range_count)
 {
   try
   {

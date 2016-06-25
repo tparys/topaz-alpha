@@ -96,7 +96,7 @@ atom atom::new_int(int64_t value)
       // provided the remaining value is still negative
       // (most significant remaining bit is a 1)
       for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0xff) &&
-	     ((raw[ret.int_skip + 1] & 0x80) == 0x80); ret.int_skip++) {}
+             ((raw[ret.int_skip + 1] & 0x80) == 0x80); ret.int_skip++) {}
     }
     else
     {
@@ -104,7 +104,7 @@ atom atom::new_int(int64_t value)
       // provided the remaining value is still positive
       // (most significant remaining bit is a 0)
       for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00) &&
-	     ((raw[ret.int_skip + 1] & 0x80) == 0x00); ret.int_skip++) {}
+             ((raw[ret.int_skip + 1] & 0x80) == 0x00); ret.int_skip++) {}
     }
     
     // All integers less than 16 bytes long (128 bits) will fit in this ...
@@ -144,7 +144,7 @@ atom atom::new_uint(uint64_t value)
     
     // Drop unneeded leading zeroes (up to 7)
     for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00);
-	 ret.int_skip++) {}
+         ret.int_skip++) {}
     
     // All integers less than 16 bytes long (128 bits) will fit in this ...
     ret.data_enc = atom::SHORT;
@@ -280,35 +280,35 @@ bool atom::operator==(atom const &ref)
     {
       case atom::UINT:
       case atom::INT:
-	// Works the same for both
-	if (uint_val == ref.uint_val)
-	{
-	  return true;
-	}
-	break;
-	
+        // Works the same for both
+        if (uint_val == ref.uint_val)
+        {
+          return true;
+        }
+        break;
+ 
       case atom::BYTES:
-	// Compare size and bytes
-	if (bytes.size() == ref.bytes.size())
-	{
-	  // Check each byte
-	  for (size_t i = 0; i < bytes.size(); i++)
-	  {
-	    if (bytes[i] != ref.bytes[i])
-	    {
-	      return false;
-	    }
-	  }
-	  
-	  // All bytes match 
-	  return true;
-	}
-	break;
-	
+        // Compare size and bytes
+        if (bytes.size() == ref.bytes.size())
+        {
+          // Check each byte
+          for (size_t i = 0; i < bytes.size(); i++)
+          {
+            if (bytes[i] != ref.bytes[i])
+            {
+              return false;
+            }
+          }
+   
+          // All bytes match 
+          return true;
+        }
+        break;
+ 
       default:
-	// Misc type, nothing further to check
-	return true;
-	break;
+        // Misc type, nothing further to check
+        return true;
+        break;
     }
   }
   
@@ -759,59 +759,59 @@ void atom::print() const
       is_print = true;
       for (i = 0; i < bytes.size(); i++)
       {
-	if (!isprint(bytes[i]))
-	{
-	  is_print = false;
-	}
+        if (!isprint(bytes[i]))
+        {
+          is_print = false;
+        }
       }
       
       // Nonzero length of printable chars are probably strings
       if ((bytes.size() > 0) && (is_print))
       {
-	// Assuming string ...
-	printf("\'");
-	for (i = 0; i < bytes.size(); i++)
-	{
-	  printf("%c", bytes[i]);
-	}
-	printf("\'");
+        // Assuming string ...
+        printf("\'");
+        for (i = 0; i < bytes.size(); i++)
+        {
+          printf("%c", bytes[i]);
+        }
+        printf("\'");
       }
       // UIDs are two (usually small) numbers, stored together as a uint64.
       // If it looks like two signed or unsigned uint32's, assume UID.
       else if ((bytes.size() == 8) &&
-	       ((bytes[0] == 0x00) || (bytes[0] == 0xff)) &&
-	       ((bytes[4] == 0x00) || (bytes[4] == 0xff)))
+               ((bytes[0] == 0x00) || (bytes[0] == 0xff)) &&
+               ((bytes[4] == 0x00) || (bytes[4] == 0xff)))
       {
-	// Assuming UID ...
-	uint64_t uid = get_uid();
-	
-	printf("%x", (unsigned int)_UID_HIGH(uid));
-	printf(":");
-	printf("%x", (unsigned int)_UID_LOW(uid));
+        // Assuming UID ...
+        uint64_t uid = get_uid();
+ 
+        printf("%x", (unsigned int)_UID_HIGH(uid));
+        printf(":");
+        printf("%x", (unsigned int)_UID_LOW(uid));
       }
       // Half UIDs are UIDs, but half as big, so same thing applies. If it's
       // four bytes, assume a half UID type
       else if ((bytes.size() == 4) &&
-	       ((bytes[0] == 0x00) || (bytes[0] == 0xff)))
+               ((bytes[0] == 0x00) || (bytes[0] == 0xff)))
       {
-	// Assuming Half UID ...
-	uint32_t half = get_half_uid();
-	
-	printf("%x:", half);
+        // Assuming Half UID ...
+        uint32_t half = get_half_uid();
+ 
+        printf("%x:", half);
       }
       // Plain ol' byte sequence ...
       else
       {
-	printf("[");
-	for (i = 0; (i < 16) && (i < bytes.size()); i++)
-	{
-	  printf("%02X ", bytes[i]);
-	}
-	if (i == 16)
-	{
-	  printf("... ");
-	}
-	printf("]");
+        printf("[");
+        for (i = 0; (i < 16) && (i < bytes.size()); i++)
+        {
+          printf("%02X ", bytes[i]);
+        }
+        if (i == 16)
+        {
+          printf("... ");
+        }
+        printf("]");
       }
       
       break;

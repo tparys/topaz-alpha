@@ -118,7 +118,7 @@ size_t datum::size() const
       count += 2; // Token overhead
       for (i = 0; i < data_list.size(); i++)
       {
-	count += data_list[i].size();
+        count += data_list[i].size();
       }
       break;
       
@@ -183,7 +183,7 @@ size_t datum::encode_bytes(byte *data) const
       // Each item in the list
       for (size_t i = 0; i < data_list.size(); i++)
       {
-	data += data_list[i].encode_bytes(data);
+        data += data_list[i].encode_bytes(data);
       }
       
       // End of list
@@ -232,9 +232,9 @@ size_t datum::decode_bytes(byte const *data, size_t len)
       // End of list?
       if (data[size] == datum::TOK_END_LIST)
       {
-	// Done here
-	size++;
-	break;
+        // Done here
+        size++;
+        break;
       }
       
       // Else, assume some other datum type
@@ -287,9 +287,9 @@ size_t datum::decode_bytes(byte const *data, size_t len)
       // End of list?
       if (data[size] == datum::TOK_END_LIST)
       {
-	// Done here
-	size++;
-	break;
+        // Done here
+        size++;
+        break;
       }
       
       // Else, assume some other datum type
@@ -545,7 +545,7 @@ datum &datum::find_by_name(uint64_t id)
   for (size_t i = 0; i < data_list.size(); i++)
   {
     if ((data_list[i].get_type() == datum::NAMED) &&
-	(data_list[i].name().get_uint() == id))
+        (data_list[i].name().get_uint() == id))
     {
       return data_list[i].named_value();
     }
@@ -569,7 +569,7 @@ datum const &datum::find_by_name(uint64_t id) const
   for (size_t i = 0; i < data_list.size(); i++)
   {
     if ((data_list[i].get_type() == datum::NAMED) &&
-	(data_list[i].name().get_uint() == id))
+        (data_list[i].name().get_uint() == id))
     {
       return data_list[i].named_value();
     }
@@ -592,48 +592,48 @@ bool datum::operator==(datum const &ref)
     switch (data_type)
     {
       case datum::ATOM:
-	// Compare atoms
-	return data_atom == ref.data_atom;
-	break;
-	
+        // Compare atoms
+        return data_atom == ref.data_atom;
+        break;
+ 
       case datum::NAMED:
-	// Compare name and value atoms
-	return ((data_atom == ref.data_atom) &&
-		(data_list[0] == ref.data_list[0]));
-	break;
-	
+        // Compare name and value atoms
+        return ((data_atom == ref.data_atom) &&
+                (data_list[0] == ref.data_list[0]));
+        break;
+ 
       case datum::METHOD:
-	// Compare method calls
-	if ((data_object_uid != ref.data_object_uid) ||
-	    (data_method_uid != ref.data_method_uid))
-	{
-	  // Failure
-	  return false;
-	}
-	
-	// No break here - fall through to check list tokens
-	
+        // Compare method calls
+        if ((data_object_uid != ref.data_object_uid) ||
+            (data_method_uid != ref.data_method_uid))
+        {
+          // Failure
+          return false;
+        }
+ 
+        // No break here - fall through to check list tokens
+ 
       case datum::LIST:
-	// Compare list items
-	if (data_list.size() == ref.data_list.size())
-	{
-	  for (size_t i = 0; i < data_list.size(); i++)
-	  {
-	    if (data_list[i] != ref.data_list[i])
-	    {
-	      // Mismatch
-	      return false;
-	    }
-	  }
-	  
-	  // All items match
-	  return true;
-	}
-	break;
-	
+        // Compare list items
+        if (data_list.size() == ref.data_list.size())
+        {
+          for (size_t i = 0; i < data_list.size(); i++)
+          {
+            if (data_list[i] != ref.data_list[i])
+            {
+              // Mismatch
+              return false;
+            }
+          }
+   
+          // All items match
+          return true;
+        }
+        break;
+ 
       default: // datum::END_SESSION
-	return true;
-	break;
+        return true;
+        break;
     }
   }
   // Match fail
@@ -718,8 +718,8 @@ void datum::print() const
       printf("[");
       for (i = 0; i < data_list.size(); i++)
       {
-	if (i > 0) printf(", ");
-	data_list[i].print();
+        if (i > 0) printf(", ");
+        data_list[i].print();
       }
       printf("]");
       break;

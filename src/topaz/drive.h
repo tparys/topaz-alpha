@@ -41,7 +41,7 @@ namespace topaz
   class drive
   {
     
-  public:
+    public:
     
     /**
      * \brief Topaz Hard Drive Constructor
@@ -106,7 +106,7 @@ namespace topaz
      * @param len Length of data to copy
      */
     void table_get_bin(uint64_t tbl_uid, uint64_t offset,
-		       void *ptr, uint64_t len);
+                       void *ptr, uint64_t len);
     
     /**
      * \brief Set Value in Specified Table
@@ -135,7 +135,7 @@ namespace topaz
      * @param len Length of data to copy
      */
     void table_set_bin(uint64_t tbl_uid, uint64_t offset,
-		       void const *ptr, uint64_t len);
+                       void const *ptr, uint64_t len);
     
     /**
      * \brief Set Binary Table from File
@@ -145,7 +145,7 @@ namespace topaz
      * @param filename File to use for input
      */
     void table_set_bin_file(uint64_t tbl_uid, uint64_t offset,
-			    char const *filename);
+                            char const *filename);
     
     /**
      * \brief Retrieve default device PIN
@@ -161,14 +161,14 @@ namespace topaz
      * \return Any data returned from method call
      */
     datum invoke(uint64_t object_uid, uint64_t method_uid,
-		 datum params = datum(datum::LIST));
+                 datum params = datum(datum::LIST));
     
     /**
      * \brief Invoke Revert[] on Admin_SP, and handle session termination
      */
     void admin_sp_revert();
 
-  protected:
+    protected:
     
     /**
      * \brief Send payload to TCG Opal drive

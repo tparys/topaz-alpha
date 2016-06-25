@@ -138,7 +138,7 @@ void check(atom test, atom::type_t type, atom::enc_t enc, size_t size)
   if (test.get_header_size() + size != test_bytes.size())
   {
     printf("*** Failed (expected %u bytes) ***\n",
-	   (unsigned int)(test.get_header_size() + size));
+           (unsigned int)(test.get_header_size() + size));
     exit(1);
   }
   

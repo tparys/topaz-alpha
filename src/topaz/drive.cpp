@@ -136,7 +136,7 @@ void drive::login_anon(uint64_t sp_uid)
   
   // Debug
   TOPAZ_DEBUG(1) printf("Anonymous Session %" PRIx64 ":%" PRIx64 " Started\n",
-			tper_session_id, host_session_id);
+                        tper_session_id, host_session_id);
 }
 
 /**
@@ -184,7 +184,7 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
   
   // Debug
   TOPAZ_DEBUG(1) printf("Authorized Session %" PRIx64 ":%" PRIx64 " Started\n",
-			tper_session_id, host_session_id);
+                        tper_session_id, host_session_id);
 }
 
 /**
@@ -234,7 +234,7 @@ atom drive::table_get(uint64_t tbl_uid, uint64_t tbl_col)
  *
  */
 void drive::table_get_bin(uint64_t tbl_uid, uint64_t offset,
-			  void *ptr, uint64_t len)
+                          void *ptr, uint64_t len)
 {
   char *out_ptr = (char*)ptr;
   
@@ -308,7 +308,7 @@ void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val)
  * @param len Length of data to copy
  */
 void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
-			  void const *ptr, uint64_t len)
+                          void const *ptr, uint64_t len)
 {
   byte const *raw = (byte const *)ptr;
   uint64_t send_size;
@@ -344,7 +344,7 @@ void drive::table_set_bin(uint64_t tbl_uid, uint64_t offset,
  * @param filename File to use for input
  */
 void drive::table_set_bin_file(uint64_t tbl_uid, uint64_t offset,
-			       char const *filename)
+                               char const *filename)
 {
   FILE *in_file;
   size_t file_len, count;
@@ -383,7 +383,7 @@ void drive::table_set_bin_file(uint64_t tbl_uid, uint64_t offset,
   // How many blocks are we moving?
   size_t xfer_count = 1 + (file_len - 1) / xfer_len;
   printf("Transfer will require %u block operations ...\n",
-	 (unsigned int)xfer_count);
+         (unsigned int)xfer_count);
   spinner spin(xfer_count);
 
   // Begin the transfer
@@ -727,31 +727,31 @@ void drive::probe_level0()
     // Rip it open
     code = be16toh(feat->code);
     TOPAZ_DEBUG(2) printf("  Feature 0x%04x v%d (%d bytes): ", code,
-			  feat->version >> 4, feat->length);
+                          feat->version >> 4, feat->length);
     if (code == FEAT_TPER)
     {
       TOPAZ_DEBUG(2)
       {
-	printf("Trusted Peripheral (TPer)\n");
-	printf("    Sync: %d\n",        0x01 & (data[offset]     ));
-	printf("    Async: %d\n",       0x01 & (data[offset] >> 1));
-	printf("    Ack/Nak: %d\n",     0x01 & (data[offset] >> 2));
-	printf("    Buffer Mgmt: %d\n", 0x01 & (data[offset] >> 3));
-	printf("    Streaming: %d\n",   0x01 & (data[offset] >> 4));
-	printf("    ComID Mgmt: %d\n",  0x01 & (data[offset] >> 6));
+        printf("Trusted Peripheral (TPer)\n");
+        printf("    Sync: %d\n",        0x01 & (data[offset]     ));
+        printf("    Async: %d\n",       0x01 & (data[offset] >> 1));
+        printf("    Ack/Nak: %d\n",     0x01 & (data[offset] >> 2));
+        printf("    Buffer Mgmt: %d\n", 0x01 & (data[offset] >> 3));
+        printf("    Streaming: %d\n",   0x01 & (data[offset] >> 4));
+        printf("    ComID Mgmt: %d\n",  0x01 & (data[offset] >> 6));
       }
     }
     else if (code == FEAT_LOCK)
     {
       TOPAZ_DEBUG(2)
       {
-	printf("Locking\n");
-	printf("    Supported: %d\n",        0x01 & (data[offset]     ));
-	printf("    Enabled: %d\n",          0x01 & (data[offset] >> 1));
-	printf("    Locked: %d\n",           0x01 & (data[offset] >> 2));
-	printf("    Media Encryption: %d\n", 0x01 & (data[offset] >> 3));
-	printf("    MBR Enabled: %d\n",      0x01 & (data[offset] >> 4));
-	printf("    MBR Done: %d\n",         0x01 & (data[offset] >> 5));
+        printf("Locking\n");
+        printf("    Supported: %d\n",        0x01 & (data[offset]     ));
+        printf("    Enabled: %d\n",          0x01 & (data[offset] >> 1));
+        printf("    Locked: %d\n",           0x01 & (data[offset] >> 2));
+        printf("    Media Encryption: %d\n", 0x01 & (data[offset] >> 3));
+        printf("    MBR Enabled: %d\n",      0x01 & (data[offset] >> 4));
+        printf("    MBR Done: %d\n",         0x01 & (data[offset] >> 5));
       }
     }
     else if (code == FEAT_GEO)
@@ -760,11 +760,11 @@ void drive::probe_level0()
       lba_align = be64toh(geo->lowest_align);
       TOPAZ_DEBUG(2)
       {
-	printf("Geometry Reporting\n");
-	printf("    Align Required: %d\n",    0x01 & geo->align); 
-	printf("    LBA Size: %d\n",          be32toh(geo->lba_size));
-	printf("    Align Granularity: %u\n", (unsigned int)be64toh(geo->align_gran));
-	printf("    Lowest Align: %u\n",      (unsigned int)lba_align);
+        printf("Geometry Reporting\n");
+        printf("    Align Required: %d\n",    0x01 & geo->align); 
+        printf("    LBA Size: %d\n",          be32toh(geo->lba_size));
+        printf("    Align Granularity: %u\n", (unsigned int)be64toh(geo->align_gran));
+        printf("    Lowest Align: %u\n",      (unsigned int)lba_align);
       }
     }
     else if (code == FEAT_ENTERPRISE)
@@ -783,37 +783,37 @@ void drive::probe_level0()
     {
       TOPAZ_DEBUG(2)
       {
-	feat_single_t *single = (feat_single_t*)feat_data;
-	printf("Single User Mode\n");
-	printf("    Locking Objects Supported: %d\n", be32toh(single->lock_obj_count));
-	printf("    Single User Presence: ");
-	switch (0x03 & single->bitmask)
-	{
-	  case 0:
-	    printf("None\n");
-	    break;
-	    
-	  case 1:
-	    printf("Some\n");
-	    break;
-	    
-	  default:
-	    printf("All\n");
-	    break;
-	}
-	printf("    Ownership Policy: %s\n",
-	       (0x04 & single->bitmask ? "Admin" : "User"));
+        feat_single_t *single = (feat_single_t*)feat_data;
+        printf("Single User Mode\n");
+        printf("    Locking Objects Supported: %d\n", be32toh(single->lock_obj_count));
+        printf("    Single User Presence: ");
+        switch (0x03 & single->bitmask)
+        {
+          case 0:
+            printf("None\n");
+            break;
+     
+          case 1:
+            printf("Some\n");
+            break;
+     
+          default:
+            printf("All\n");
+            break;
+        }
+        printf("    Ownership Policy: %s\n",
+               (0x04 & single->bitmask ? "Admin" : "User"));
       }
     }
     else if (code == FEAT_TABLES)
     {
       TOPAZ_DEBUG(2)
       {
-	feat_tables_t *tables = (feat_tables_t*)feat_data;
-	printf("Additional DataStore Tables\n");
-	printf("    Max Tables: %d\n",     be16toh(tables->max_tables));
-	printf("    Max Table Size: %d\n", be32toh(tables->max_size));
-	printf("    Table Align: %d\n",    be32toh(tables->table_align));
+        feat_tables_t *tables = (feat_tables_t*)feat_data;
+        printf("Additional DataStore Tables\n");
+        printf("    Max Tables: %d\n",     be16toh(tables->max_tables));
+        printf("    Max Table Size: %d\n", be32toh(tables->max_size));
+        printf("    Table Align: %d\n",    be32toh(tables->table_align));
       }
     }
     else if (code == FEAT_OPAL2)
@@ -888,16 +888,16 @@ void drive::probe_level1()
     {
       if (val < max_xfer)
       {
-	max_xfer = val;
+        max_xfer = val;
       }
       TOPAZ_DEBUG(2) printf("  Max ComPkt Size is %" PRIu64 " (%" PRIu64 " blocks)\n",
-			    val, val / ATA_BLOCK_SIZE);
+                            val, val / ATA_BLOCK_SIZE);
     }
     else if (name == "MaxIndTokenSize")
     {
       if (val < max_token)
       {
-	max_token = val;
+        max_token = val;
       }
       TOPAZ_DEBUG(2) printf("  Max Token Size is %" PRIu64 "\n", val);
     }
@@ -916,7 +916,7 @@ void drive::logout()
   {
     // Debug
     TOPAZ_DEBUG(1) printf("Stopping TPM Session %" PRIx64 ":%" PRIx64 "\n",
-			  tper_session_id, host_session_id);
+                          tper_session_id, host_session_id);
     
     // Off it goes
     try
