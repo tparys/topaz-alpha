@@ -1,3 +1,6 @@
+#ifndef TOPAZ_UID_H
+#define TOPAZ_UID_H
+
 /**
  * Topaz - Unique ID's
  *
@@ -144,3 +147,5 @@ namespace topaz
   };
   
 };
+
+#endif
