@@ -214,6 +214,7 @@ int main2(prog_state_t *state)
   
   // set up NBD
   if ((ioctl(state->nbd, NBD_SET_SIZE, mbr_shadow_size) == -1) ||
+      (ioctl(state->nbd, NBD_SET_BLKSIZE, 4096) == -1) ||
       (ioctl(state->nbd, NBD_CLEAR_SOCK) == -1))
   {
     perror("NBD setup failed");

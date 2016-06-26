@@ -854,11 +854,15 @@ void drive::probe_level0()
  */
 void drive::probe_level1()
 {
+  // Expected padding when sending a maximum sized token
+  // (includes headers & padding)
+  uint64_t max_pad = 100;
+  
   TOPAZ_DEBUG(1) printf("Establish Level 1 Comms - Host Properties\n");
   
   // Pick some reasonable I/O properties to use
   uint64_t max_xfer = MAX_IO_BLOCKS * 512;
-  max_token = max_xfer - 100;
+  max_token = max_xfer - max_pad;
 
   // Build data structure to inform drive of our choices
   datum host_props;
@@ -901,6 +905,14 @@ void drive::probe_level1()
       }
       TOPAZ_DEBUG(2) printf("  Max Token Size is %" PRIu64 "\n", val);
     }
+  }
+
+  // It's possible that the maximum token size may not actually fit
+  // in a binary table write, so let's tweak that value if it seems off
+  if (max_xfer - max_pad < max_token)
+  {
+    max_token = max_xfer - max_pad;
+    TOPAZ_DEBUG(2) printf("  Decreasing Max Token Size to %" PRIu64 "\n", max_token);
   }
 
   // Update managed buffer
