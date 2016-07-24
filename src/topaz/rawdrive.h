@@ -33,6 +33,7 @@
 
 #include <stdint.h>
 #include <stddef.h> /* size_t */
+#include <string>
 
 namespace topaz
 {
@@ -110,16 +111,37 @@ namespace topaz
      */
     void if_recv(uint8_t proto, uint16_t comid,
                  void *data, uint8_t bcount);
-    
+
+    /**
+     * Get drive model number
+     *
+     * @return String representing model number of drive
+     */
+    std::string get_model() const;
+
+    /**
+     * Get drive serial number
+     *
+     * @return String representing serial number of drive
+     */
+    std::string get_serial() const;
+
+    /**
+     * Get drive firmware revision
+     *
+     * @return String representing firmware revision of drive
+     */
+    std::string get_firmware() const;
+
     protected:
-    
+
     /**
      * check_libata
      *
      * Check libata (Linux ATA layer) for misconfiguration.
      */
     void check_libata();
-    
+
     /**
      * check_tpm
      *
@@ -137,15 +159,15 @@ namespace topaz
     void get_identify(uint16_t *data);
     
     /**
-     * dump_id_string
+     * get_id_string
      *
-     * Print a string encoded in a set of uint16_t data.
+     * Query a string encoded in a set of uint16_t data.
      *
-     * @param desc String describing the encoded string
      * @param data Pointer to start of uin16_t encoded string
      * @param max  Maximum size of string
+     * @return Value of string
      */
-    void dump_id_string(char const *desc, uint16_t *data, size_t max);
+    std::string get_id_string(uint16_t *data, size_t max);
     
     /**
      * ata_exec_12
@@ -179,6 +201,11 @@ namespace topaz
     
     /* internal data */
     int fd;
+
+    /* drive identification */
+    std::string drive_model;
+    std::string drive_serial;
+    std::string drive_firmware;
     
   };
   

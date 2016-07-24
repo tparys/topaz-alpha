@@ -54,7 +54,28 @@ namespace topaz
      * \brief Topaz Hard Drive Destructor
      */
     ~drive();
-    
+
+    /**
+     * Get drive model number
+     *
+     * @return String representing model number of drive
+     */
+    std::string get_model() const;
+
+    /**
+     * Get drive serial number
+     *
+     * @return String representing serial number of drive
+     */
+    std::string get_serial() const;
+
+    /**
+     * Get drive firmware revision
+     *
+     * @return String representing firmware revision of drive
+     */
+    std::string get_firmware() const;
+
     /**
      * \brief Query max number of Admins in Locking SP
      */

@@ -41,6 +41,7 @@
 #include <topaz/defs.h>
 #include <topaz/exceptions.h>
 #include <topaz/rawdrive.h>
+using namespace std;
 using namespace topaz;
 
 // Set to nonzero to use ATA12 commands
@@ -172,6 +173,36 @@ void rawdrive::if_recv(uint8_t proto, uint16_t comid,
 }
 
 /**
+ * Get drive model number
+ *
+ * @return String representing model number of drive
+ */
+string rawdrive::get_model() const
+{
+  return drive_model;
+}
+
+/**
+ * Get drive serial number
+ *
+ * @return String representing serial number of drive
+ */
+string rawdrive::get_serial() const
+{
+  return drive_serial;
+}
+
+/**
+ * Get drive firmware revision
+ *
+ * @return String representing firmware revision of drive
+ */
+string rawdrive::get_firmware() const
+{
+  return drive_firmware;
+}
+
+/**
  * check_libata
  *
  * Check libata (Linux ATA layer) for misconfiguration.
@@ -258,31 +289,37 @@ void rawdrive::get_identify(uint16_t *data)
     TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
     ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, 1, 1);
   }
-  
-  // Useful debug
+
+  // Pull drive ID information
+  drive_model = get_id_string(data + 27, 40);
+  drive_serial = get_id_string(data + 10, 20);
+  drive_firmware = get_id_string(data + 23, 8);
+ 
+  // Print debug
   TOPAZ_DEBUG(2)
   {
-    dump_id_string("Serial", data + 10, 20);
-    dump_id_string("Firmware", data + 23, 8);
-    dump_id_string("Model", data + 27, 40);
+    printf("  Model: %s\n", drive_model.c_str());
+    printf("  Serial: %s\n", drive_serial.c_str());
+    printf("  Firmware: %s\n", drive_firmware.c_str());
   }
 }
 
 /**
- * dump_id_string
+ * get_id_string
  *
- * Print a string encoded in a set of uint16_t data.
+ * Query a string encoded in a set of uint16_t data.
  *
  * @param data Pointer to start of uin16_t encoded string
  * @param max  Maximum size of string
+ * @return Value of string
  */
-void rawdrive::dump_id_string(char const *desc, uint16_t *data, size_t max)
+string rawdrive::get_id_string(uint16_t *data, size_t max)
 {
   size_t i;
   uint16_t word;
   char c;
+  string val;
   
-  printf("  %s: ", desc);
   for (i = 0; i < max; i++)
   {
     word = data[i >> 1];
@@ -302,13 +339,15 @@ void rawdrive::dump_id_string(char const *desc, uint16_t *data, size_t max)
     {
       break;
     }
+
     // Skip spaces
     if (c != ' ')
     {
-      printf("%c", c);
+      val += c;
     }
   }
-  printf("\n");
+
+  return val;
 }
 
 /**

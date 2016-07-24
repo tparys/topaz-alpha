@@ -94,6 +94,36 @@ drive::~drive()
 }
 
 /**
+ * Get drive model number
+ *
+ * @return String representing model number of drive
+ */
+string drive::get_model() const
+{
+  return raw.get_model();
+}
+
+/**
+ * Get drive serial number
+ *
+ * @return String representing serial number of drive
+ */
+string drive::get_serial() const
+{
+  return raw.get_serial();
+}
+
+/**
+ * Get drive firmware revision
+ *
+ * @return String representing firmware revision of drive
+ */
+string drive::get_firmware() const
+{
+  return raw.get_firmware();
+}
+
+/**
  * \brief Query max number of admin objects in Locking SP
  */
 uint64_t drive::get_max_admins()
