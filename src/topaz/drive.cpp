@@ -540,9 +540,24 @@ void drive::admin_sp_revert()
   invoke(ADMIN_SP, REVERT);
   
   // If this succeeds, the session is terminated immediately
+  forget_session();
+}
+
+/**
+ * \brief Treat session as stopped, even if its not.
+ *
+ * Forget current session, and do not try to close it cleanly.
+ * This is useful in uses such as Revert and RevertSP, which
+ * abort the session, but do not explicitly close it. Any attempts
+ * to close the session after this point will result in timeouts.
+ */
+void drive::forget_session()
+{
+  // Treat session as terminated
   tper_session_id = 0;
   host_session_id = 0;
 }
+
 
 /**
  * \brief Send payload to TCG Opal drive

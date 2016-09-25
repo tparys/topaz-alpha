@@ -189,6 +189,16 @@ namespace topaz
      */
     void admin_sp_revert();
 
+    /**
+     * \brief Treat session as stopped, even if its not.
+     *
+     * Forget current session, and do not try to close it cleanly.
+     * This is useful in uses such as Revert and RevertSP, which
+     * abort the session, but do not explicitly close it. Any attempts
+     * to close the session after this point will result in timeouts.
+     */
+    void forget_session();
+
     protected:
     
     /**
