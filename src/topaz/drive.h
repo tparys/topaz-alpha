@@ -77,6 +77,13 @@ namespace topaz
     std::string get_firmware() const;
 
     /**
+     * Get drive certificate
+     *
+     * @return String containing drive's DER certificate
+     */
+    std::string get_certificate();
+
+    /**
      * \brief Query max number of Admins in Locking SP
      */
     uint64_t get_max_admins();

@@ -118,6 +118,11 @@ int main(int argc, char **argv)
       // Dump default PIN
       cout << target.default_pin() << endl;
     }
+    else if (strcmp(argv[optind + 1], "cert") == 0)
+    {
+      // Dump drive security certificate
+      cout << target.get_certificate() << endl;
+    }
     else if (strcmp(argv[optind + 1], "status") == 0)
     {
       atom val;
@@ -197,6 +202,7 @@ void usage()
   cerr << endl
        << "Usage:" << endl
        << "  tp_admin [opts] <drive> msid     - View MSID (default admin PIN)" << endl
+       << "  tp_admin [opts] <drive> cert     - View drive security certificate" << endl
        << "  tp_admin [opts] <drive> status   - View current Admin SP status" << endl
        << "  tp_admin [opts] <drive> login    - Test SID(admin) login credentials" << endl
        << "  tp_admin [opts] <drive> setpin   - Set/Change SID(admin) PIN" << endl

@@ -126,6 +126,24 @@ string drive::get_firmware() const
 }
 
 /**
+ * Get drive certificate
+ *
+ * @return String containing drive's DER certificate
+ */
+string drive::get_certificate()
+{
+  unsigned char *block = &(raw_buffer[0]);
+
+  // Get TPM security certificate
+  raw.if_recv(0, 1, block, raw_buffer.size() / ATA_BLOCK_SIZE);
+
+  // Bytes 2 & 3 give size of certificate
+  unsigned cert_size = (block[2] << 8) + block[3];
+
+  return string((char*)block + 4, cert_size);
+}
+
+/**
  * \brief Query max number of admin objects in Locking SP
  */
 uint64_t drive::get_max_admins()
