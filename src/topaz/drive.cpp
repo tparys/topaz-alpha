@@ -63,6 +63,8 @@ drive::drive(char const *path)
   : raw(path)
 {
   // Initialization
+  session_is_auth = false;
+  session_sp = 0;
   tper_session_id = 0;
   host_session_id = 0;
   msg_type = SWG_MSG_UNKNOWN;
@@ -157,6 +159,10 @@ void drive::login_anon(uint64_t sp_uid)
   
   // Off it goes
   datum rc = invoke(SESSION_MGR, START_SESSION, params);
+
+  // Session tracking
+  session_is_auth = false;
+  session_sp = sp_uid;
   
   // Host session ID
   host_session_id = rc[0].value().get_uint();
@@ -205,7 +211,11 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
     // misnamed exception thrown when the wrong PIN is entered.
     throw topaz_exception("Login failure");
   }
-  
+
+  // Session tracking
+  session_is_auth = true;
+  session_sp = sp_uid;
+
   // Host session ID
   host_session_id = rc[0].value().get_uint();
   
@@ -215,6 +225,28 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
   // Debug
   TOPAZ_DEBUG(1) printf("Authorized Session %" PRIx64 ":%" PRIx64 " Started\n",
                         tper_session_id, host_session_id);
+}
+
+/**
+ * \brief Query if authenticated session
+ *
+ * @return If authenticated session is active, false otherwise
+ */
+bool drive::get_session_auth() const
+{
+  return session_is_auth;
+}
+
+/**
+ * \brief Query for session SP
+ *
+ * Return the UID of the current session Security Provider (SP).
+ *
+ * @return UID of current session SP, or 0 if no session
+ */
+uint64_t drive::get_session_sp() const
+{
+  return session_sp;
 }
 
 /**
@@ -554,6 +586,8 @@ void drive::admin_sp_revert()
 void drive::forget_session()
 {
   // Treat session as terminated
+  session_is_auth = 0;
+  session_sp = 0;
   tper_session_id = 0;
   host_session_id = 0;
 }
@@ -992,9 +1026,8 @@ void drive::logout()
       // no big deal, and is expected behavior
     }
     
-    // Mark state
-    tper_session_id = 0;
-    host_session_id = 0;
+    // Clear out state
+    forget_session();
   }
 }
 

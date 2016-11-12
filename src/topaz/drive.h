@@ -100,7 +100,23 @@ namespace topaz
      * @param user_uid 
      */
     void login(uint64_t sp_uid, uint64_t auth_uid, std::string pin);
-    
+
+    /**
+     * \brief Query if authenticated session
+     *
+     * @return If authenticated session is active, false otherwise
+     */
+    bool get_session_auth() const;
+
+    /**
+     * \brief Query for session SP
+     *
+     * Return the UID of the current session Security Provider (SP).
+     *
+     * @return UID of current session SP, or 0 if no session
+     */
+    uint64_t get_session_sp() const;
+
     /**
      * \brief Query Whole Table
      *
@@ -265,6 +281,8 @@ namespace topaz
     uint64_t max_token;
     
     // TPM session data
+    uint64_t session_sp;
+    bool session_is_auth;
     uint64_t tper_session_id;
     uint64_t host_session_id;
     
