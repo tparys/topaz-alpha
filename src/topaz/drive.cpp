@@ -69,6 +69,7 @@ drive::drive(char const *path)
   host_session_id = 0;
   msg_type = SWG_MSG_UNKNOWN;
   has_proto_reset = false;
+  lock_flag = false;
   lba_align = 1;
   com_id = 0;
   raw_buffer.resize(1024); // Until otherwise identified
@@ -265,6 +266,22 @@ bool drive::get_session_auth() const
 uint64_t drive::get_session_sp() const
 {
   return session_sp;
+}
+
+/**
+ * \brief Query if drive locked
+ *
+ * Query Level 0 locking feature descriptor to see if there are
+ * any locking ranges that are enabled and still locked.
+ *
+ * @return UID of current session SP, or 0 if no session
+ */
+bool drive::get_locked()
+{
+  // Update data (lazy?)
+  probe_level0();
+
+  return lock_flag;
 }
 
 /**
@@ -850,6 +867,9 @@ void drive::probe_level0()
         printf("    MBR Enabled: %d\n",      0x01 & (data[offset] >> 4));
         printf("    MBR Done: %d\n",         0x01 & (data[offset] >> 5));
       }
+
+      // Update lock flag
+      lock_flag = (0x01 & (data[offset] >> 2)) ? true : false;
     }
     else if (code == FEAT_GEO)
     {

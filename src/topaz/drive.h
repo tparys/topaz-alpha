@@ -125,6 +125,16 @@ namespace topaz
     uint64_t get_session_sp() const;
 
     /**
+     * \brief Query if drive locked
+     *
+     * Query Level 0 locking feature descriptor to see if there are
+     * any locking ranges that are enabled and still locked.
+     *
+     * @return UID of current session SP, or 0 if no session
+     */
+    bool get_locked();
+
+    /**
      * \brief Query Whole Table
      *
      * @param tbl_uid Identifier of target table
@@ -296,6 +306,7 @@ namespace topaz
     // Internal info describing drive
     swg_msg_type_t msg_type;   // Enterprise or Opal
     bool has_proto_reset;
+    bool lock_flag;
     uint32_t com_id;
     uint64_t lba_align;
     uint64_t max_com_pkt_size;
