@@ -34,7 +34,6 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
-#include <endian.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -44,13 +43,15 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <linux/types.h>
 #include <linux/nbd.h>
 #include <linux/fs.h>
 #include <topaz/debug.h>
 #include <topaz/drive.h>
 #include <topaz/exceptions.h>
-#include <topaz/uid.h>
 #include <topaz/pin_entry.h>
+#include <topaz/portable_endian.h>
+#include <topaz/uid.h>
 using namespace std;
 using namespace topaz;
 
@@ -71,10 +72,10 @@ typedef struct
   int sig_pipe[2];    // for signal handler
   int kern_pipe[2];   // for NBD kernel thread
   int nbd;            // handle for NBD device
-  
+
   pthread_t kthread;  // kernel thread
   bool kthread_ok;    // thread started?
-  
+
 } prog_state_t;
 
 /* lone global for signal handler */
@@ -93,7 +94,7 @@ int main(int argc, char **argv)
   bool cur_pin_valid = false;
   int i, rc;
   char c;
-    
+
   // initialize state to known values
   prog_state_t state;
   for (i = 0; i < 2; i++)
@@ -317,26 +318,28 @@ int main2(prog_state_t *state)
             send(state->kern_pipe[0], &reply, sizeof(struct nbd_reply), 0);
             send(state->kern_pipe[0], &(buffer[0]), request.len, 0);
             break;
-   
+
           case NBD_CMD_WRITE:
             TOPAZ_DEBUG(1) printf("Request for write of size %d\n", request.len);
-     
+
             // Grab data from socket
             buffer.resize(request.len);
             recv(state->kern_pipe[0], &(buffer[0]), request.len, MSG_WAITALL);
             target.table_set_bin(MBR_UID, request.from, &(buffer[0]), request.len);
-     
+
             // Respond
             send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
             break;
-   
+
+#ifdef NBD_CMD_FLUSH
           case NBD_CMD_FLUSH:
             TOPAZ_DEBUG(1) printf("Flush request\n");
-     
+
             // Nothing to do, respond
             send(state->kern_pipe[0], (char*)&reply, sizeof(struct nbd_reply), 0);
             break;
-   
+#endif
+
           default:
             TOPAZ_DEBUG(1) printf("Invalid / unknown request type %d\n", request.type);
      

@@ -32,10 +32,10 @@
 #define __STDC_FORMAT_MACROS
 #include <cstdio>
 #include <cstring>
-#include <endian.h>
 #include <inttypes.h>
 #include <topaz/atom.h>
 #include <topaz/exceptions.h>
+#include <topaz/portable_endian.h>
 #include <topaz/uid.h>
 using namespace topaz;
 

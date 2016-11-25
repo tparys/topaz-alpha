@@ -16,7 +16,7 @@ endif (CMAKE_COMPILER_IS_GNUCC)
 #
 
 # Put all binaries in one place
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${Project_SOURCE_DIR}/build")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # Where includes get sourced
 include_directories(src)
