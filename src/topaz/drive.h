@@ -41,7 +41,7 @@ namespace topaz
     class drive
     {
 
-      public:
+    public:
 
         /**
          * \brief Topaz Hard Drive Constructor
@@ -232,7 +232,17 @@ namespace topaz
          */
         void forget_session();
 
-      protected:
+        /**
+         * \brief Begin atomic transaction
+         */
+        void start_transaction();
+
+        /**
+         * \brief End atomic transaction
+         */
+        void end_transaction();
+
+    protected:
 
         /**
          * \brief Send payload to TCG Opal drive

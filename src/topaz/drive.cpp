@@ -627,6 +627,91 @@ void drive::forget_session()
     host_session_id = 0;
 }
 
+/**
+ * \brief Begin atomic transaction
+ */
+void drive::start_transaction()
+{
+    // Form a single token transaction message
+    byte_vector bytes;
+    bytes.push_back(datum::TOK_START_TRANS);
+    bytes.push_back(0);
+
+    // Debug
+    TOPAZ_DEBUG(3)
+    {
+        printf("SWG Call: Transaction Start\n");
+    }
+
+    // Send to drive
+    send(bytes, true);
+
+    // Collect response
+    recv(bytes);
+
+    // Check status code (TBD - Clean this up)
+    unsigned status = bytes[1];
+
+    // Debug
+    TOPAZ_DEBUG(3)
+    {
+        printf("SWG Return : Transaction Start");
+        if (status)
+        {
+            printf(" <STATUS=%u>", status);
+        }
+        printf("\n");
+    }
+
+    // Fail out
+    if (status)
+    {
+        throw topaz_exception("Transaction failed");
+    }
+}
+
+/**
+ * \brief End atomic transaction
+ */
+void drive::end_transaction()
+{
+    // Form a single token transaction message
+    byte_vector bytes;
+    bytes.push_back(datum::TOK_END_TRANS);
+    bytes.push_back(0);
+
+    // Debug
+    TOPAZ_DEBUG(3)
+    {
+        printf("SWG Call: Transaction End\n");
+    }
+
+    // Send to drive
+    send(bytes, true);
+
+    // Collect response
+    recv(bytes);
+
+    // Check status code (TBD - Clean this up)
+    unsigned status = bytes[1];
+
+    // Debug
+    TOPAZ_DEBUG(3)
+    {
+        printf("SWG Return : Transaction End");
+        if (status)
+        {
+            printf(" <STATUS=%u>", status);
+        }
+        printf("\n");
+    }
+
+    // Fail out
+    if (status)
+    {
+        throw topaz_exception("Transaction failed");
+    }
+}
 
 /**
  * \brief Send payload to TCG Opal drive
