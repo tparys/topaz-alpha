@@ -6,16 +6,16 @@
  *
  * Copyright (c) 2014, T Parys
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -54,31 +54,31 @@ using namespace topaz;
  */
 rawdrive::rawdrive(char const *path)
 {
-  // First, verify libata isn't misconfigured ...
-  check_libata();
-  
-  // Open up device
-  TOPAZ_DEBUG(1) printf("Opening %s ...\n", path);
-  fd = open(path, O_RDWR);
-  if (fd == -1)
-  {
-    throw topaz_exception("Cannot open specified device");
-  }
-  
-  // Check the TPM
-  try
-  {
-    check_tpm();
-  }
-  catch (topaz_exception &e)
-  {
-    // Constructor not done, destructor won't be called ...
-    close(fd);
-    
-    // Pass it along
-    throw e;
-  }
-  
+    // First, verify libata isn't misconfigured ...
+    check_libata();
+
+    // Open up device
+    TOPAZ_DEBUG(1) printf("Opening %s ...\n", path);
+    fd = open(path, O_RDWR);
+    if (fd == -1)
+    {
+        throw topaz_exception("Cannot open specified device");
+    }
+
+    // Check the TPM
+    try
+    {
+        check_tpm();
+    }
+    catch (topaz_exception &e)
+    {
+        // Constructor not done, destructor won't be called ...
+        close(fd);
+
+        // Pass it along
+        throw e;
+    }
+
 }
 
 /**
@@ -86,8 +86,8 @@ rawdrive::rawdrive(char const *path)
  */
 rawdrive::~rawdrive()
 {
-  // Cleanup
-  close(fd);
+    // Cleanup
+    close(fd);
 }
 
 /**
@@ -103,32 +103,32 @@ rawdrive::~rawdrive()
 void rawdrive::if_send(uint8_t proto, uint16_t comid,
                        void *data, uint8_t bcount)
 {
-  if (USE_ATA12)
-  {
-    // ATA12 Command - Trusted Send (0x5e)
-    ata12_cmd_t cmd  = {0};
-    cmd.feature      = proto;
-    cmd.count        = bcount;
-    cmd.lba_mid      = comid & 0xff;
-    cmd.lba_high     = comid >> 8;
-    cmd.command      = 0x5e;
-    
-    // Off it goes
-    ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
-  }
-  else
-  {
-    // ATA16 Command - Trusted Send (0x5e)
-    ata16_cmd_t cmd  = {0};
-    cmd.feature.low  = proto;
-    cmd.count.low    = bcount;
-    cmd.lba_mid.low  = comid & 0xff;
-    cmd.lba_high.low = comid >> 8;
-    cmd.command      = 0x5e;
-    
-    // Off it goes
-    ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
-  }
+    if (USE_ATA12)
+    {
+        // ATA12 Command - Trusted Send (0x5e)
+        ata12_cmd_t cmd  = {0};
+        cmd.feature      = proto;
+        cmd.count        = bcount;
+        cmd.lba_mid      = comid & 0xff;
+        cmd.lba_high     = comid >> 8;
+        cmd.command      = 0x5e;
+
+        // Off it goes
+        ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
+    }
+    else
+    {
+        // ATA16 Command - Trusted Send (0x5e)
+        ata16_cmd_t cmd  = {0};
+        cmd.feature.low  = proto;
+        cmd.count.low    = bcount;
+        cmd.lba_mid.low  = comid & 0xff;
+        cmd.lba_high.low = comid >> 8;
+        cmd.command      = 0x5e;
+
+        // Off it goes
+        ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
+    }
 }
 
 /**
@@ -144,32 +144,32 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
 void rawdrive::if_recv(uint8_t proto, uint16_t comid,
                        void *data, uint8_t bcount)
 {
-  if (USE_ATA12)
-  {
-    // ATA12 Command - Trusted Receive (0x5c)
-    ata12_cmd_t cmd  = {0};
-    cmd.feature      = proto;
-    cmd.count        = bcount;
-    cmd.lba_mid      = comid & 0xff;
-    cmd.lba_high     = comid >> 8;
-    cmd.command      = 0x5c;
-    
-    // Off it goes
-    ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
-  }
-  else
-  {
-    // ATA16 Command - Trusted Receive (0x5c)
-    ata16_cmd_t cmd  = {0};
-    cmd.feature.low  = proto;
-    cmd.count.low    = bcount;
-    cmd.lba_mid.low  = comid & 0xff;
-    cmd.lba_high.low = comid >> 8;
-    cmd.command      = 0x5c;         // Trusted receive
-    
-    // Off it goes
-    ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
-  }
+    if (USE_ATA12)
+    {
+        // ATA12 Command - Trusted Receive (0x5c)
+        ata12_cmd_t cmd  = {0};
+        cmd.feature      = proto;
+        cmd.count        = bcount;
+        cmd.lba_mid      = comid & 0xff;
+        cmd.lba_high     = comid >> 8;
+        cmd.command      = 0x5c;
+
+        // Off it goes
+        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
+    }
+    else
+    {
+        // ATA16 Command - Trusted Receive (0x5c)
+        ata16_cmd_t cmd  = {0};
+        cmd.feature.low  = proto;
+        cmd.count.low    = bcount;
+        cmd.lba_mid.low  = comid & 0xff;
+        cmd.lba_high.low = comid >> 8;
+        cmd.command      = 0x5c;         // Trusted receive
+
+        // Off it goes
+        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
+    }
 }
 
 /**
@@ -179,7 +179,7 @@ void rawdrive::if_recv(uint8_t proto, uint16_t comid,
  */
 string rawdrive::get_model() const
 {
-  return drive_model;
+    return drive_model;
 }
 
 /**
@@ -189,7 +189,7 @@ string rawdrive::get_model() const
  */
 string rawdrive::get_serial() const
 {
-  return drive_serial;
+    return drive_serial;
 }
 
 /**
@@ -199,7 +199,7 @@ string rawdrive::get_serial() const
  */
 string rawdrive::get_firmware() const
 {
-  return drive_firmware;
+    return drive_firmware;
 }
 
 /**
@@ -209,28 +209,28 @@ string rawdrive::get_firmware() const
  */
 void rawdrive::check_libata()
 {
-  int fd;
-  char in;
-  
-  // Best effort only - /sys may not be mounted
-  TOPAZ_DEBUG(1) printf("Probe libata configuration\n");
-  fd = open("/sys/module/libata/parameters/allow_tpm", O_RDONLY);
-  if (fd != -1)
-  {
-    // File opened
-    if (read(fd, &in, 1) == 1)
+    int fd;
+    char in;
+
+    // Best effort only - /sys may not be mounted
+    TOPAZ_DEBUG(1) printf("Probe libata configuration\n");
+    fd = open("/sys/module/libata/parameters/allow_tpm", O_RDONLY);
+    if (fd != -1)
     {
-      // Data read
-      if (in == '0')
-      {
-        throw topaz_exception(
-          "Linux libata layer configured to block TPM calls (add libata.allow_tpm=1 to kernel args)");
-      }
+        // File opened
+        if (read(fd, &in, 1) == 1)
+        {
+            // Data read
+            if (in == '0')
+            {
+                throw topaz_exception(
+                    "Linux libata layer configured to block TPM calls (add libata.allow_tpm=1 to kernel args)");
+            }
+        }
+
+        // Cleanup
+        close(fd);
     }
-    
-    // Cleanup
-    close(fd);
-  }
 }
 
 /**
@@ -240,25 +240,25 @@ void rawdrive::check_libata()
  */
 void rawdrive::check_tpm()
 {
-  uint16_t id_data[256];
-  
-  // Query identify data
-  get_identify(id_data);
-  
-  // Verify ATA version >= 8
-  TOPAZ_DEBUG(1) printf("Verifying ATA support\n");
-  if ((id_data[80] & ~((1 < 8) - 1)) == 0)
-  {
-    throw topaz_exception("ATA device too old to report TPM presence");
-  }
-  
-  // Check for TPM presence
-  TOPAZ_DEBUG(1) printf("Searching for TPM Fingerprint\n");
-  if ((id_data[48] & 0xC000) != 0x4000)
-  {
-    throw topaz_exception("No TPM Detected in Specified Drive");
-  }
-}  
+    uint16_t id_data[256];
+
+    // Query identify data
+    get_identify(id_data);
+
+    // Verify ATA version >= 8
+    TOPAZ_DEBUG(1) printf("Verifying ATA support\n");
+    if ((id_data[80] & ~((1 < 8) - 1)) == 0)
+    {
+        throw topaz_exception("ATA device too old to report TPM presence");
+    }
+
+    // Check for TPM presence
+    TOPAZ_DEBUG(1) printf("Searching for TPM Fingerprint\n");
+    if ((id_data[48] & 0xC000) != 0x4000)
+    {
+        throw topaz_exception("No TPM Detected in Specified Drive");
+    }
+}
 
 /**
  * ata_identify
@@ -269,39 +269,39 @@ void rawdrive::check_tpm()
  */
 void rawdrive::get_identify(uint16_t *data)
 {
-  if (USE_ATA12)
-  {
-    // ATA12 Command - Identify Device (0xec)
-    ata12_cmd_t cmd = {0};
-    cmd.command     = 0xec;
-    
-    // Off it goes
-    TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
-    ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, 1, 1);
-  }
-  else
-  {
-    // ATA16 Command - Identify Device (0xec)
-    ata16_cmd_t cmd = {0};
-    cmd.command     = 0xec;
-    
-    // Off it goes
-    TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
-    ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, 1, 1);
-  }
+    if (USE_ATA12)
+    {
+        // ATA12 Command - Identify Device (0xec)
+        ata12_cmd_t cmd = {0};
+        cmd.command     = 0xec;
 
-  // Pull drive ID information
-  drive_model = get_id_string(data + 27, 40);
-  drive_serial = get_id_string(data + 10, 20);
-  drive_firmware = get_id_string(data + 23, 8);
- 
-  // Print debug
-  TOPAZ_DEBUG(2)
-  {
-    printf("  Model: %s\n", drive_model.c_str());
-    printf("  Serial: %s\n", drive_serial.c_str());
-    printf("  Firmware: %s\n", drive_firmware.c_str());
-  }
+        // Off it goes
+        TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
+        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, 1, 1);
+    }
+    else
+    {
+        // ATA16 Command - Identify Device (0xec)
+        ata16_cmd_t cmd = {0};
+        cmd.command     = 0xec;
+
+        // Off it goes
+        TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
+        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, 1, 1);
+    }
+
+    // Pull drive ID information
+    drive_model = get_id_string(data + 27, 40);
+    drive_serial = get_id_string(data + 10, 20);
+    drive_firmware = get_id_string(data + 23, 8);
+
+    // Print debug
+    TOPAZ_DEBUG(2)
+    {
+        printf("  Model: %s\n", drive_model.c_str());
+        printf("  Serial: %s\n", drive_serial.c_str());
+        printf("  Firmware: %s\n", drive_firmware.c_str());
+    }
 }
 
 /**
@@ -315,39 +315,39 @@ void rawdrive::get_identify(uint16_t *data)
  */
 string rawdrive::get_id_string(uint16_t *data, size_t max)
 {
-  size_t i;
-  uint16_t word;
-  char c;
-  string val;
-  
-  for (i = 0; i < max; i++)
-  {
-    word = data[i >> 1];
-    
-    // Toggle on high/low byte
-    if (i % 2)
+    size_t i;
+    uint16_t word;
+    char c;
+    string val;
+
+    for (i = 0; i < max; i++)
     {
-      c = 0xff & word;
-    }
-    else
-    {
-      c = 0xff & (word >> 8);
-    }
-    
-    // Stop on NULL
-    if (c == 0x00)
-    {
-      break;
+        word = data[i >> 1];
+
+        // Toggle on high/low byte
+        if (i % 2)
+        {
+            c = 0xff & word;
+        }
+        else
+        {
+            c = 0xff & (word >> 8);
+        }
+
+        // Stop on NULL
+        if (c == 0x00)
+        {
+            break;
+        }
+
+        // Skip spaces
+        if (c != ' ')
+        {
+            val += c;
+        }
     }
 
-    // Skip spaces
-    if (c != ' ')
-    {
-      val += c;
-    }
-  }
-
-  return val;
+    return val;
 }
 
 /**
@@ -365,122 +365,122 @@ string rawdrive::get_id_string(uint16_t *data, size_t max)
 void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
                            void *data, uint8_t bcount, int wait)
 {
-  struct sg_io_hdr sg_io;  // ioctl data structure
-  unsigned char cdb[12];   // Command descriptor block
-  unsigned char sense[32]; // SCSI sense (error) data
-  int rc;
-  
-  // Initialize structures
-  memset(&sg_io, 0, sizeof(sg_io));
-  memset(&cdb, 0, sizeof(cdb));
-  memset(&sense, 0, sizeof(sense));
-  
-  ////
-  // Fill in ioctl data for ATA12 pass through
-  //
-  
-  // Mandatory per interface
-  sg_io.interface_id    = 'S';
-  
-  // Location, size of command descriptor block (command)
-  sg_io.cmdp            = cdb;
-  sg_io.cmd_len         = sizeof(cdb);
-  
-  // Command data transfer (optional)
-  sg_io.dxferp          = data;
-  sg_io.dxfer_len       = bcount * ATA_BLOCK_SIZE;
-  sg_io.dxfer_direction = type;
-  
-  // Sense (error) data
-  sg_io.sbp             = sense;
-  sg_io.mx_sb_len       = sizeof(sense);
-  
-  // Timeout (ms)
-  sg_io.timeout         = wait * 1000;
-  
-  ////
-  // Fill in SCSI command
-  //
-  
-  // Byte 0: ATA12 pass through
-  cdb[0] = 0xA1;
-  
-  // Byte 1: ATA protocol (read/write/none)
-  // Byte 2: Check condition, blocks, size, I/O direction
-  // Final direction specific bits
-  switch (type)
-  {
-    case SG_DXFER_NONE:
-      cdb[1] = 3 << 1; // ATA no data
-      cdb[2] = 0x20;   // Check condition only
-      break;
-      
-    case SG_DXFER_FROM_DEV:
-      cdb[1] = 4 << 1; // ATA PIO-in
-      cdb[2] = 0x2e;   // Check, blocks, size in sector count, read
-      break;
+    struct sg_io_hdr sg_io;  // ioctl data structure
+    unsigned char cdb[12];   // Command descriptor block
+    unsigned char sense[32]; // SCSI sense (error) data
+    int rc;
 
-    case SG_DXFER_TO_DEV:
-      cdb[1] = 5 << 1; // ATA PIO-out
-      cdb[2] = 0x26;   // Check, blocks, size in sector count
-      break;
-      
-    default: // Invalid
-      throw topaz_exception("Invalid ATA Direction");
-      break;
-  }
-  
-  // Rest of ATA12 command get copied here (7 bytes)
-  memcpy(cdb + 3, &cmd, 7);
-  
-  ////
-  // Run ioctl
-  //
-  
-  // Debug output command
-  TOPAZ_DEBUG(4)
-  {
-    // Command descriptor block
-    printf("ATA Command:\n");
-    dump(&cmd, sizeof(cmd));
-    
-    // Command descriptor block
-    printf("SCSI CDB:\n");
-    dump(cdb, sizeof(cdb));
-    
-    // Data out?
-    if (type == SG_DXFER_TO_DEV)
+    // Initialize structures
+    memset(&sg_io, 0, sizeof(sg_io));
+    memset(&cdb, 0, sizeof(cdb));
+    memset(&sense, 0, sizeof(sense));
+
+    ////
+    // Fill in ioctl data for ATA12 pass through
+    //
+
+    // Mandatory per interface
+    sg_io.interface_id    = 'S';
+
+    // Location, size of command descriptor block (command)
+    sg_io.cmdp            = cdb;
+    sg_io.cmd_len         = sizeof(cdb);
+
+    // Command data transfer (optional)
+    sg_io.dxferp          = data;
+    sg_io.dxfer_len       = bcount * ATA_BLOCK_SIZE;
+    sg_io.dxfer_direction = type;
+
+    // Sense (error) data
+    sg_io.sbp             = sense;
+    sg_io.mx_sb_len       = sizeof(sense);
+
+    // Timeout (ms)
+    sg_io.timeout         = wait * 1000;
+
+    ////
+    // Fill in SCSI command
+    //
+
+    // Byte 0: ATA12 pass through
+    cdb[0] = 0xA1;
+
+    // Byte 1: ATA protocol (read/write/none)
+    // Byte 2: Check condition, blocks, size, I/O direction
+    // Final direction specific bits
+    switch (type)
     {
-      printf("Write Data:\n");
-      dump(data, bcount * ATA_BLOCK_SIZE);
+        case SG_DXFER_NONE:
+            cdb[1] = 3 << 1; // ATA no data
+            cdb[2] = 0x20;   // Check condition only
+            break;
+
+        case SG_DXFER_FROM_DEV:
+            cdb[1] = 4 << 1; // ATA PIO-in
+            cdb[2] = 0x2e;   // Check, blocks, size in sector count, read
+            break;
+
+        case SG_DXFER_TO_DEV:
+            cdb[1] = 5 << 1; // ATA PIO-out
+            cdb[2] = 0x26;   // Check, blocks, size in sector count
+            break;
+
+        default: // Invalid
+            throw topaz_exception("Invalid ATA Direction");
+            break;
     }
-  }
-  
-  // System call
-  rc = ioctl(fd, SG_IO, &sg_io);
-  if (rc != 0)
-  {
-    throw topaz_exception("SGIO ioctl failed");
-  }
-  
-  // Debug input
-  if (type == SG_DXFER_FROM_DEV)
-  {
+
+    // Rest of ATA12 command get copied here (7 bytes)
+    memcpy(cdb + 3, &cmd, 7);
+
+    ////
+    // Run ioctl
+    //
+
+    // Debug output command
     TOPAZ_DEBUG(4)
     {
-      printf("Read Data:\n");
-      dump(data, bcount * ATA_BLOCK_SIZE);
+        // Command descriptor block
+        printf("ATA Command:\n");
+        dump(&cmd, sizeof(cmd));
+
+        // Command descriptor block
+        printf("SCSI CDB:\n");
+        dump(cdb, sizeof(cdb));
+
+        // Data out?
+        if (type == SG_DXFER_TO_DEV)
+        {
+            printf("Write Data:\n");
+            dump(data, bcount * ATA_BLOCK_SIZE);
+        }
     }
-  }
-  
-  // Check sense data
-  if (sense[0] != 0x72 || sense[7] != 0x0e || sense[8] != 0x09
-      || sense[9] != 0x0c || sense[10] != 0x00)
-  {
-    //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
-    //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
-    throw topaz_exception("SGIO ioctl bad status");
-  }
+
+    // System call
+    rc = ioctl(fd, SG_IO, &sg_io);
+    if (rc != 0)
+    {
+        throw topaz_exception("SGIO ioctl failed");
+    }
+
+    // Debug input
+    if (type == SG_DXFER_FROM_DEV)
+    {
+        TOPAZ_DEBUG(4)
+        {
+            printf("Read Data:\n");
+            dump(data, bcount * ATA_BLOCK_SIZE);
+        }
+    }
+
+    // Check sense data
+    if (sense[0] != 0x72 || sense[7] != 0x0e || sense[8] != 0x09
+        || sense[9] != 0x0c || sense[10] != 0x00)
+    {
+        //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
+        //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
+        throw topaz_exception("SGIO ioctl bad status");
+    }
 }
 
 /**
@@ -498,120 +498,120 @@ void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
 void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
                            void *data, uint8_t bcount, int wait)
 {
-  struct sg_io_hdr sg_io;  // ioctl data structure
-  unsigned char cdb[16];   // Command descriptor block
-  unsigned char sense[32]; // SCSI sense (error) data
-  int rc;
-  
-  // Initialize structures
-  memset(&sg_io, 0, sizeof(sg_io));
-  memset(&cdb, 0, sizeof(cdb));
-  memset(&sense, 0, sizeof(sense));
-  
-  ////
-  // Fill in ioctl data for ATA16 pass through
-  //
-  
-  // Mandatory per interface
-  sg_io.interface_id    = 'S';
-  
-  // Location, size of command descriptor block (command)
-  sg_io.cmdp            = cdb;
-  sg_io.cmd_len         = sizeof(cdb);
-  
-  // Command data transfer (optional)
-  sg_io.dxferp          = data;
-  sg_io.dxfer_len       = bcount * ATA_BLOCK_SIZE;
-  sg_io.dxfer_direction = type;
-  
-  // Sense (error) data
-  sg_io.sbp             = sense;
-  sg_io.mx_sb_len       = sizeof(sense);
-  
-  // Timeout (ms)
-  sg_io.timeout         = wait * 1000;
-  
-  ////
-  // Fill in SCSI command
-  //
-  
-  // Byte 0: ATA16 pass through
-  cdb[0] = 0x85;
-  
-  // Byte 1: ATA protocol (read/write/none)
-  // Byte 2: Check condition, blocks, size, I/O direction
-  // Final direction specific bits
-  switch (type)
-  {
-    case SG_DXFER_NONE:
-      cdb[1] = 3 << 1; // ATA no data
-      cdb[2] = 0x20;   // Check condition only
-      break;
-      
-    case SG_DXFER_FROM_DEV:
-      cdb[1] = 4 << 1; // ATA PIO-in
-      cdb[2] = 0x2e;   // Check, blocks, size in sector count, read
-      break;
+    struct sg_io_hdr sg_io;  // ioctl data structure
+    unsigned char cdb[16];   // Command descriptor block
+    unsigned char sense[32]; // SCSI sense (error) data
+    int rc;
 
-    case SG_DXFER_TO_DEV:
-      cdb[1] = 5 << 1; // ATA PIO-out
-      cdb[2] = 0x26;   // Check, blocks, size in sector count
-      break;
-      
-    default: // Invalid
-      throw topaz_exception("Invalid ATA Direction");
-      break;
-  }
+    // Initialize structures
+    memset(&sg_io, 0, sizeof(sg_io));
+    memset(&cdb, 0, sizeof(cdb));
+    memset(&sense, 0, sizeof(sense));
 
-  // Rest of ATA16 command get copied here (12 bytes)
-  memcpy(cdb + 3, &cmd, 12);
-  
-  ////
-  // Run ioctl
-  //
-  
-  // Debug output command
-  TOPAZ_DEBUG(4)
-  {
-    // Command descriptor block
-    printf("ATA Command:\n");
-    dump(&cmd, sizeof(cmd));
-    
-    // Command descriptor block
-    printf("SCSI CDB:\n");
-    dump(cdb, sizeof(cdb));
-    
-    // Data out?
-    if (type == SG_DXFER_TO_DEV)
+    ////
+    // Fill in ioctl data for ATA16 pass through
+    //
+
+    // Mandatory per interface
+    sg_io.interface_id    = 'S';
+
+    // Location, size of command descriptor block (command)
+    sg_io.cmdp            = cdb;
+    sg_io.cmd_len         = sizeof(cdb);
+
+    // Command data transfer (optional)
+    sg_io.dxferp          = data;
+    sg_io.dxfer_len       = bcount * ATA_BLOCK_SIZE;
+    sg_io.dxfer_direction = type;
+
+    // Sense (error) data
+    sg_io.sbp             = sense;
+    sg_io.mx_sb_len       = sizeof(sense);
+
+    // Timeout (ms)
+    sg_io.timeout         = wait * 1000;
+
+    ////
+    // Fill in SCSI command
+    //
+
+    // Byte 0: ATA16 pass through
+    cdb[0] = 0x85;
+
+    // Byte 1: ATA protocol (read/write/none)
+    // Byte 2: Check condition, blocks, size, I/O direction
+    // Final direction specific bits
+    switch (type)
     {
-      printf("Write Data:\n");
-      dump(data, bcount * ATA_BLOCK_SIZE);
+        case SG_DXFER_NONE:
+            cdb[1] = 3 << 1; // ATA no data
+            cdb[2] = 0x20;   // Check condition only
+            break;
+
+        case SG_DXFER_FROM_DEV:
+            cdb[1] = 4 << 1; // ATA PIO-in
+            cdb[2] = 0x2e;   // Check, blocks, size in sector count, read
+            break;
+
+        case SG_DXFER_TO_DEV:
+            cdb[1] = 5 << 1; // ATA PIO-out
+            cdb[2] = 0x26;   // Check, blocks, size in sector count
+            break;
+
+        default: // Invalid
+            throw topaz_exception("Invalid ATA Direction");
+            break;
     }
-  }
-  
-  // System call
-  rc = ioctl(fd, SG_IO, &sg_io);
-  if (rc != 0)
-  {
-    throw topaz_exception("SGIO ioctl failed");
-  }
-  
-  // Debug input
-  if (type == SG_DXFER_FROM_DEV)
-  {
+
+    // Rest of ATA16 command get copied here (12 bytes)
+    memcpy(cdb + 3, &cmd, 12);
+
+    ////
+    // Run ioctl
+    //
+
+    // Debug output command
     TOPAZ_DEBUG(4)
     {
-      printf("Read Data:\n");
-      dump(data, bcount * ATA_BLOCK_SIZE);
+        // Command descriptor block
+        printf("ATA Command:\n");
+        dump(&cmd, sizeof(cmd));
+
+        // Command descriptor block
+        printf("SCSI CDB:\n");
+        dump(cdb, sizeof(cdb));
+
+        // Data out?
+        if (type == SG_DXFER_TO_DEV)
+        {
+            printf("Write Data:\n");
+            dump(data, bcount * ATA_BLOCK_SIZE);
+        }
     }
-  }
-  
-  // Check sense data
-  if (sense[0] != 0x72 || sense[7] != 0x0e || sense[8] != 0x09
-      || sense[9] != 0x0c || sense[10] != 0x00)
-  {
-    //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
-    //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
-    throw topaz_exception("SGIO ioctl bad status");
-  }
+
+    // System call
+    rc = ioctl(fd, SG_IO, &sg_io);
+    if (rc != 0)
+    {
+        throw topaz_exception("SGIO ioctl failed");
+    }
+
+    // Debug input
+    if (type == SG_DXFER_FROM_DEV)
+    {
+        TOPAZ_DEBUG(4)
+        {
+            printf("Read Data:\n");
+            dump(data, bcount * ATA_BLOCK_SIZE);
+        }
+    }
+
+    // Check sense data
+    if (sense[0] != 0x72 || sense[7] != 0x0e || sense[8] != 0x09
+        || sense[9] != 0x0c || sense[10] != 0x00)
+    {
+        //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
+        //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
+        throw topaz_exception("SGIO ioctl bad status");
+    }
 }

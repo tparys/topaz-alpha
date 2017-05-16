@@ -6,16 +6,16 @@
  *
  * Copyright (c) 2014, T Parys
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,7 +37,7 @@ using namespace topaz;
  */
 encodable::encodable()
 {
-  // Nada
+    // Nada
 }
 
 /**
@@ -45,7 +45,7 @@ encodable::encodable()
  */
 encodable::~encodable()
 {
-  // Nada
+    // Nada
 }
 
 /**
@@ -55,16 +55,16 @@ encodable::~encodable()
  */
 byte_vector encodable::encode_vector() const
 {
-  byte_vector data;
-  
-  // Resize to appropriate size
-  data.resize(size());
-  
-  // Set up the data call
-  encode_bytes(&(data[0]));
-  
-  // All done
-  return data;
+    byte_vector data;
+
+    // Resize to appropriate size
+    data.resize(size());
+
+    // Set up the data call
+    encode_bytes(&(data[0]));
+
+    // All done
+    return data;
 }
 
 /**
@@ -75,6 +75,6 @@ byte_vector encodable::encode_vector() const
  */
 size_t encodable::decode_vector(byte_vector const &data)
 {
-  // Pass it on
-  return decode_bytes(&(data[0]), data.size());
+    // Pass it on
+    return decode_bytes(&(data[0]), data.size());
 }

@@ -3,16 +3,16 @@
  *
  * Copyright (c) 2014, T Parys
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,51 +40,51 @@ using namespace topaz;
 
 int main(int argc, char **argv)
 {
-  char c;
+    char c;
 
-  // Process command line switches */
-  opterr = 0;
-  while ((c = getopt (argc, argv, "v")) != -1)
-  {
-    switch (c)
+    // Process command line switches */
+    opterr = 0;
+    while ((c = getopt (argc, argv, "v")) != -1)
     {
-      case 'v':
-        topaz_debug++;
-        break;
-        
-      default:
-        cerr << "Invalid command line option " << c << endl;
+        switch (c)
+        {
+            case 'v':
+                topaz_debug++;
+                break;
+
+            default:
+                cerr << "Invalid command line option " << c << endl;
+        }
     }
-  }
-  
-  // Check remaining arguments
-  if ((argc - optind) <= 0)
-  {
-    cerr << "Usage: test /dev/sdX" << endl;
-    return -1;
-  }
- 
-  // Open the device
-  try
-  {
-    datum io;
-    drive target(argv[optind]);
-    
-    uint64_t next_uid = _UID_MAKE(  0x6, 0x8);
-    uint64_t obj_uid  = _UID_MAKE(0x802, 0x0);
-    
-    target.login(LOCKING_SP, ADMIN_BASE + 1, "password");
-    //target.login_anon(ADMIN_SP);
-    
-    target.invoke(obj_uid, next_uid);
-    
-    //target.table_get(MBR_CONTROL);
-    
-  }
-  catch (topaz_exception &e)
-  {
-    cout << "Exception raised: " << e.what() << endl;
-  }
-  
-  return 0;
+
+    // Check remaining arguments
+    if ((argc - optind) <= 0)
+    {
+        cerr << "Usage: test /dev/sdX" << endl;
+        return -1;
+    }
+
+    // Open the device
+    try
+    {
+        datum io;
+        drive target(argv[optind]);
+
+        uint64_t next_uid = _UID_MAKE(  0x6, 0x8);
+        uint64_t obj_uid  = _UID_MAKE(0x802, 0x0);
+
+        target.login(LOCKING_SP, ADMIN_BASE + 1, "password");
+        //target.login_anon(ADMIN_SP);
+
+        target.invoke(obj_uid, next_uid);
+
+        //target.table_get(MBR_CONTROL);
+
+    }
+    catch (topaz_exception &e)
+    {
+        cout << "Exception raised: " << e.what() << endl;
+    }
+
+    return 0;
 }

@@ -7,16 +7,16 @@
  *
  * Copyright (c) 2014, T Parys
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,11 +44,11 @@ using namespace topaz;
  */
 atom::atom()
 {
-  // Initialize
-  data_type = atom::EMPTY;
-  data_enc = atom::NONE;
-  int_skip = 0;
-  uint_val = 0;
+    // Initialize
+    data_type = atom::EMPTY;
+    data_enc = atom::NONE;
+    int_skip = 0;
+    uint_val = 0;
 }
 
 /**
@@ -56,7 +56,7 @@ atom::atom()
  */
 atom::~atom()
 {
-  // Nada
+    // Nada
 }
 
 //////////////////////////////////////////////////////////////////
@@ -66,52 +66,52 @@ atom::~atom()
  */
 atom atom::new_int(int64_t value)
 {
-  union
-  {
-    uint64_t flip;
-    byte     raw[8];
-  };
-  atom ret;
-  
-  // Intitialize
-  ret.data_type = atom::INT;
-  ret.int_val = value;
-  
-  // Really small values fit into a single byte
-  if ((value < 0x20) && (value >= -0x20))
-  {
-    // Tiny atom (Data in same byte as header)
-    ret.data_enc = atom::TINY;
-    ret.int_skip = 0;
-  }
-  else // Determine how many bytes are really needed
-  {
-    // Byteflip to big endian
-    flip = htobe64(value);
-    
-    // Logic differs a bit based on sign
-    if (value < 0)
+    union
     {
-      // Negative condition is to drop 0xff bytes,
-      // provided the remaining value is still negative
-      // (most significant remaining bit is a 1)
-      for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0xff) &&
-             ((raw[ret.int_skip + 1] & 0x80) == 0x80); ret.int_skip++) {}
-    }
-    else
+        uint64_t flip;
+        byte     raw[8];
+    };
+    atom ret;
+
+    // Intitialize
+    ret.data_type = atom::INT;
+    ret.int_val = value;
+
+    // Really small values fit into a single byte
+    if ((value < 0x20) && (value >= -0x20))
     {
-      // Positive condition is to drop 0x00 bytes,
-      // provided the remaining value is still positive
-      // (most significant remaining bit is a 0)
-      for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00) &&
-             ((raw[ret.int_skip + 1] & 0x80) == 0x00); ret.int_skip++) {}
+        // Tiny atom (Data in same byte as header)
+        ret.data_enc = atom::TINY;
+        ret.int_skip = 0;
     }
-    
-    // All integers less than 16 bytes long (128 bits) will fit in this ...
-    ret.data_enc = atom::SHORT;
-  }
-  
-  return ret;
+    else // Determine how many bytes are really needed
+    {
+        // Byteflip to big endian
+        flip = htobe64(value);
+
+        // Logic differs a bit based on sign
+        if (value < 0)
+        {
+            // Negative condition is to drop 0xff bytes,
+            // provided the remaining value is still negative
+            // (most significant remaining bit is a 1)
+            for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0xff) &&
+                     ((raw[ret.int_skip + 1] & 0x80) == 0x80); ret.int_skip++) {}
+        }
+        else
+        {
+            // Positive condition is to drop 0x00 bytes,
+            // provided the remaining value is still positive
+            // (most significant remaining bit is a 0)
+            for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00) &&
+                     ((raw[ret.int_skip + 1] & 0x80) == 0x00); ret.int_skip++) {}
+        }
+
+        // All integers less than 16 bytes long (128 bits) will fit in this ...
+        ret.data_enc = atom::SHORT;
+    }
+
+    return ret;
 }
 
 /**
@@ -119,38 +119,38 @@ atom atom::new_int(int64_t value)
  */
 atom atom::new_uint(uint64_t value)
 {
-  union
-  {
-    uint64_t flip;
-    byte     raw[8];
-  };
-  atom ret;
-  
-  // Intitialize
-  ret.data_type = atom::UINT;
-  ret.uint_val = value;
-  
-  // Really small values fit into a single byte
-  if (value < 0x40)
-  {
-    // Tiny atom (Data in same byte as header)
-    ret.data_enc = atom::TINY;
-    ret.int_skip = 0;
-  }
-  else // Determine how many bytes are really needed
-  {
-    // Byteflip to big endian
-    flip = htobe64(value);
-    
-    // Drop unneeded leading zeroes (up to 7)
-    for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00);
-         ret.int_skip++) {}
-    
-    // All integers less than 16 bytes long (128 bits) will fit in this ...
-    ret.data_enc = atom::SHORT;
-  }
-  
-  return ret;
+    union
+    {
+        uint64_t flip;
+        byte     raw[8];
+    };
+    atom ret;
+
+    // Intitialize
+    ret.data_type = atom::UINT;
+    ret.uint_val = value;
+
+    // Really small values fit into a single byte
+    if (value < 0x40)
+    {
+        // Tiny atom (Data in same byte as header)
+        ret.data_enc = atom::TINY;
+        ret.int_skip = 0;
+    }
+    else // Determine how many bytes are really needed
+    {
+        // Byteflip to big endian
+        flip = htobe64(value);
+
+        // Drop unneeded leading zeroes (up to 7)
+        for (ret.int_skip = 0; (ret.int_skip < 8) && (raw[ret.int_skip] == 0x00);
+             ret.int_skip++) {}
+
+        // All integers less than 16 bytes long (128 bits) will fit in this ...
+        ret.data_enc = atom::SHORT;
+    }
+
+    return ret;
 }
 
 /**
@@ -158,36 +158,36 @@ atom atom::new_uint(uint64_t value)
  */
 atom atom::new_uid(uint64_t value)
 {
-  union
-  {
-    uint64_t flip;
-    byte     raw[8];
-  };
-  atom ret;
-  
-  // Unique ID's (UIDs) are quirky. They are 64 bit integers, but get
-  // encoded like a byte sequence, of a single length 8 (short).
-  // This is simultaneously simpler, and infuriating ...
-  
-  // Intitialize
-  ret.data_type = atom::UINT;
-  ret.uint_val = value;
-  
-  // Stored as binary
-  ret.data_type = atom::BYTES;
-  ret.data_enc = atom::SHORT;
-  
-  // Flip integer big endian
-  flip = htobe64(value);
-  
-  // Now binary
-  ret.bytes.resize(8);
-  for (size_t i = 0; i < 8; i++)
-  {
-    ret.bytes[i] = raw[i];
-  }
-    
-  return ret;
+    union
+    {
+        uint64_t flip;
+        byte     raw[8];
+    };
+    atom ret;
+
+    // Unique ID's (UIDs) are quirky. They are 64 bit integers, but get
+    // encoded like a byte sequence, of a single length 8 (short).
+    // This is simultaneously simpler, and infuriating ...
+
+    // Intitialize
+    ret.data_type = atom::UINT;
+    ret.uint_val = value;
+
+    // Stored as binary
+    ret.data_type = atom::BYTES;
+    ret.data_enc = atom::SHORT;
+
+    // Flip integer big endian
+    flip = htobe64(value);
+
+    // Now binary
+    ret.bytes.resize(8);
+    for (size_t i = 0; i < 8; i++)
+    {
+        ret.bytes[i] = raw[i];
+    }
+
+    return ret;
 }
 
 /**
@@ -195,35 +195,35 @@ atom atom::new_uid(uint64_t value)
  */
 atom atom::new_half_uid(uint32_t value)
 {
-  union
-  {
-    uint32_t flip;
-    byte     raw[4];
-  };
-  atom ret;
-  
-  // Half Unique ID's (UIDs) are also quirky. They are 32 bit
-  // integers, stored as a four byte sequence.
-  
-  // Intitialize
-  ret.data_type = atom::UINT;
-  ret.uint_val = value;
-  
-  // Stored as binary
-  ret.data_type = atom::BYTES;
-  ret.data_enc = atom::SHORT;
-  
-  // Flip integer big endian
-  flip = htobe32(value);
-  
-  // Now binary
-  ret.bytes.resize(4);
-  for (size_t i = 0; i < 4; i++)
-  {
-    ret.bytes[i] = raw[i];
-  }
-    
-  return ret;
+    union
+    {
+        uint32_t flip;
+        byte     raw[4];
+    };
+    atom ret;
+
+    // Half Unique ID's (UIDs) are also quirky. They are 32 bit
+    // integers, stored as a four byte sequence.
+
+    // Intitialize
+    ret.data_type = atom::UINT;
+    ret.uint_val = value;
+
+    // Stored as binary
+    ret.data_type = atom::BYTES;
+    ret.data_enc = atom::SHORT;
+
+    // Flip integer big endian
+    flip = htobe32(value);
+
+    // Now binary
+    ret.bytes.resize(4);
+    for (size_t i = 0; i < 4; i++)
+    {
+        ret.bytes[i] = raw[i];
+    }
+
+    return ret;
 }
 
 /**
@@ -231,22 +231,22 @@ atom atom::new_half_uid(uint32_t value)
  */
 atom atom::new_bin(byte const *data, size_t len)
 {
-  atom ret;
-  
-  // Intialize
-  ret.data_type = atom::BYTES;
-  
-  // Pick data encoding
-  ret.pick_encoding(len);
-  
-  // Copy data over
-  ret.bytes.resize(len);
-  for (size_t i = 0; i < len; i++)
-  {
-    ret.bytes[i] = data[i];
-  }
-  
-  return ret;
+    atom ret;
+
+    // Intialize
+    ret.data_type = atom::BYTES;
+
+    // Pick data encoding
+    ret.pick_encoding(len);
+
+    // Copy data over
+    ret.bytes.resize(len);
+    for (size_t i = 0; i < len; i++)
+    {
+        ret.bytes[i] = data[i];
+    }
+
+    return ret;
 }
 
 /**
@@ -254,7 +254,7 @@ atom atom::new_bin(byte const *data, size_t len)
  */
 atom atom::new_bin(char const *str)
 {
-  return atom::new_bin((byte const*)str, strlen(str));
+    return atom::new_bin((byte const*)str, strlen(str));
 }
 
 /**
@@ -262,7 +262,7 @@ atom atom::new_bin(char const *str)
  */
 atom atom::new_bin(byte_vector data)
 {
-  return atom::new_bin(&(data[0]), data.size());
+    return atom::new_bin(&(data[0]), data.size());
 }
 
 /**
@@ -272,48 +272,48 @@ atom atom::new_bin(byte_vector data)
  */
 bool atom::operator==(atom const &ref)
 {
-  // Check to make sure both are same type and encoding
-  if ((data_type == ref.data_type) && (data_enc == ref.data_enc))
-  {
-    // Type specific checks
-    switch (data_type)
+    // Check to make sure both are same type and encoding
+    if ((data_type == ref.data_type) && (data_enc == ref.data_enc))
     {
-      case atom::UINT:
-      case atom::INT:
-        // Works the same for both
-        if (uint_val == ref.uint_val)
+        // Type specific checks
+        switch (data_type)
         {
-          return true;
+            case atom::UINT:
+            case atom::INT:
+                // Works the same for both
+                if (uint_val == ref.uint_val)
+                {
+                    return true;
+                }
+                break;
+
+            case atom::BYTES:
+                // Compare size and bytes
+                if (bytes.size() == ref.bytes.size())
+                {
+                    // Check each byte
+                    for (size_t i = 0; i < bytes.size(); i++)
+                    {
+                        if (bytes[i] != ref.bytes[i])
+                        {
+                            return false;
+                        }
+                    }
+
+                    // All bytes match
+                    return true;
+                }
+                break;
+
+            default:
+                // Misc type, nothing further to check
+                return true;
+                break;
         }
-        break;
- 
-      case atom::BYTES:
-        // Compare size and bytes
-        if (bytes.size() == ref.bytes.size())
-        {
-          // Check each byte
-          for (size_t i = 0; i < bytes.size(); i++)
-          {
-            if (bytes[i] != ref.bytes[i])
-            {
-              return false;
-            }
-          }
-   
-          // All bytes match 
-          return true;
-        }
-        break;
- 
-      default:
-        // Misc type, nothing further to check
-        return true;
-        break;
     }
-  }
-  
-  // Match fail
-  return false;
+
+    // Match fail
+    return false;
 }
 
 /**
@@ -323,7 +323,7 @@ bool atom::operator==(atom const &ref)
  */
 bool atom::operator!=(atom const &ref)
 {
-  return !((*this) == ref);
+    return !((*this) == ref);
 }
 
 /**
@@ -333,21 +333,21 @@ bool atom::operator!=(atom const &ref)
  */
 size_t atom::size() const
 {
-  // Empty and Tiny atoms are one byte
-  if ((data_type == atom::EMPTY) || (data_enc == atom::TINY))
-  {
-    return 1;
-  }
-  else if (data_type == atom::BYTES)
-  {
-    // Binary data
-    return get_header_size() + bytes.size();
-  }
-  else
-  {
-    // Signed / Unsigned Integer
-    return get_header_size() + (8 - int_skip);
-  }
+    // Empty and Tiny atoms are one byte
+    if ((data_type == atom::EMPTY) || (data_enc == atom::TINY))
+    {
+        return 1;
+    }
+    else if (data_type == atom::BYTES)
+    {
+        // Binary data
+        return get_header_size() + bytes.size();
+    }
+    else
+    {
+        // Signed / Unsigned Integer
+        return get_header_size() + (8 - int_skip);
+    }
 }
 
 /**
@@ -358,102 +358,102 @@ size_t atom::size() const
  */
 size_t atom::encode_bytes(byte *data) const
 {
-  size_t len, i = 0;
-  union
-  {
-    uint64_t flip;
-    byte     raw[8];
-  };
-  byte const *enc_data;
+    size_t len, i = 0;
+    union
+    {
+        uint64_t flip;
+        byte     raw[8];
+    };
+    byte const *enc_data;
 
-  // Figure out WHAT we're encoding
-  switch (data_type)
-  {
-    case atom::EMPTY:
-      // Trivial case - Empty atom, single byte, done
-      data[i++] = atom::EMPTY_TOK;
-      return i;
-      
-    case atom::UINT:
-    case atom::INT:
-      // Integers
-      len = 8 - int_skip;         // How many bytes getting stored
-      flip = htobe64(uint_val);   // Big endian order
-      enc_data = raw + int_skip;  // Pointer to starting byte
-      break;
-      
-    default: // atom::BYTES:
-      // Binary data
-      len = bytes.size();         // Length from container
-      enc_data = &(bytes[0]);     // Pointer to starting byte
-      break;
-  }
-  
-  // Write out the atom header
-  switch (data_enc)
-  {
-    case atom::TINY:
-      // Tiny atom - Header and Data in one byte
-      
-      // First byte
-      data[i] = atom::TINY_TOK;
-      if (data_type == atom::INT) data[i] |= atom::TINY_SIGN;
-      data[i++] |= 0x3f & uint_val;
-      
-      // Nothing further to do
-      return i;
-      
-    case atom::SHORT:
-      // Short atom - 1 byte header, <16 byte data
-      
-      // First byte
-      data[i] = atom::SHORT_TOK;
-      if (data_type == atom::BYTES) data[i] |= atom::SHORT_BIN;
-      if (data_type == atom::INT) data[i] |= atom::SHORT_SIGN;
-      data[i++] |= len;
-      
-      break;
-      
-    case atom::MEDIUM:
-      // Medium atom - 2 byte header, <2048 byte data
-      
-      // First byte
-      data[i] = atom::MEDIUM_TOK;
-      if (data_type == atom::BYTES) data[i] |= atom::MEDIUM_BIN;
-      if (data_type == atom::INT) data[i] |= atom::MEDIUM_SIGN;
-      data[i++] |= len >> 8;
-      
-      // Second byte
-      data[i++] = 0xff & len;
-      
-      break;
-      
-    default: // atom::LONG:
-      // Long atom - 4 byte header, <16777216 byte data
-      
-      // First byte
-      data[i] = atom::LONG_TOK;
-      if (data_type == atom::BYTES) data[i] |= atom::LONG_BIN;
-      if (data_type == atom::INT) data[i] |= atom::LONG_SIGN;
-      i++;
-      
-      // Second byte
-      data[i++] = 0xff & (len >> 16);
-      
-      // Third byte
-      data[i++] = 0xff & (len >> 8);
-      
-      // Fourth byte
-      data[i++] = 0xff & len;
-      
-      break;
-  }
-  
-  // Finally, copy in the atom's payload
-  memcpy(data + i, enc_data, len);
-  
-  // Final byte count
-  return i + len;
+    // Figure out WHAT we're encoding
+    switch (data_type)
+    {
+        case atom::EMPTY:
+            // Trivial case - Empty atom, single byte, done
+            data[i++] = atom::EMPTY_TOK;
+            return i;
+
+        case atom::UINT:
+        case atom::INT:
+            // Integers
+            len = 8 - int_skip;         // How many bytes getting stored
+            flip = htobe64(uint_val);   // Big endian order
+            enc_data = raw + int_skip;  // Pointer to starting byte
+            break;
+
+        default: // atom::BYTES:
+            // Binary data
+            len = bytes.size();         // Length from container
+            enc_data = &(bytes[0]);     // Pointer to starting byte
+            break;
+    }
+
+    // Write out the atom header
+    switch (data_enc)
+    {
+        case atom::TINY:
+            // Tiny atom - Header and Data in one byte
+
+            // First byte
+            data[i] = atom::TINY_TOK;
+            if (data_type == atom::INT) data[i] |= atom::TINY_SIGN;
+            data[i++] |= 0x3f & uint_val;
+
+            // Nothing further to do
+            return i;
+
+        case atom::SHORT:
+            // Short atom - 1 byte header, <16 byte data
+
+            // First byte
+            data[i] = atom::SHORT_TOK;
+            if (data_type == atom::BYTES) data[i] |= atom::SHORT_BIN;
+            if (data_type == atom::INT) data[i] |= atom::SHORT_SIGN;
+            data[i++] |= len;
+
+            break;
+
+        case atom::MEDIUM:
+            // Medium atom - 2 byte header, <2048 byte data
+
+            // First byte
+            data[i] = atom::MEDIUM_TOK;
+            if (data_type == atom::BYTES) data[i] |= atom::MEDIUM_BIN;
+            if (data_type == atom::INT) data[i] |= atom::MEDIUM_SIGN;
+            data[i++] |= len >> 8;
+
+            // Second byte
+            data[i++] = 0xff & len;
+
+            break;
+
+        default: // atom::LONG:
+            // Long atom - 4 byte header, <16777216 byte data
+
+            // First byte
+            data[i] = atom::LONG_TOK;
+            if (data_type == atom::BYTES) data[i] |= atom::LONG_BIN;
+            if (data_type == atom::INT) data[i] |= atom::LONG_SIGN;
+            i++;
+
+            // Second byte
+            data[i++] = 0xff & (len >> 16);
+
+            // Third byte
+            data[i++] = 0xff & (len >> 8);
+
+            // Fourth byte
+            data[i++] = 0xff & len;
+
+            break;
+    }
+
+    // Finally, copy in the atom's payload
+    memcpy(data + i, enc_data, len);
+
+    // Final byte count
+    return i + len;
 }
 
 /**
@@ -465,108 +465,108 @@ size_t atom::encode_bytes(byte *data) const
  */
 size_t atom::decode_bytes(byte const *data, size_t len)
 {
-  size_t head_bytes = 0, count = 0;
-  
-  // Minimum 1 byte
-  decode_check_size(len, 1);
-  
-  // What is it?
-  if (data[0] == atom::EMPTY_TOK)
-  {
-    // Empty Atom (no data)
-    data_type = atom::EMPTY;
-    data_enc = atom::NONE;
-    
-    // No further processing
-    return 1;
-  }
-  if (data[0] < atom::SHORT_TOK)
-  {
-    // Tiny Atom (Data stored in header)
-    data_enc = atom::TINY;
-    
-    // Determine type
-    decode_set_type(0x03 & (data[0] >> 6));
-    
-    // Must be integer (Note: union type)
-    int_val = 0x3f & data[0];
-    if ((data_type == atom::INT) && (data[0] & 0x20))
+    size_t head_bytes = 0, count = 0;
+
+    // Minimum 1 byte
+    decode_check_size(len, 1);
+
+    // What is it?
+    if (data[0] == atom::EMPTY_TOK)
     {
-      // Negative signed integer - Sign extend
-      int_val |= ~(0x3fULL);
+        // Empty Atom (no data)
+        data_type = atom::EMPTY;
+        data_enc = atom::NONE;
+
+        // No further processing
+        return 1;
     }
-    
-    // No further processing
-    return 1;
-  }
-  else if (data[0] < atom::MEDIUM_TOK)
-  {
-    // Short Atom (1 byte header)
-    data_enc = atom::SHORT;
-    head_bytes = 1;
-    
-    // Determine type
-    decode_set_type(0x03 & (data[0] >> 4));
-    
-    // Determine size
-    count = data[0] & 0x0f;
-  }
-  else if (data[0] < atom::LONG_TOK)
-  {
-    // Medium Atom (2 byte header)
-    data_enc = atom::MEDIUM;
-    head_bytes = 2;
-    decode_check_size(len, head_bytes);
-    
-    // Determine type
-    decode_set_type(0x03 & (data[0] >> 3));
-    
-    // Determine size
-    count = 0x07 & data[0];
-    count = (count << 8) + data[1];
-  }
-  else if (data[0] < 0xe4)
-  {
-    // Long Atom (4 byte header)
-    data_enc = atom::LONG;
-    head_bytes = 4;
-    decode_check_size(len, head_bytes);
-    
-    // Determine type
-    decode_set_type(0x03 & data[0]);
-    
-    // Determine size
-    count = data[1];
-    count = (count << 8) + data[2];
-    count = (count << 8) + data[3];
-  }
-  else // Reserved, or non-atom token (0xe4 - 0xfe)
-  {
-    printf("***** Bad Char - %x *****\n", data[0]);
-    throw topaz_exception("Cannot parse atom (invalid token)");
-  }
-  
-  // Ensure expected remaining data is present
-  decode_check_size(len, head_bytes + count);
-  
-  // Load atom payload
-  if ((data_type == atom::UINT) || (data_type == atom::INT))
-  {
-    // Parse integers
-    decode_int(data + head_bytes, count);
-  }
-  else if (data_type == atom::BYTES)
-  {
-    // Binary data
-    bytes.resize(count);
-    for (size_t i = 0; i < count; i++)
+    if (data[0] < atom::SHORT_TOK)
     {
-      bytes[i] = data[head_bytes + i];
+        // Tiny Atom (Data stored in header)
+        data_enc = atom::TINY;
+
+        // Determine type
+        decode_set_type(0x03 & (data[0] >> 6));
+
+        // Must be integer (Note: union type)
+        int_val = 0x3f & data[0];
+        if ((data_type == atom::INT) && (data[0] & 0x20))
+        {
+            // Negative signed integer - Sign extend
+            int_val |= ~(0x3fULL);
+        }
+
+        // No further processing
+        return 1;
     }
-  }
-  
-  // Final size
-  return head_bytes + count;
+    else if (data[0] < atom::MEDIUM_TOK)
+    {
+        // Short Atom (1 byte header)
+        data_enc = atom::SHORT;
+        head_bytes = 1;
+
+        // Determine type
+        decode_set_type(0x03 & (data[0] >> 4));
+
+        // Determine size
+        count = data[0] & 0x0f;
+    }
+    else if (data[0] < atom::LONG_TOK)
+    {
+        // Medium Atom (2 byte header)
+        data_enc = atom::MEDIUM;
+        head_bytes = 2;
+        decode_check_size(len, head_bytes);
+
+        // Determine type
+        decode_set_type(0x03 & (data[0] >> 3));
+
+        // Determine size
+        count = 0x07 & data[0];
+        count = (count << 8) + data[1];
+    }
+    else if (data[0] < 0xe4)
+    {
+        // Long Atom (4 byte header)
+        data_enc = atom::LONG;
+        head_bytes = 4;
+        decode_check_size(len, head_bytes);
+
+        // Determine type
+        decode_set_type(0x03 & data[0]);
+
+        // Determine size
+        count = data[1];
+        count = (count << 8) + data[2];
+        count = (count << 8) + data[3];
+    }
+    else // Reserved, or non-atom token (0xe4 - 0xfe)
+    {
+        printf("***** Bad Char - %x *****\n", data[0]);
+        throw topaz_exception("Cannot parse atom (invalid token)");
+    }
+
+    // Ensure expected remaining data is present
+    decode_check_size(len, head_bytes + count);
+
+    // Load atom payload
+    if ((data_type == atom::UINT) || (data_type == atom::INT))
+    {
+        // Parse integers
+        decode_int(data + head_bytes, count);
+    }
+    else if (data_type == atom::BYTES)
+    {
+        // Binary data
+        bytes.resize(count);
+        for (size_t i = 0; i < count; i++)
+        {
+            bytes[i] = data[head_bytes + i];
+        }
+    }
+
+    // Final size
+    return head_bytes + count;
 }
 
 /**
@@ -576,7 +576,7 @@ size_t atom::decode_bytes(byte const *data, size_t len)
  */
 atom::type_t atom::get_type() const
 {
-  return data_type;
+    return data_type;
 }
 
 /**
@@ -586,7 +586,7 @@ atom::type_t atom::get_type() const
  */
 atom::enc_t atom::get_enc() const
 {
-  return data_enc;
+    return data_enc;
 }
 
 /**
@@ -596,25 +596,25 @@ atom::enc_t atom::get_enc() const
  */
 size_t atom::get_header_size() const
 {
-  switch (data_enc)
-  {
-    case atom::NONE:
-    case atom::TINY:
-      return 0;
-      break;
+    switch (data_enc)
+    {
+        case atom::NONE:
+        case atom::TINY:
+            return 0;
+            break;
 
-    case atom::SHORT:
-      return 1;
-      break;
-      
-    case atom::MEDIUM:
-      return 2;
-      break;
-      
-    default: // atom::LONG:
-      return 4;
-      break;
-  }
+        case atom::SHORT:
+            return 1;
+            break;
+
+        case atom::MEDIUM:
+            return 2;
+            break;
+
+        default: // atom::LONG:
+            return 4;
+            break;
+    }
 }
 
 /**
@@ -622,25 +622,25 @@ size_t atom::get_header_size() const
  */
 uint64_t atom::get_uid() const
 {
-  union
-  {
-    uint64_t flip;
-    char     raw[8];
-  };
-  
-  // Unique ID's (UIDs) are quirky. They are 64 bit integers, but get
-  // encoded like a byte sequence, of a single length 8 (short).
-  // This is simultaneously simpler, and infuriating ...
-  if ((data_type != atom::BYTES) || (data_enc != atom::SHORT) || (bytes.size() != 8))
-  {
-    throw topaz_exception("Invalid UID Atom");
-  }
-  
-  // Extract the bytes
-  memcpy(raw, &(bytes[0]), 8);
-  
-  // Flip to native endianess
-  return be64toh(flip);
+    union
+    {
+        uint64_t flip;
+        char     raw[8];
+    };
+
+    // Unique ID's (UIDs) are quirky. They are 64 bit integers, but get
+    // encoded like a byte sequence, of a single length 8 (short).
+    // This is simultaneously simpler, and infuriating ...
+    if ((data_type != atom::BYTES) || (data_enc != atom::SHORT) || (bytes.size() != 8))
+    {
+        throw topaz_exception("Invalid UID Atom");
+    }
+
+    // Extract the bytes
+    memcpy(raw, &(bytes[0]), 8);
+
+    // Flip to native endianess
+    return be64toh(flip);
 }
 
 /**
@@ -648,23 +648,23 @@ uint64_t atom::get_uid() const
  */
 uint32_t atom::get_half_uid() const
 {
-  union
-  {
-    uint32_t flip;
-    char     raw[4];
-  };
-  
-  // Unique ID's (Half) are similar to UID's, but stored as 4 byte binary
-  if ((data_type != atom::BYTES) || (data_enc != atom::SHORT) || (bytes.size() != 4))
-  {
-    throw topaz_exception("Invalid UID Atom");
-  }
-  
-  // Extract the bytes
-  memcpy(raw, &(bytes[0]), 4);
-  
-  // Flip to native endianess
-  return be32toh(flip);
+    union
+    {
+        uint32_t flip;
+        char     raw[4];
+    };
+
+    // Unique ID's (Half) are similar to UID's, but stored as 4 byte binary
+    if ((data_type != atom::BYTES) || (data_enc != atom::SHORT) || (bytes.size() != 4))
+    {
+        throw topaz_exception("Invalid UID Atom");
+    }
+
+    // Extract the bytes
+    memcpy(raw, &(bytes[0]), 4);
+
+    // Flip to native endianess
+    return be32toh(flip);
 }
 
 /**
@@ -672,14 +672,14 @@ uint32_t atom::get_half_uid() const
  */
 uint64_t atom::get_uint() const
 {
-  // Sanity check
-  if (data_type != atom::UINT)
-  {
-    throw topaz_exception("Atom is not unsigned integer");
-  }
-  
-  // Pass it back
-  return uint_val;
+    // Sanity check
+    if (data_type != atom::UINT)
+    {
+        throw topaz_exception("Atom is not unsigned integer");
+    }
+
+    // Pass it back
+    return uint_val;
 }
 
 /**
@@ -687,14 +687,14 @@ uint64_t atom::get_uint() const
  */
 int64_t atom::get_int() const
 {
-  // Sanity check
-  if (data_type != atom::INT)
-  {
-    throw topaz_exception("Atom is not signed integer");
-  }
-  
-  // Pass it back
-  return int_val;
+    // Sanity check
+    if (data_type != atom::INT)
+    {
+        throw topaz_exception("Atom is not signed integer");
+    }
+
+    // Pass it back
+    return int_val;
 }
 
 /**
@@ -702,14 +702,14 @@ int64_t atom::get_int() const
  */
 byte_vector const &atom::get_bytes() const
 {
-  // Sanity check
-  if (data_type != atom::BYTES)
-  {
-    throw topaz_exception("Atom is not binary data");
-  }
-  
-  // Return reference
-  return bytes;
+    // Sanity check
+    if (data_type != atom::BYTES)
+    {
+        throw topaz_exception("Atom is not binary data");
+    }
+
+    // Return reference
+    return bytes;
 }
 
 /**
@@ -717,13 +717,13 @@ byte_vector const &atom::get_bytes() const
  */
 std::string atom::get_string() const
 {
-  // Sanity check
-  if (data_type != atom::BYTES)
-  {
-    throw topaz_exception("Atom is not binary data");
-  }
-  
-  return std::string(bytes.begin(), bytes.end());
+    // Sanity check
+    if (data_type != atom::BYTES)
+    {
+        throw topaz_exception("Atom is not binary data");
+    }
+
+    return std::string(bytes.begin(), bytes.end());
 }
 
 /**
@@ -731,91 +731,91 @@ std::string atom::get_string() const
  */
 void atom::print() const
 {
-  size_t i;
-  bool is_print;
-  
-  // Determine what it is ...
-  switch (data_type)
-  {
-    case atom::EMPTY:
-      // Nothing
-      printf("(EMPTY)");
-      break;
-      
-    case atom::UINT:
-      // Unsigned integer
-      printf("%" PRIu64 "(u)", uint_val);
-      break;
-      
-    case atom::INT:
-      // Signed integer
-      printf("%" PRId64 "(s)", int_val);
-      break;
-      
-    case atom::BYTES:
-      // Binary / Bytes - Try to guess what's in it ...
-      
-      // First, check for printable chars
-      is_print = true;
-      for (i = 0; i < bytes.size(); i++)
-      {
-        if (!isprint(bytes[i]))
-        {
-          is_print = false;
-        }
-      }
-      
-      // Nonzero length of printable chars are probably strings
-      if ((bytes.size() > 0) && (is_print))
-      {
-        // Assuming string ...
-        printf("\'");
-        for (i = 0; i < bytes.size(); i++)
-        {
-          printf("%c", bytes[i]);
-        }
-        printf("\'");
-      }
-      // UIDs are two (usually small) numbers, stored together as a uint64.
-      // If it looks like two signed or unsigned uint32's, assume UID.
-      else if ((bytes.size() == 8) &&
-               ((bytes[0] == 0x00) || (bytes[0] == 0xff)) &&
-               ((bytes[4] == 0x00) || (bytes[4] == 0xff)))
-      {
-        // Assuming UID ...
-        uint64_t uid = get_uid();
- 
-        printf("%x", (unsigned int)_UID_HIGH(uid));
-        printf(":");
-        printf("%x", (unsigned int)_UID_LOW(uid));
-      }
-      // Half UIDs are UIDs, but half as big, so same thing applies. If it's
-      // four bytes, assume a half UID type
-      else if ((bytes.size() == 4) &&
-               ((bytes[0] == 0x00) || (bytes[0] == 0xff)))
-      {
-        // Assuming Half UID ...
-        uint32_t half = get_half_uid();
- 
-        printf("%x:", half);
-      }
-      // Plain ol' byte sequence ...
-      else
-      {
-        printf("[");
-        for (i = 0; (i < 16) && (i < bytes.size()); i++)
-        {
-          printf("%02X ", bytes[i]);
-        }
-        if (i == 16)
-        {
-          printf("... ");
-        }
-        printf("]");
-      }
-      
-      break;
-  }
+    size_t i;
+    bool is_print;
+
+    // Determine what it is ...
+    switch (data_type)
+    {
+        case atom::EMPTY:
+            // Nothing
+            printf("(EMPTY)");
+            break;
+
+        case atom::UINT:
+            // Unsigned integer
+            printf("%" PRIu64 "(u)", uint_val);
+            break;
+
+        case atom::INT:
+            // Signed integer
+            printf("%" PRId64 "(s)", int_val);
+            break;
+
+        case atom::BYTES:
+            // Binary / Bytes - Try to guess what's in it ...
+
+            // First, check for printable chars
+            is_print = true;
+            for (i = 0; i < bytes.size(); i++)
+            {
+                if (!isprint(bytes[i]))
+                {
+                    is_print = false;
+                }
+            }
+
+            // Nonzero length of printable chars are probably strings
+            if ((bytes.size() > 0) && (is_print))
+            {
+                // Assuming string ...
+                printf("\'");
+                for (i = 0; i < bytes.size(); i++)
+                {
+                    printf("%c", bytes[i]);
+                }
+                printf("\'");
+            }
+            // UIDs are two (usually small) numbers, stored together as a uint64.
+            // If it looks like two signed or unsigned uint32's, assume UID.
+            else if ((bytes.size() == 8) &&
+                     ((bytes[0] == 0x00) || (bytes[0] == 0xff)) &&
+                     ((bytes[4] == 0x00) || (bytes[4] == 0xff)))
+            {
+                // Assuming UID ...
+                uint64_t uid = get_uid();
+
+                printf("%x", (unsigned int)_UID_HIGH(uid));
+                printf(":");
+                printf("%x", (unsigned int)_UID_LOW(uid));
+            }
+            // Half UIDs are UIDs, but half as big, so same thing applies. If it's
+            // four bytes, assume a half UID type
+            else if ((bytes.size() == 4) &&
+                     ((bytes[0] == 0x00) || (bytes[0] == 0xff)))
+            {
+                // Assuming Half UID ...
+                uint32_t half = get_half_uid();
+
+                printf("%x:", half);
+            }
+            // Plain ol' byte sequence ...
+            else
+            {
+                printf("[");
+                for (i = 0; (i < 16) && (i < bytes.size()); i++)
+                {
+                    printf("%02X ", bytes[i]);
+                }
+                if (i == 16)
+                {
+                    printf("... ");
+                }
+                printf("]");
+            }
+
+            break;
+    }
 }
 
 /**
@@ -825,27 +825,27 @@ void atom::print() const
  */
 void atom::pick_encoding(size_t byte_count)
 {
-  // What's it going to fit in?
-  if (byte_count < 16)
-  {
-    // Small atom (1 byte header)
-    data_enc = atom::SHORT;
-  }
-  else if (byte_count < 2048)
-  {
-    // Medium atom (2 byte header)
-    data_enc = atom::MEDIUM;
-  }
-  else if (byte_count < 16777216)
-  {
-    // Long atom (4 byte header)
-    data_enc = atom::LONG;
-  }
-  else
-  {
-    // Really?
-    throw topaz_exception("Atom too large to encode");
-  }
+    // What's it going to fit in?
+    if (byte_count < 16)
+    {
+        // Small atom (1 byte header)
+        data_enc = atom::SHORT;
+    }
+    else if (byte_count < 2048)
+    {
+        // Medium atom (2 byte header)
+        data_enc = atom::MEDIUM;
+    }
+    else if (byte_count < 16777216)
+    {
+        // Long atom (4 byte header)
+        data_enc = atom::LONG;
+    }
+    else
+    {
+        // Really?
+        throw topaz_exception("Atom too large to encode");
+    }
 }
 
 /**
@@ -856,10 +856,10 @@ void atom::pick_encoding(size_t byte_count)
  */
 void atom::decode_check_size(size_t len, size_t min) const
 {
-  if (len < min)
-  {
-    throw topaz_exception("Atom encoding too short");
-  }
+    if (len < min)
+    {
+        throw topaz_exception("Atom encoding too short");
+    }
 }
 
 /**
@@ -869,24 +869,24 @@ void atom::decode_check_size(size_t len, size_t min) const
  */
 void atom::decode_set_type(uint8_t bits)
 {
-  switch(bits)
-  {
-    case 0:
-      data_type = atom::UINT;
-      break;
-      
-    case 1:
-      data_type = atom::INT;
-      break;
-      
-    case 2:
-      data_type = atom::BYTES;
-      break;
-      
-    default:
-      throw topaz_exception("Invalid / Unhandled atom type");
-      break;
-  }
+    switch(bits)
+    {
+        case 0:
+            data_type = atom::UINT;
+            break;
+
+        case 1:
+            data_type = atom::INT;
+            break;
+
+        case 2:
+            data_type = atom::BYTES;
+            break;
+
+        default:
+            throw topaz_exception("Invalid / Unhandled atom type");
+            break;
+    }
 }
 
 /**
@@ -894,37 +894,37 @@ void atom::decode_set_type(uint8_t bits)
  */
 void atom::decode_int(byte const *data, size_t len)
 {
-  union
-  {
-    uint64_t flip;
-    byte     raw[8];
-  };
-  
-  // Sanity check
-  if ((len == 0) || (len > 8))
-  {
-    throw topaz_exception("Invalid integer Atom length");
-  }
-  
-  // How many bytes don't get set in raw ...
-  int_skip = 8 - len;
-  
-  // Sign extend negative values
-  if ((data_type == atom::INT) && (data[0] & 0x80))
-  {
-    flip = -1; // Unsigned, so 0xfffffffff ....
-  }
-  else
-  {
-    flip = 0;
-  }
-  
-  // Copy data over
-  for (size_t i = 0; i < len; i++)
-  {
-    raw[int_skip + i] = data[i];
-  }
-  
-  // Byteflip (Note: union type)
-  uint_val = be64toh(flip);
+    union
+    {
+        uint64_t flip;
+        byte     raw[8];
+    };
+
+    // Sanity check
+    if ((len == 0) || (len > 8))
+    {
+        throw topaz_exception("Invalid integer Atom length");
+    }
+
+    // How many bytes don't get set in raw ...
+    int_skip = 8 - len;
+
+    // Sign extend negative values
+    if ((data_type == atom::INT) && (data[0] & 0x80))
+    {
+        flip = -1; // Unsigned, so 0xfffffffff ....
+    }
+    else
+    {
+        flip = 0;
+    }
+
+    // Copy data over
+    for (size_t i = 0; i < len; i++)
+    {
+        raw[int_skip + i] = data[i];
+    }
+
+    // Byteflip (Note: union type)
+    uint_val = be64toh(flip);
 }
