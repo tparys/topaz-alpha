@@ -247,6 +247,39 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
 }
 
 /**
+ * \brief End a session with drive TPM
+ */
+void drive::logout()
+{
+    if (tper_session_id)
+    {
+        // Debug
+        TOPAZ_DEBUG(1) printf("Stopping TPM Session %" PRIx64 ":%" PRIx64 "\n",
+                              tper_session_id, host_session_id);
+
+        // Off it goes
+        try
+        {
+            // End of session is a single byte
+            byte_vector bytes;
+            bytes.push_back(datum::TOK_END_SESSION);
+
+            // Bye!
+            send(bytes);
+            recv(bytes);
+        }
+        catch (topaz_exception &e)
+        {
+            // Logout might time out, such as on TPer revert
+            // no big deal, and is expected behavior
+        }
+
+        // Clear out state
+        forget_session();
+    }
+}
+
+/**
  * \brief Query if authenticated session
  *
  * @return If authenticated session is active, false otherwise
@@ -1119,39 +1152,6 @@ void drive::probe_level1()
 
     // Update managed buffer
     raw_buffer.resize(max_xfer);
-}
-
-/**
- * \brief End a session with drive TPM
- */
-void drive::logout()
-{
-    if (tper_session_id)
-    {
-        // Debug
-        TOPAZ_DEBUG(1) printf("Stopping TPM Session %" PRIx64 ":%" PRIx64 "\n",
-                              tper_session_id, host_session_id);
-
-        // Off it goes
-        try
-        {
-            // End of session is a single byte
-            byte_vector bytes;
-            bytes.push_back(datum::TOK_END_SESSION);
-
-            // Bye!
-            send(bytes);
-            recv(bytes);
-        }
-        catch (topaz_exception &e)
-        {
-            // Logout might time out, such as on TPer revert
-            // no big deal, and is expected behavior
-        }
-
-        // Clear out state
-        forget_session();
-    }
 }
 
 /**

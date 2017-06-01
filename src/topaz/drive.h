@@ -109,6 +109,11 @@ namespace topaz
         void login(uint64_t sp_uid, uint64_t auth_uid, std::string pin);
 
         /**
+         * \brief End TPM session
+         */
+        void logout();
+
+        /**
          * \brief Query if authenticated session
          *
          * @return If authenticated session is active, false otherwise
@@ -273,11 +278,6 @@ namespace topaz
          * \brief Level 1 Probe - Host Properties
          */
         void probe_level1();
-
-        /**
-         * \brief End TPM session
-         */
-        void logout();
 
         /**
          * \brief Read Level0 Data for Old SSC Feature Data
