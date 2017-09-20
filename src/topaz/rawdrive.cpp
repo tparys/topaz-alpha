@@ -53,6 +53,7 @@ using namespace topaz;
  * @param path OS path to specified drive (eg - '/dev/sdX')
  */
 rawdrive::rawdrive(char const *path)
+    : if_dma(false)
 {
     // First, verify libata isn't misconfigured ...
     check_libata();
@@ -91,6 +92,16 @@ rawdrive::~rawdrive()
 }
 
 /**
+ * Set DMA for IF-SEND / IF-RECV
+ *
+ * @param dma Flag indicating DMA
+ */
+void rawdrive::set_if_dma(bool dma)
+{
+    if_dma = dma;
+}
+
+/**
  * if_send (TCG Opal IF-SEND)
  *
  * Low level interface to send data to Drive TPM
@@ -103,31 +114,34 @@ rawdrive::~rawdrive()
 void rawdrive::if_send(uint8_t proto, uint16_t comid,
                        void *data, uint8_t bcount)
 {
+    // Trusted Send DMA or PIO
+    uint8_t ata_cmd = (if_dma ? 0x5f : 0x5e);
+
     if (USE_ATA12)
     {
-        // ATA12 Command - Trusted Send (0x5e)
+        // ATA12 Command
         ata12_cmd_t cmd  = {0};
         cmd.feature      = proto;
         cmd.count        = bcount;
         cmd.lba_mid      = comid & 0xff;
         cmd.lba_high     = comid >> 8;
-        cmd.command      = 0x5f; // Trusted Send DMA
+        cmd.command      = ata_cmd;
 
         // Off it goes
-        ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5, true);
+        ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5, if_dma);
     }
     else
     {
-        // ATA16 Command - Trusted Send (0x5e)
+        // ATA16 Command
         ata16_cmd_t cmd  = {0};
         cmd.feature.low  = proto;
         cmd.count.low    = bcount;
         cmd.lba_mid.low  = comid & 0xff;
         cmd.lba_high.low = comid >> 8;
-        cmd.command      = 0x5f; // Trusted Send DMA
+        cmd.command      = ata_cmd;
 
         // Off it goes
-        ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5, true);
+        ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5, if_dma);
     }
 }
 
@@ -144,31 +158,34 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
 void rawdrive::if_recv(uint8_t proto, uint16_t comid,
                        void *data, uint8_t bcount)
 {
+    // Trusted Receive DMA or PIO
+    uint8_t ata_cmd = (if_dma ? 0x5d : 0x5c);
+
     if (USE_ATA12)
     {
-        // ATA12 Command - Trusted Receive (0x5c)
+        // ATA12 Command
         ata12_cmd_t cmd  = {0};
         cmd.feature      = proto;
         cmd.count        = bcount;
         cmd.lba_mid      = comid & 0xff;
         cmd.lba_high     = comid >> 8;
-        cmd.command      = 0x5d; // Trusted Receive DMA
+        cmd.command      = ata_cmd;
 
         // Off it goes
-        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, true);
+        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, if_dma);
     }
     else
     {
-        // ATA16 Command - Trusted Receive (0x5c)
+        // ATA16 Command
         ata16_cmd_t cmd  = {0};
         cmd.feature.low  = proto;
         cmd.count.low    = bcount;
         cmd.lba_mid.low  = comid & 0xff;
         cmd.lba_high.low = comid >> 8;
-        cmd.command      = 0x5d; // Trusted Receive DMA
+        cmd.command      = ata_cmd;
 
         // Off it goes
-        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, true);
+        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, if_dma);
     }
 }
 

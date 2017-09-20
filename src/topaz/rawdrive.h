@@ -86,6 +86,13 @@ namespace topaz
          */
         ~rawdrive();
 
+	/**
+	 * Set DMA for IF-SEND / IF-RECV
+	 *
+	 * @param dma Flag indicating DMA
+	 */
+        void set_if_dma(bool dma);
+
         /**
          * if_send (TCG Opal IF-SEND)
          *
@@ -208,6 +215,9 @@ namespace topaz
         std::string drive_model;
         std::string drive_serial;
         std::string drive_firmware;
+
+	/* using DMA for IF SEND/RECV calls? */
+	bool if_dma;
 
     };
 

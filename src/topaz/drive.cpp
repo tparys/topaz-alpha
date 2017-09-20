@@ -841,16 +841,41 @@ void drive::recv(byte_vector &inbuf)
  */
 void drive::probe_tpm()
 {
-    tpm_protos_t protos;
+    tpm_protos_t protos, protos_dma;
     int i, count;
     bool has_tcg = false;
 
     // TPM protocols listed by IF-RECV
-    TOPAZ_DEBUG(1) printf("Probe TPM Security Protocols\n");
+    TOPAZ_DEBUG(1) printf("Checking DMA support\n");
+
+    TOPAZ_DEBUG(2) printf("  Trying DMA\n");
+    raw.set_if_dma(true);
+    raw.if_recv(0, 0, &protos_dma, 1);
+
+    TOPAZ_DEBUG(2) printf("  Trying PIO\n");
+    raw.set_if_dma(false);
     raw.if_recv(0, 0, &protos, 1);
 
+    // See if DMA seems stable
+    if (memcmp(&protos, &protos_dma, sizeof(protos)) == 0)
+    {
+	TOPAZ_DEBUG(2) printf("  Using DMA interfacing\n");
+	raw.set_if_dma(true);
+    }
+    else
+    {
+	TOPAZ_DEBUG(2) printf("  Reverting to PIO\n");
+	raw.set_if_dma(false);
+    }
+
     // Browse results
+    TOPAZ_DEBUG(1) printf("Checking TPM Security Protocols\n");
     count = be16toh(protos.list_len);
+    if (count > 6)
+    {
+	// Most likely a bad packet
+	throw topaz_exception("Corrupt security protocol packet");
+    }
     for (i = 0; i < count; i++)
     {
         int proto = protos.list[i];
