@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 {
     string cur_pin, new_pin;
     bool cur_pin_valid = false, new_pin_valid = false;
-    char c;
+    int c;
 
     // Process command line switches */
     opterr = 0;

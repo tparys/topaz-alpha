@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     bool pin_valid = false;
     uint64_t user_uid = ADMIN_BASE + 1;
     uint64_t lba_count = 1;
-    char c;
+    int c;
 
     // Process command line switches */
     opterr = 0;

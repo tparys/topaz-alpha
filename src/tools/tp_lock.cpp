@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     string cur_pin, new_pin;
     bool cur_pin_valid = false, new_pin_valid = false;
     uint64_t user_uid = ADMIN_BASE + 1, range_id, start, size;
-    char c;
+    int c;
 
     // Process command line switches */
     opterr = 0;
