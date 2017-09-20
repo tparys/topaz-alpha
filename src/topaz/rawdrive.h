@@ -180,9 +180,10 @@ namespace topaz
          * @param data   Data buffer for ATA operation, NULL on SGIO_DATA_NONE
          * @param bcount Length of data buffer in blocks (512 bytes)
          * @param wait   Command timeout (seconds)
+	 * @param dma    Indicate DMA operation
          */
         void ata_exec_12(ata12_cmd_t &cmd, int type,
-                         void *data, uint8_t bcount, int wait);
+                         void *data, uint8_t bcount, int wait, bool dma);
 
         /**
          * ata_exec_16
@@ -195,9 +196,10 @@ namespace topaz
          * @param data   Data buffer for ATA operation, NULL on SGIO_DATA_NONE
          * @param bcount Length of data buffer in blocks (512 bytes)
          * @param wait   Command timeout (seconds)
+	 * @param dma    Indicate DMA operation
          */
         void ata_exec_16(ata16_cmd_t &cmd, int type,
-                         void *data, uint8_t bcount, int wait);
+                         void *data, uint8_t bcount, int wait, bool dma);
 
         /* internal data */
         int fd;

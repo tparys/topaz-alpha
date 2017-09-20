@@ -45,7 +45,7 @@ using namespace std;
 using namespace topaz;
 
 // Set to nonzero to use ATA12 commands
-#define USE_ATA12 1
+#define USE_ATA12 0
 
 /**
  * \brief Topaz Raw Hard Drive Constructor
@@ -111,10 +111,10 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
         cmd.count        = bcount;
         cmd.lba_mid      = comid & 0xff;
         cmd.lba_high     = comid >> 8;
-        cmd.command      = 0x5e;
+        cmd.command      = 0x5f; // Trusted Send DMA
 
         // Off it goes
-        ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
+        ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5, true);
     }
     else
     {
@@ -124,10 +124,10 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
         cmd.count.low    = bcount;
         cmd.lba_mid.low  = comid & 0xff;
         cmd.lba_high.low = comid >> 8;
-        cmd.command      = 0x5e;
+        cmd.command      = 0x5f; // Trusted Send DMA
 
         // Off it goes
-        ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5);
+        ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5, true);
     }
 }
 
@@ -152,10 +152,10 @@ void rawdrive::if_recv(uint8_t proto, uint16_t comid,
         cmd.count        = bcount;
         cmd.lba_mid      = comid & 0xff;
         cmd.lba_high     = comid >> 8;
-        cmd.command      = 0x5c;
+        cmd.command      = 0x5d; // Trusted Receive DMA
 
         // Off it goes
-        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
+        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, true);
     }
     else
     {
@@ -165,10 +165,10 @@ void rawdrive::if_recv(uint8_t proto, uint16_t comid,
         cmd.count.low    = bcount;
         cmd.lba_mid.low  = comid & 0xff;
         cmd.lba_high.low = comid >> 8;
-        cmd.command      = 0x5c;         // Trusted receive
+        cmd.command      = 0x5d; // Trusted Receive DMA
 
         // Off it goes
-        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5);
+        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, true);
     }
 }
 
@@ -273,23 +273,25 @@ void rawdrive::get_identify(uint16_t *data)
     {
         // ATA12 Command - Identify Device (0xec)
         ata12_cmd_t cmd = {0};
-	cmd.count       = 0x01;
+        cmd.count       = 0x01;
+        cmd.device      = 0x40;
         cmd.command     = 0xec;
 
         // Off it goes
         TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
-        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, 1, 1);
+        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, 1, 1, false);
     }
     else
     {
         // ATA16 Command - Identify Device (0xec)
         ata16_cmd_t cmd = {0};
-	cmd.count.low   = 0x01;
+ 	cmd.count.low   = 0x01;
+	cmd.device      = 0x40;
         cmd.command     = 0xec;
 
         // Off it goes
         TOPAZ_DEBUG(1) printf("Probe ATA Identify\n");
-        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, 1, 1);
+        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, 1, 1, false);
     }
 
     // Pull drive ID information
@@ -363,9 +365,10 @@ string rawdrive::get_id_string(uint16_t *data, size_t max)
  * @param data   Data buffer for ATA operation, NULL on SGIO_DATA_NONE
  * @param bcount Length of data buffer in blocks (512 bytes)
  * @param wait   Command timeout (seconds)
+ * @param dma    Indicate DMA operation
  */
 void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
-                           void *data, uint8_t bcount, int wait)
+                           void *data, uint8_t bcount, int wait, bool dma)
 {
     struct sg_io_hdr sg_io;  // ioctl data structure
     unsigned char cdb[12];   // Command descriptor block
@@ -407,29 +410,32 @@ void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
     // Byte 0: ATA12 pass through
     cdb[0] = 0xA1;
 
-    // Byte 1: ATA protocol (read/write/none)
-    // Byte 2: Check condition, blocks, size, I/O direction
-    // Final direction specific bits
-    switch (type)
+    // Byte 1: ATA protocol
+    if (dma)
     {
-        case SG_DXFER_NONE:
-            cdb[1] = 3 << 1; // ATA no data
-            cdb[2] = 0x20;   // Check condition only
-            break;
+	cdb[1] = 6 << 1; // DMA
+    }
+    else if (type == SG_DXFER_FROM_DEV)
+    {
+	cdb[1] = 4 << 1; // ATA PIO-in
+    }
+    else if (type == SG_DXFER_TO_DEV)
+    {
+	cdb[1] = 5 << 1; // ATA PIO-out
+    }
+    else
+    {
+	throw topaz_exception("Invalid ATA Direction");
+    }
 
-        case SG_DXFER_FROM_DEV:
-            cdb[1] = 4 << 1; // ATA PIO-in
-            cdb[2] = 0x2e;   // Check, blocks, size in sector count, read
-            break;
-
-        case SG_DXFER_TO_DEV:
-            cdb[1] = 5 << 1; // ATA PIO-out
-            cdb[2] = 0x26;   // Check, blocks, size in sector count
-            break;
-
-        default: // Invalid
-            throw topaz_exception("Invalid ATA Direction");
-            break;
+    // Byte 2: Blocks, size, I/O direction
+    if (type == SG_DXFER_FROM_DEV)
+    {
+	cdb[2] = 0x0e;   // Blocks, size in sector count, read
+    }
+    else
+    {
+	cdb[2] = 0x06;   // Blocks, size in sector count
     }
 
     // Rest of ATA12 command get copied here (7 bytes)
@@ -465,6 +471,18 @@ void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
         throw topaz_exception("SGIO ioctl failed");
     }
 
+    // Check base status
+    if (sg_io.status && sg_io.status != 2) // SG_CHECK_CONDITION
+    {
+	throw topaz_exception("SGIO: bad status");
+    }
+
+    // Check host interface
+    if (sg_io.host_status)
+    {
+	throw topaz_exception("SGIO: bad host status");
+    }
+
     // Debug input
     if (type == SG_DXFER_FROM_DEV)
     {
@@ -473,15 +491,6 @@ void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
             printf("Read Data:\n");
             dump(data, bcount * ATA_BLOCK_SIZE);
         }
-    }
-
-    // Check sense data
-    if (sense[0] != 0x72 || sense[7] != 0x0e || sense[8] != 0x09
-        || sense[9] != 0x0c || sense[10] != 0x00)
-    {
-        //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
-        //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
-        throw topaz_exception("SGIO ioctl bad status");
     }
 }
 
@@ -496,9 +505,10 @@ void rawdrive::ata_exec_12(ata12_cmd_t &cmd, int type,
  * @param data   Data buffer for ATA operation, NULL on SGIO_DATA_NONE
  * @param bcount Length of data buffer in blocks (512 bytes)
  * @param wait   Command timeout (seconds)
+ * @param dma    Indicate DMA operation
  */
 void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
-                           void *data, uint8_t bcount, int wait)
+                           void *data, uint8_t bcount, int wait, bool dma)
 {
     struct sg_io_hdr sg_io;  // ioctl data structure
     unsigned char cdb[16];   // Command descriptor block
@@ -540,29 +550,32 @@ void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
     // Byte 0: ATA16 pass through
     cdb[0] = 0x85;
 
-    // Byte 1: ATA protocol (read/write/none)
-    // Byte 2: Check condition, blocks, size, I/O direction
-    // Final direction specific bits
-    switch (type)
+    // Byte 1: ATA protocol
+    if (dma)
     {
-        case SG_DXFER_NONE:
-            cdb[1] = 3 << 1; // ATA no data
-            cdb[2] = 0x20;   // Check condition only
-            break;
+	cdb[1] = 6 << 1; // DMA
+    }
+    else if (type == SG_DXFER_FROM_DEV)
+    {
+	cdb[1] = 4 << 1; // ATA PIO-in
+    }
+    else if (type == SG_DXFER_TO_DEV)
+    {
+	cdb[1] = 5 << 1; // ATA PIO-out
+    }
+    else
+    {
+	throw topaz_exception("Invalid ATA Direction");
+    }
 
-        case SG_DXFER_FROM_DEV:
-            cdb[1] = 4 << 1; // ATA PIO-in
-            cdb[2] = 0x2e;   // Check, blocks, size in sector count, read
-            break;
-
-        case SG_DXFER_TO_DEV:
-            cdb[1] = 5 << 1; // ATA PIO-out
-            cdb[2] = 0x26;   // Check, blocks, size in sector count
-            break;
-
-        default: // Invalid
-            throw topaz_exception("Invalid ATA Direction");
-            break;
+    // Byte 2: Blocks, size, I/O direction
+    if (type == SG_DXFER_FROM_DEV)
+    {
+	cdb[2] = 0x0e;   // Blocks, size in sector count, read
+    }
+    else
+    {
+	cdb[2] = 0x06;   // Blocks, size in sector count
     }
 
     // Rest of ATA16 command get copied here (12 bytes)
@@ -598,6 +611,18 @@ void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
         throw topaz_exception("SGIO ioctl failed");
     }
 
+    // Check base status
+    if (sg_io.status && sg_io.status != 2) // SG_CHECK_CONDITION
+    {
+	throw topaz_exception("SGIO: bad status");
+    }
+
+    // Check host interface
+    if (sg_io.host_status)
+    {
+	throw topaz_exception("SGIO: bad host status");
+    }
+
     // Debug input
     if (type == SG_DXFER_FROM_DEV)
     {
@@ -606,14 +631,5 @@ void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
             printf("Read Data:\n");
             dump(data, bcount * ATA_BLOCK_SIZE);
         }
-    }
-
-    // Check sense data
-    if (sense[0] != 0x72 || sense[7] != 0x0e || sense[8] != 0x09
-        || sense[9] != 0x0c || sense[10] != 0x00)
-    {
-        //fprintf(stderr, "error  = %02x\n", sense[11]);    // 0x00 means success
-        //fprintf(stderr, "status = %02x\n", sense[21]);    // 0x50 means success
-        throw topaz_exception("SGIO ioctl bad status");
     }
 }

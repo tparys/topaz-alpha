@@ -319,7 +319,6 @@ namespace topaz
         bool lock_flag;
         uint32_t com_id;
         uint64_t lba_align;
-        uint64_t max_com_pkt_size;
         unsigned admin_count;
         unsigned user_count;
 
