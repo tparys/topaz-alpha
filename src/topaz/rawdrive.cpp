@@ -273,6 +273,7 @@ void rawdrive::get_identify(uint16_t *data)
     {
         // ATA12 Command - Identify Device (0xec)
         ata12_cmd_t cmd = {0};
+	cmd.count       = 0x01;
         cmd.command     = 0xec;
 
         // Off it goes
@@ -283,6 +284,7 @@ void rawdrive::get_identify(uint16_t *data)
     {
         // ATA16 Command - Identify Device (0xec)
         ata16_cmd_t cmd = {0};
+	cmd.count.low   = 0x01;
         cmd.command     = 0xec;
 
         // Off it goes
