@@ -46,7 +46,7 @@ void usage();
 
 int main(int argc, char **argv)
 {
-    char c;
+    int c;
     uint64_t uid = 0;
     string pin;
 
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    cerr << "Invalid command line option " << c << endl;
+                    cerr << "Invalid command line option " << (char)optopt << endl;
                 }
                 break;
         }

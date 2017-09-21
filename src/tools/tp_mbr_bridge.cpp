@@ -140,7 +140,7 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    cerr << "Invalid command line option " << c << endl;
+                    cerr << "Invalid command line option " << (char)optopt << endl;
                 }
                 break;
         }
