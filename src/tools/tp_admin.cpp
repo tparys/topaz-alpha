@@ -157,11 +157,8 @@ int main(int argc, char **argv)
                 new_pin = pin_from_console_check("new SID(admin)");
             }
 
-            // Convert PIN to atom for table I/O
-            atom new_pin_atom = atom::new_bin(new_pin.c_str());
-
             // Set PIN of SID (Drive Owner) in Admin SP
-            target.table_set(C_PIN_SID, 3, new_pin_atom);
+            target.table_set(C_PIN_SID, 3, new_pin);
         }
         // Activate Locking SP
         else if (strcmp(argv[optind + 1], "activate") == 0)

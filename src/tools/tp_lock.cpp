@@ -152,11 +152,8 @@ int main(int argc, char **argv)
                 new_pin = pin_from_console_check("new");
             }
 
-            // Convert PIN to atom for table I/O
-            atom new_pin_atom = atom::new_bin(new_pin.c_str());
-
             // Set PIN of current user in Locking SP
-            target.table_set(pin_uid, 3, new_pin_atom);
+            target.table_set(pin_uid, 3, new_pin);
         }
         // Display available users
         else if (strcmp(argv[optind + 1], "users") == 0)

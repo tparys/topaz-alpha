@@ -186,6 +186,15 @@ namespace topaz
         void table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val);
 
         /**
+         * \brief Set String Value in Specified Table
+         *
+         * @param tbl_uid Identifier of target table
+         * @param tbl_col Column number of data to retrieve (table specific)
+         * @param val Value to set in column
+         */
+        void table_set(uint64_t tbl_uid, uint64_t tbl_col, std::string val);
+
+        /**
          * \brief Set Binary Table
          *
          * @param tbl_uid Identifier of target table

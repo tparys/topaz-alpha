@@ -430,6 +430,20 @@ void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val)
 }
 
 /**
+ * \brief Set String Value in Specified Table
+ *
+ * @param tbl_uid Identifier of target table
+ * @param tbl_col Column number of data to retrieve (table specific)
+ * @param val Value to set in column
+ */
+void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, string val)
+{
+    // Convenience / clarity wrapper ...
+    byte const *ptr = (byte const*)(val.c_str());
+    return table_set(tbl_uid, tbl_col, atom::new_bin(ptr, val.size()));
+}
+
+/**
  * \brief Set Binary Table
  *
  * @param tbl_uid Identifier of target table
