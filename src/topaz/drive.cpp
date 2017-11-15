@@ -213,7 +213,7 @@ void drive::login(uint64_t sp_uid, uint64_t auth_uid, string pin)
 
     // Optional Arguments (Named Atoms)
     params[3].name()        = atom::new_uint(0);       // Host Challenge
-    params[3].named_value() = atom::new_bin(pin.c_str());
+    params[3].named_value() = atom::new_bin((byte*)pin.c_str(), pin.size());
     params[4].name()        = atom::new_uint(3);       // Host Signing Authority (User)
     params[4].named_value() = atom::new_uid(auth_uid);
 
