@@ -86,6 +86,14 @@ namespace topaz
          */
         ~rawdrive();
 
+        /**
+         * \brief Request ioctl of underlying device
+         *
+         * @param request Kernel ioctl code
+         * @param arg     Pointer to argument, if relevant
+         */
+        int request_ioctl(unsigned long request, void *arg = nullptr);
+
 	/**
 	 * Set DMA for IF-SEND / IF-RECV
 	 *

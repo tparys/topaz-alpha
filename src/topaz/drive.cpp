@@ -33,6 +33,7 @@
 #include <cstdio>
 #include <cstring>
 #include <inttypes.h>
+#include <linux/fs.h>
 #include <topaz/defs.h>
 #include <topaz/debug.h>
 #include <topaz/drive.h>
@@ -758,6 +759,26 @@ void drive::end_transaction()
     {
         throw topaz_exception("Transaction failed");
     }
+}
+
+/**
+ * \brief Clear kernel page cache for device
+ *
+ * @return False on failure
+ */
+bool drive::clear_page_cache()
+{
+    return (0 == raw.request_ioctl(BLKFLSBUF));
+}
+
+/**
+ * \brief Force re-read of device partition table
+ *
+ * @return False on failure
+ */
+bool drive::reread_partitions()
+{
+    return (0 == raw.request_ioctl(BLKRRPART));
 }
 
 /**

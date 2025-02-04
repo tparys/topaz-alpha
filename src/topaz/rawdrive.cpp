@@ -92,6 +92,14 @@ rawdrive::~rawdrive()
 }
 
 /**
+ * \brief Request ioctl of underlying device
+ */
+int rawdrive::request_ioctl(unsigned long request, void *arg)
+{
+    return ioctl(fd, request, arg);
+}
+
+/**
  * Set DMA for IF-SEND / IF-RECV
  *
  * @param dma Flag indicating DMA

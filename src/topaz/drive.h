@@ -256,6 +256,20 @@ namespace topaz
          */
         void end_transaction();
 
+        /**
+         * \brief Clear kernel page cache for device
+         *
+         * @return False on failure
+         */
+        bool clear_page_cache();
+
+        /**
+         * \brief Force re-read of device partition table
+         *
+         * @return False on failure
+         */
+        bool reread_partitions();
+
     protected:
 
         /**
