@@ -188,7 +188,7 @@ int main2(prog_state_t *state)
     struct nbd_reply reply;
     int max_fd, rc = 0;
     fd_set fds;
-    vector<byte> buffer;
+    vector<topaz::byte> buffer;
 
     ////
     // First set up the NBD device ...

@@ -427,7 +427,7 @@ void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, datum val)
 void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, uint64_t val)
 {
     // Convenience / clarity wrapper ...
-    return table_set(tbl_uid, tbl_col, atom::new_uint(val));
+    table_set(tbl_uid, tbl_col, atom::new_uint(val));
 }
 
 /**
@@ -441,7 +441,7 @@ void drive::table_set(uint64_t tbl_uid, uint64_t tbl_col, string val)
 {
     // Convenience / clarity wrapper ...
     byte const *ptr = (byte const*)(val.c_str());
-    return table_set(tbl_uid, tbl_col, atom::new_bin(ptr, val.size()));
+    table_set(tbl_uid, tbl_col, atom::new_bin(ptr, val.size()));
 }
 
 /**
