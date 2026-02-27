@@ -36,6 +36,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <sys/ioctl.h>
+#include <linux/nvme_ioctl.h>
 #include <scsi/sg.h>
 #include <topaz/debug.h>
 #include <topaz/defs.h>
@@ -47,6 +48,12 @@ using namespace topaz;
 // Set to nonzero to use ATA12 commands
 #define USE_ATA12 0
 
+enum NvmeCommands
+{
+    NVME_SECURITY_SEND = 0x81,
+    NVME_SECURITY_RECV = 0x82,
+};
+
 /**
  * \brief Topaz Raw Hard Drive Constructor
  *
@@ -54,9 +61,18 @@ using namespace topaz;
  */
 rawdrive::rawdrive(char const *path)
     : if_dma(false)
+    , is_nvme(false)
 {
-    // First, verify libata isn't misconfigured ...
-    check_libata();
+    // Path start with /dev/nvme?
+    if (strncmp(path, "/dev/nvme", 9) == 0)
+    {
+        is_nvme = true;
+    }
+    else // Assume ATA
+    {
+        // First, verify libata isn't misconfigured ...
+        check_libata();
+    }
 
     // Open up device
     TOPAZ_DEBUG(1) printf("Opening %s ...\n", path);
@@ -67,19 +83,21 @@ rawdrive::rawdrive(char const *path)
     }
 
     // Check the TPM
-    try
+    if (!is_nvme)
     {
-        check_tpm();
-    }
-    catch (topaz_exception &e)
-    {
-        // Constructor not done, destructor won't be called ...
-        close(fd);
+        try
+        {
+            check_tpm();
+        }
+        catch (topaz_exception &e)
+        {
+            // Constructor not done, destructor won't be called ...
+            close(fd);
 
-        // Pass it along
-        throw e;
+            // Pass it along
+            throw e;
+        }
     }
-
 }
 
 /**
@@ -122,34 +140,42 @@ void rawdrive::set_if_dma(bool dma)
 void rawdrive::if_send(uint8_t proto, uint16_t comid,
                        void *data, uint8_t bcount)
 {
-    // Trusted Send DMA or PIO
-    uint8_t ata_cmd = (if_dma ? 0x5f : 0x5e);
-
-    if (USE_ATA12)
+    if (is_nvme)
     {
-        // ATA12 Command
-        ata12_cmd_t cmd  = {0};
-        cmd.feature      = proto;
-        cmd.count        = bcount;
-        cmd.lba_mid      = comid & 0xff;
-        cmd.lba_high     = comid >> 8;
-        cmd.command      = ata_cmd;
-
-        // Off it goes
-        ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5, if_dma);
+        nvme_exec(NVME_SECURITY_SEND,
+                  proto, comid, data, bcount);
     }
     else
     {
-        // ATA16 Command
-        ata16_cmd_t cmd  = {0};
-        cmd.feature.low  = proto;
-        cmd.count.low    = bcount;
-        cmd.lba_mid.low  = comid & 0xff;
-        cmd.lba_high.low = comid >> 8;
-        cmd.command      = ata_cmd;
+        // Trusted Send DMA or PIO
+        uint8_t ata_cmd = (if_dma ? 0x5f : 0x5e);
 
-        // Off it goes
-        ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5, if_dma);
+        if (USE_ATA12)
+        {
+            // ATA12 Command
+            ata12_cmd_t cmd  = {};
+            cmd.feature      = proto;
+            cmd.count        = bcount;
+            cmd.lba_mid      = comid & 0xff;
+            cmd.lba_high     = comid >> 8;
+            cmd.command      = ata_cmd;
+
+            // Off it goes
+            ata_exec_12(cmd, SG_DXFER_TO_DEV, data, bcount, 5, if_dma);
+        }
+        else
+        {
+            // ATA16 Command
+            ata16_cmd_t cmd  = {};
+            cmd.feature.low  = proto;
+            cmd.count.low    = bcount;
+            cmd.lba_mid.low  = comid & 0xff;
+            cmd.lba_high.low = comid >> 8;
+            cmd.command      = ata_cmd;
+
+            // Off it goes
+            ata_exec_16(cmd, SG_DXFER_TO_DEV, data, bcount, 5, if_dma);
+        }
     }
 }
 
@@ -166,34 +192,42 @@ void rawdrive::if_send(uint8_t proto, uint16_t comid,
 void rawdrive::if_recv(uint8_t proto, uint16_t comid,
                        void *data, uint8_t bcount)
 {
-    // Trusted Receive DMA or PIO
-    uint8_t ata_cmd = (if_dma ? 0x5d : 0x5c);
-
-    if (USE_ATA12)
+    if (is_nvme)
     {
-        // ATA12 Command
-        ata12_cmd_t cmd  = {0};
-        cmd.feature      = proto;
-        cmd.count        = bcount;
-        cmd.lba_mid      = comid & 0xff;
-        cmd.lba_high     = comid >> 8;
-        cmd.command      = ata_cmd;
-
-        // Off it goes
-        ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, if_dma);
+        nvme_exec(NVME_SECURITY_RECV,
+                  proto, comid, data, bcount);
     }
     else
     {
-        // ATA16 Command
-        ata16_cmd_t cmd  = {0};
-        cmd.feature.low  = proto;
-        cmd.count.low    = bcount;
-        cmd.lba_mid.low  = comid & 0xff;
-        cmd.lba_high.low = comid >> 8;
-        cmd.command      = ata_cmd;
+        // Trusted Receive DMA or PIO
+        uint8_t ata_cmd = (if_dma ? 0x5d : 0x5c);
 
-        // Off it goes
-        ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, if_dma);
+        if (USE_ATA12)
+        {
+            // ATA12 Command
+            ata12_cmd_t cmd  = {};
+            cmd.feature      = proto;
+            cmd.count        = bcount;
+            cmd.lba_mid      = comid & 0xff;
+            cmd.lba_high     = comid >> 8;
+            cmd.command      = ata_cmd;
+
+            // Off it goes
+            ata_exec_12(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, if_dma);
+        }
+        else
+        {
+            // ATA16 Command
+            ata16_cmd_t cmd  = {};
+            cmd.feature.low  = proto;
+            cmd.count.low    = bcount;
+            cmd.lba_mid.low  = comid & 0xff;
+            cmd.lba_high.low = comid >> 8;
+            cmd.command      = ata_cmd;
+
+            // Off it goes
+            ata_exec_16(cmd, SG_DXFER_FROM_DEV, data, bcount, 5, if_dma);
+        }
     }
 }
 
@@ -234,6 +268,7 @@ string rawdrive::get_firmware() const
  */
 void rawdrive::check_libata()
 {
+    return;
     int fd;
     char in;
 
@@ -297,7 +332,7 @@ void rawdrive::get_identify(uint16_t *data)
     if (USE_ATA12)
     {
         // ATA12 Command - Identify Device (0xec)
-        ata12_cmd_t cmd = {0};
+        ata12_cmd_t cmd = {};
         cmd.count       = 0x01;
         cmd.device      = 0x40;
         cmd.command     = 0xec;
@@ -309,7 +344,7 @@ void rawdrive::get_identify(uint16_t *data)
     else
     {
         // ATA16 Command - Identify Device (0xec)
-        ata16_cmd_t cmd = {0};
+        ata16_cmd_t cmd = {};
  	cmd.count.low   = 0x01;
 	cmd.device      = 0x40;
         cmd.command     = 0xec;
@@ -655,6 +690,65 @@ void rawdrive::ata_exec_16(ata16_cmd_t &cmd, int type,
         {
             printf("Read Data:\n");
             dump(data, bcount * ATA_BLOCK_SIZE);
+        }
+    }
+}
+
+/**
+ * nvme_exec
+ *
+ * Execute NVME Admin ioctl.
+ *
+ * @param opcode   NVME 12 byte buffer to valid ATA16 command
+ * @param protocol Security Protocol
+ * @param comid    Protocol ComId
+ * @param data     Data buffer for ATA operation, NULL on SGIO_DATA_NONE
+ * @param bcount   Length of data buffer in blocks (512 bytes)
+ */
+void rawdrive::nvme_exec(uint8_t opcode, uint8_t proto, uint16_t comid,
+                         void *data, uint8_t bcount)
+{
+    // 512 bytes per block
+    uint32_t byte_count = bcount * ATA_BLOCK_SIZE;
+
+    // Fill out NVME admin command
+    struct nvme_passthru_cmd cmd = {};
+    cmd.opcode = opcode;
+    cmd.nsid = 0; // Not used, except for namespace specific unlocking (needed?)
+    cmd.addr = (__u64)(uintptr_t)data;
+    cmd.data_len = byte_count;
+    cmd.cdw10 = (proto << 24) | (comid << 8);
+    cmd.cdw11 = byte_count;
+
+    // Debug output command
+    TOPAZ_DEBUG(4)
+    {
+        // Command descriptor block
+        printf("NVME Command:\n");
+        dump(&cmd, sizeof(cmd));
+
+        // Data out?
+        if (opcode == NVME_SECURITY_SEND)
+        {
+            printf("Write Data:\n");
+            dump(data, bcount * ATA_BLOCK_SIZE);
+        }
+    }
+
+    // Call device ioctl
+    int rc = ioctl(fd, NVME_IOCTL_ADMIN64_CMD, &cmd);
+    if (rc != 0)
+    {
+        throw topaz_exception("NVME ioctl failed");
+    }
+
+    // Debug input
+    if (opcode == NVME_SECURITY_RECV)
+    {
+        TOPAZ_DEBUG(4)
+        {
+            printf("Read Data:\n");
+            dump(data, byte_count);
         }
     }
 }

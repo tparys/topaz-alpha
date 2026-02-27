@@ -1129,6 +1129,12 @@ void drive::probe_level0()
             TOPAZ_DEBUG(2) printf("Pyrite SSC 1.0\n");
             parse_level0_feat_ssc2(feat_data);
         }
+        else if (code == FEAT_PYRITE2)
+        {
+            msg_type = SWG_MSG_OPAL;
+            TOPAZ_DEBUG(2) printf("Pyrite SSC 2.0\n");
+            parse_level0_feat_ssc2(feat_data);
+        }
         else if ((code >= 0x1000) && (code < 0x4000))
         {
             TOPAZ_DEBUG(2) printf("SSCs");
@@ -1279,7 +1285,7 @@ void drive::parse_level0_feat_ssc2(void const *feat_data)
  */
 void drive::reset_comid(uint32_t com_id)
 {
-    unsigned char block[ATA_BLOCK_SIZE] = {0};
+    unsigned char block[ATA_BLOCK_SIZE] = {};
     opal_comid_req_t *cmd = (opal_comid_req_t*)block;
     opal_comid_resp_t *resp = (opal_comid_resp_t*)block;
 

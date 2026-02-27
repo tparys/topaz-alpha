@@ -115,7 +115,7 @@ string topaz::pin_from_console(char const *prompt)
     string pin;
 
     // Set up handler if someone hits Ctrl-C (INT) or sends a TERM
-    struct sigaction new_action = {0}, old_action[2];
+    struct sigaction new_action = {}, old_action[2];
     new_action.sa_sigaction = pin_signal_handler;
     new_action.sa_flags = SA_SIGINFO;
     if ((sigaction(SIGINT, &new_action, old_action + 0) < 0) ||

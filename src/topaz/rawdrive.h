@@ -216,6 +216,20 @@ namespace topaz
         void ata_exec_16(ata16_cmd_t &cmd, int type,
                          void *data, uint8_t bcount, int wait, bool dma);
 
+        /**
+         * nvme_exec
+         *
+         * Execute NVME admin ioctl.
+         *
+         * @param opcode   NVME 12 byte buffer to valid ATA16 command
+         * @param protocol Security Protocol
+         * @param comid    Protocol ComId
+         * @param data     Data buffer for ATA operation, NULL on SGIO_DATA_NONE
+         * @param bcount   Length of data buffer in blocks (512 bytes)
+         */
+        void nvme_exec(uint8_t opcode, uint8_t proto, uint16_t comid,
+                       void *data, uint8_t bcount);
+
         /* internal data */
         int fd;
 
@@ -227,6 +241,8 @@ namespace topaz
 	/* using DMA for IF SEND/RECV calls? */
 	bool if_dma;
 
+        /* NVME flag */
+        bool is_nvme;
     };
 
 };

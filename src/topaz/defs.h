@@ -109,7 +109,10 @@ namespace topaz
         FEAT_TABLES     = 0x0202,
         FEAT_OPAL2      = 0x0203,
         FEAT_OPALITE    = 0x0301,
-        FEAT_PYRITE     = 0x0302
+        FEAT_PYRITE     = 0x0302,
+        FEAT_PYRITE2    = 0x0303,
+        FEAT_SID_AUTH   = 0x0402,
+        FEAT_DATAREMOVE = 0x0404,
     } level0_feat_id_t;
 
     // Geometry Feature Data (0x003)
@@ -150,6 +153,7 @@ namespace topaz
     // TCG Opal 2.0 SSC Feature Data (0x203)
     // TCG Opalite 1.0 SSC Feature Data (0x301)
     // TCG Pyrite 1.0 SSC Feature Data (0x302)
+    // TCG Pyrite 2.0 SSC Feature Data (0x303)
     typedef struct
     {
         uint16_t comid_base;
