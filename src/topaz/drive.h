@@ -56,6 +56,13 @@ namespace topaz
         ~drive();
 
         /**
+         * Get path to device
+         *
+         * @return Path to device
+         */
+        std::string get_device_path() const;
+
+        /**
          * Get drive model number
          *
          * @return String representing model number of drive
@@ -324,6 +331,9 @@ namespace topaz
          * @return String representation of ID
          */
         char const *lookup_tpm_proto(uint8_t proto);
+
+        // Path to device
+        std::string device_path;
 
         // Underlying Device implementing IF-SEND/RECV
         rawdrive raw;

@@ -43,7 +43,7 @@ namespace topaz
     //
 
     // Global UIDs
-    enum
+    enum Global
     {
         // Session Manager - Start / Stop Sessions to defined SPs
         SESSION_MGR      = _UID_MAKE(   0x0,    0xff),
@@ -56,7 +56,7 @@ namespace topaz
     };
 
     // Defined UIDs within Admin SP
-    enum
+    enum AdminSp
     {
         // Info
         SP_INFO          = _UID_MAKE(   0x1,     0x2),
@@ -76,7 +76,7 @@ namespace topaz
     };
 
     // Defined UIDs within Locking SP
-    enum
+    enum LoockingSp
     {
         // Access Control Entries
         ACE_DATASTORE_GET = _UID_MAKE(  0x8,  0x3fc00), // Read access to DataStore Table
@@ -102,6 +102,84 @@ namespace topaz
 
         // DataStore
         DATASTORE        = _UID_MAKE( 0x1001, 0),
+    };
+
+    // SP Table Columns
+    // (per SWG2 5.4.2.5)
+    enum SP
+    {
+//      UID            = 0x00,
+//      Name           = 0x01,
+//      ORG            = 0x02,
+        EffectiveAuth  = 0x03,
+        DateofIssue    = 0x04,
+        Bytes          = 0x05,
+        LifeCycleState = 0x06,
+        Frozen         = 0x07,
+    };
+
+    // LockingInfo Table Columns
+    // (per SWG2 5.7.2.1)
+    enum LockingInfo
+    {
+//      UID                  = 0x00,
+//      Name                 = 0x01,
+//      Version              = 0x02,
+        EncryptSupport       = 0x03,
+        MaxRanges            = 0x04,
+        MaxReEncryptions     = 0x05,
+        KeysAvailableCfg     = 0x06,
+        AligmentRequired     = 0x07,
+        LogicalBlockSize     = 0x08,
+        AlignmentGranularity = 0x09,
+        LowestAlignedLBA     = 0x0A,
+    };
+
+    // Locking Table Columns
+    // (per SWG2 5.7.2.2)
+    enum Locking
+    {
+//      UID              = 0x00,
+//      Name             = 0x01,
+//      CommonName       = 0x02,
+        RangeStart       = 0x03,
+        RangeLength      = 0x04,
+        ReadLockEnabled  = 0x05,
+        WriteLockEnabled = 0x06,
+        ReadLocked       = 0x07,
+        WriteLocked      = 0x08,
+        LockOnReset      = 0x09,
+        ActiveKey        = 0x0A,
+        NextKey          = 0x0B,
+        ReEncryptState   = 0x0C,
+        ReEncryptRequest = 0x0D,
+        AdvKeyMode       = 0x0E,
+        VerifyMode       = 0x0F,
+        ContOnReset      = 0x10,
+        LastReEncryptLBA = 0x11,
+        LastReEncStat    = 0x12,
+        GeneralStatus    = 0x13,
+    };
+
+    ////
+    // Value Enumerations
+    //
+
+    enum LifeCycleState
+    {
+        Issued = 0,
+        IssuedDisabled = 1,
+        IssuedFrozen = 2,
+        IssuedDisabledFrozen = 3,
+        IssuedFailed = 4,
+        // 5-7 reserved
+        ManufacturedInactive = 8,
+        Manufactured = 9,
+        ManufacturedDisabled = 10,
+        ManufacturedFrozen = 11,
+        ManufacturedDisabledFrozen = 12,
+        ManufacturedFailed = 13,
+        // 14-15 reserved
     };
 
     ////

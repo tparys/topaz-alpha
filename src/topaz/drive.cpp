@@ -61,7 +61,7 @@ using namespace topaz;
  * @param path OS path to specified drive (eg - '/dev/sdX')
  */
 drive::drive(char const *path)
-    : raw(path)
+    : device_path(path), raw(path)
 {
     // Initialization
     session_is_auth = false;
@@ -95,6 +95,16 @@ drive::~drive()
 {
     // Cleanup
     logout();
+}
+
+/**
+ * Get path to device
+ *
+ * @return Path to device
+ */
+std::string drive::get_device_path() const
+{
+    return device_path;
 }
 
 /**
