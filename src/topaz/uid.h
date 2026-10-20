@@ -76,7 +76,7 @@ namespace topaz
     };
 
     // Defined UIDs within Locking SP
-    enum LoockingSp
+    enum LockingSp
     {
         // Access Control Entries
         ACE_DATASTORE_GET = _UID_MAKE(  0x8,  0x3fc00), // Read access to DataStore Table
